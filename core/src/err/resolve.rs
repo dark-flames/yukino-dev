@@ -1,3 +1,4 @@
+use crate::err::YukinoError;
 pub use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -7,3 +8,5 @@ pub enum ResolveError {
     #[error("GlobInPathIsNotSupported: Glob in path({0}) is not supported")]
     GlobInPathIsNotSupported(String),
 }
+
+impl YukinoError for ResolveError {}
