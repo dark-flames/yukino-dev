@@ -1,10 +1,11 @@
+use crate::db::ty::DatabaseValue;
 use crate::entity::{Entity, EntityView};
 use crate::expr::Expr;
 use crate::query::calc::Computation;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-pub struct QueryResultRaw(HashMap<String, String>);
+pub struct QueryResultRaw(HashMap<String, DatabaseValue>);
 
 pub struct Query {}
 
