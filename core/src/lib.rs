@@ -1,8 +1,11 @@
 #![feature(generic_associated_types)]
 #![feature(associated_type_bounds)]
-pub mod query;
+pub mod db;
 pub mod entity;
+pub mod err;
 pub mod expr;
+pub mod query;
+pub mod resolver;
 
 #[cfg(test)]
 mod tests {
