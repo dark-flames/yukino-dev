@@ -1,7 +1,11 @@
+use crate::entity::def::EntityDefinition;
 use crate::err::{CliError, ResolveError, YukinoError};
+use crate::resolver::entity::EntityResolver;
+use crate::resolver::field::{FieldPath, FieldResolver};
 use crate::resolver::path::FileTypePathResolver;
 use proc_macro2::TokenStream;
 use quote::quote;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 
@@ -9,20 +13,29 @@ pub struct ResolverConfig {
     pub source: Vec<File>,
 }
 
-pub struct SchemaResolver {
+#[allow(dead_code)]
+pub struct DefinitionResolver {
     config: ResolverConfig,
-    result: Vec<TokenStream>,
+    entity_resolver: HashMap<usize, EntityResolver>,
+    field_resolver: HashMap<FieldPath, FieldResolver>,
+    waiting_for_field: HashMap<FieldPath, Vec<FieldPath>>,
+    waiting_for_entity: HashMap<usize, Vec<FieldPath>>,
 }
 
+#[allow(dead_code)]
 pub struct AchievedSchemaResolver {
-    token_stream: Vec<TokenStream>,
+    statements: Vec<TokenStream>,
+    definitions: Vec<EntityDefinition>,
 }
 
-impl SchemaResolver {
+impl DefinitionResolver {
     pub fn create(config: ResolverConfig) -> Self {
-        SchemaResolver {
+        DefinitionResolver {
             config,
-            result: vec![],
+            entity_resolver: HashMap::new(),
+            field_resolver: HashMap::new(),
+            waiting_for_field: HashMap::new(),
+            waiting_for_entity: HashMap::new(),
         }
     }
 
@@ -37,14 +50,15 @@ impl SchemaResolver {
         }
 
         Ok(AchievedSchemaResolver {
-            token_stream: self.result,
+            statements: vec![TokenStream::new()],
+            definitions: vec![],
         })
     }
 }
 
 impl AchievedSchemaResolver {
     pub fn unwrap(self) -> TokenStream {
-        let statements = self.token_stream;
+        let statements = self.statements;
         quote! {
             #(#statements)*
         }
