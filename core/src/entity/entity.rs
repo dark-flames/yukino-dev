@@ -1,9 +1,14 @@
 use crate::expr::Expr;
 use crate::query::calc::Computation;
 use crate::query::optimizer::QueryOptimizer;
+use std::any::type_name;
 
-pub trait FieldMarker {
+pub trait FieldMarker: Sized + 'static {
     type Type;
+
+    fn type_name() -> String {
+        type_name::<Self::Type>().to_string()
+    }
 }
 
 pub trait Entity: Clone {
