@@ -18,6 +18,7 @@ pub struct FieldPath {
     field_name: String,
 }
 
+#[derive(Clone)]
 pub struct ResolvedField {
     pub path: FieldPath,
 }
@@ -88,6 +89,20 @@ impl FieldResolver {
             .collect()
     }
 
+    pub fn get_entity_field(&self, entity_id: usize) -> Vec<ResolvedField> {
+        assert!(self.finish_resolved_entity_fields(entity_id));
+
+        self.finished[&entity_id].values().cloned().collect()
+    }
+
+    pub fn set_entity_field_count(&mut self, entity_id: usize, count: usize) {
+        self.field_count.insert(entity_id, count);
+    }
+
+    fn finish_resolved_entity_fields(&self, entity_id: usize) -> bool {
+        self.finished[&entity_id].len() == self.field_count[&entity_id]
+    }
+
     fn handle_resolve_result(&mut self, result: FieldResolveResult) -> ReadyEntities {
         match result {
             FieldResolveResult::Finished(resolved) => {
@@ -105,7 +120,7 @@ impl FieldResolver {
                     .or_default()
                     .insert(resolved.path.field_name.clone(), resolved);
 
-                if self.finished[&entity_id].len() == self.field_count[&entity_id] {
+                if self.finish_resolved_entity_fields(entity_id) {
                     ready_entities.insert(entity_id);
                 }
 
