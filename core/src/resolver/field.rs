@@ -49,6 +49,15 @@ pub trait FieldResolverCell {
     ) -> CliResult<FieldResolveResult>;
 }
 
+impl FieldPath {
+    pub fn create(entity_id: usize, field_name: String) -> Self {
+        FieldPath {
+            entity_id,
+            field_name,
+        }
+    }
+}
+
 impl FieldResolver {
     pub fn create(cells: Vec<Box<dyn FieldResolverCell>>) -> Self {
         FieldResolver {

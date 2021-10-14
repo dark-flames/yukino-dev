@@ -1,6 +1,7 @@
-use crate::err::ResolveError;
+use crate::err::{CliError, ResolveError, YukinoError};
 use proc_macro2::Ident;
 use std::collections::HashMap;
+use syn::spanned::Spanned;
 use syn::{ItemUse, PathSegment, Type, TypePath, UseTree};
 
 pub type Entry = String;
@@ -12,8 +13,9 @@ pub struct FileTypePathResolver {
 }
 
 impl FileTypePathResolver {
-    pub fn append_use_item(&mut self, item: &ItemUse) -> Result<(), ResolveError> {
-        let result = Self::resolve_use_tree(&item.tree)?;
+    pub fn append_use_item(&mut self, item: &ItemUse) -> Result<(), CliError> {
+        let result =
+            Self::resolve_use_tree(&item.tree).map_err(|e| e.as_cli_err(Some(item.span())))?;
 
         self.map.extend(result.into_iter());
 
