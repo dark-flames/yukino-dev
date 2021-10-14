@@ -7,6 +7,8 @@ pub enum ResolveError {
     FsError(String),
     #[error("GlobInPathIsNotSupported: Glob in path({0}) is not supported")]
     GlobInPathIsNotSupported(String),
+    #[error("NoSuitableResolveCell: No suitable resolve cell for field \"{0}\"")]
+    NoSuitableResolveCell(String),
 }
 
 impl YukinoError for ResolveError {}

@@ -6,17 +6,12 @@ use syn::{ItemUse, PathSegment, Type, TypePath, UseTree};
 pub type Entry = String;
 pub type FullPath = Vec<Ident>;
 
+#[derive(Default)]
 pub struct FileTypePathResolver {
     map: HashMap<Entry, FullPath>,
 }
 
 impl FileTypePathResolver {
-    pub fn new() -> FileTypePathResolver {
-        FileTypePathResolver {
-            map: HashMap::new(),
-        }
-    }
-
     pub fn append_use_item(&mut self, item: &ItemUse) -> Result<(), ResolveError> {
         let result = Self::resolve_use_tree(&item.tree)?;
 

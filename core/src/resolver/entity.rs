@@ -1,5 +1,17 @@
+use std::collections::HashMap;
+
 #[allow(dead_code)]
-pub struct EntityResolver {
+pub struct UnassembledEntity {
     id: usize,
-    completed: bool,
+}
+
+pub struct ResolvedEntity {
+    pub id: usize,
+}
+
+#[allow(dead_code)]
+#[derive(Default)]
+pub struct EntityResolver {
+    unassembled: HashMap<usize, UnassembledEntity>,
+    finished: HashMap<usize, ResolvedEntity>,
 }

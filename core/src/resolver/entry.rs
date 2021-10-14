@@ -1,13 +1,14 @@
 use crate::entity::def::EntityDefinition;
 use crate::err::{CliError, ResolveError, YukinoError};
 use crate::resolver::entity::EntityResolver;
-use crate::resolver::field::{FieldPath, FieldResolver};
+use crate::resolver::field::FieldResolver;
 use crate::resolver::path::FileTypePathResolver;
 use proc_macro2::TokenStream;
 use quote::quote;
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
+
+pub type CliResult<T> = Result<T, CliError>;
 
 pub struct ResolverConfig {
     pub source: Vec<File>,
@@ -16,10 +17,8 @@ pub struct ResolverConfig {
 #[allow(dead_code)]
 pub struct DefinitionResolver {
     config: ResolverConfig,
-    entity_resolver: HashMap<usize, EntityResolver>,
-    field_resolver: HashMap<FieldPath, FieldResolver>,
-    waiting_for_field: HashMap<FieldPath, Vec<FieldPath>>,
-    waiting_for_entity: HashMap<usize, Vec<FieldPath>>,
+    entity_resolver: EntityResolver,
+    field_resolver: FieldResolver,
 }
 
 #[allow(dead_code)]
@@ -32,20 +31,18 @@ impl DefinitionResolver {
     pub fn create(config: ResolverConfig) -> Self {
         DefinitionResolver {
             config,
-            entity_resolver: HashMap::new(),
-            field_resolver: HashMap::new(),
-            waiting_for_field: HashMap::new(),
-            waiting_for_entity: HashMap::new(),
+            entity_resolver: Default::default(),
+            field_resolver: Default::default(),
         }
     }
 
-    pub fn resolve(mut self) -> Result<AchievedSchemaResolver, CliError> {
+    pub fn resolve(mut self) -> CliResult<AchievedSchemaResolver> {
         for file in self.config.source.iter_mut() {
             let mut content = String::new();
             file.read_to_string(&mut content)
                 .map_err(|e| ResolveError::FsError(e.to_string()).as_cli_err(None))?;
             #[allow(unused_variables, unused_mut)]
-            let mut type_resolver = FileTypePathResolver::new();
+            let mut type_resolver: FileTypePathResolver = Default::default();
             unimplemented!()
         }
 
