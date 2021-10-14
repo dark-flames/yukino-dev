@@ -1,7 +1,7 @@
 use crate::entity::def::EntityDefinition;
 use crate::err::{CliError, ResolveError, YukinoError};
 use crate::resolver::entity::EntityResolver;
-use crate::resolver::field::FieldResolver;
+use crate::resolver::field::{FieldResolver, ReadyEntities};
 use crate::resolver::path::FileTypePathResolver;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -50,6 +50,16 @@ impl DefinitionResolver {
             statements: vec![TokenStream::new()],
             definitions: vec![],
         })
+    }
+    #[allow(dead_code)]
+    fn handle_ready_entities(&mut self, entities: ReadyEntities) {
+        for entity in entities.into_iter() {
+            let ready_entities = self.field_resolver.apply_entity(
+                self.entity_resolver
+                    .assembled(entity, self.field_resolver.get_entity_fields(entity)),
+            );
+            self.handle_ready_entities(ready_entities);
+        }
     }
 }
 

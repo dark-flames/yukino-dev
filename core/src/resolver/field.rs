@@ -89,14 +89,18 @@ impl FieldResolver {
             .collect()
     }
 
-    pub fn get_entity_field(&self, entity_id: usize) -> Vec<ResolvedField> {
+    pub fn get_entity_fields(&self, entity_id: usize) -> HashMap<String, ResolvedField> {
         assert!(self.finish_resolved_entity_fields(entity_id));
 
-        self.finished[&entity_id].values().cloned().collect()
+        self.finished[&entity_id].clone()
     }
 
     pub fn set_entity_field_count(&mut self, entity_id: usize, count: usize) {
         self.field_count.insert(entity_id, count);
+    }
+
+    pub fn all_finished(&self) -> bool {
+        self.waiting_for_field.is_empty() && self.waiting_for_entity.is_empty()
     }
 
     fn finish_resolved_entity_fields(&self, entity_id: usize) -> bool {
