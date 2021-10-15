@@ -21,6 +21,8 @@ pub enum ResolveError {
     NoEntityAttribute(String),
     #[error("IndexedFieldNotFound: Field `{0}` of index `{1}` was not found in entity")]
     IndexedFieldNotFound(String, String),
+    #[error("NoPrimaryField: No primary field was found in entity `{0}`")]
+    NoPrimaryField(String),
 }
 
 impl YukinoError for ResolveError {}

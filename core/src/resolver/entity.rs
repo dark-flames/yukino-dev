@@ -1,5 +1,8 @@
-use crate::entity::attr::{Entity, Index};
-use crate::entity::def::{DefinitionType, EntityDefinition, IndexDefinition, IndexType};
+use crate::db::ty::DatabaseType;
+use crate::entity::attr::{Entity, Index, IndexMethod};
+use crate::entity::def::{
+    ColumnDefinition, DefinitionType, EntityDefinition, FieldDefinition, IndexDefinition, IndexType,
+};
 use crate::err::{ResolveError, YukinoError};
 use crate::resolver::entry::CliResult;
 use crate::resolver::field::ResolvedField;
@@ -41,7 +44,7 @@ pub trait EntityResolvePass {
 
 impl UnassembledEntity {
     pub fn assemble(self, fields: HashMap<String, ResolvedField>) -> CliResult<ResolvedEntity> {
-        let field_definitions = fields
+        let mut field_definitions: HashMap<_, _> = fields
             .iter()
             .map(|(name, f)| (name.clone(), f.definition.clone()))
             .collect();
@@ -77,7 +80,50 @@ impl UnassembledEntity {
         // Generated indexes
         indexes.extend(fields.values().flat_map(|f| f.indexes.clone().into_iter()));
 
-        // todo: generate primary
+        let field_with_primary: Vec<_> = fields
+            .iter()
+            .filter_map(|(name, f)| f.primary.then(|| name.clone()))
+            .collect();
+
+        let unique_primary = if field_with_primary.len() == 1 {
+            field_with_primary.first().unwrap().clone()
+        } else {
+            let generated_name = format!("_{}_id", &self.name);
+
+            field_definitions.insert(
+                generated_name.clone(),
+                FieldDefinition {
+                    name: generated_name.clone(),
+                    ty: "String".to_string(),
+                    auto_increase: false,
+                    definition_ty: DefinitionType::Generated,
+                    columns: vec![(
+                        generated_name.clone(),
+                        ColumnDefinition {
+                            name: generated_name.clone(),
+                            ty: DatabaseType::String,
+                            nullable: false,
+                            auto_increase: false,
+                        },
+                    )]
+                    .into_iter()
+                    .collect(),
+                    identity_columns: vec![generated_name.clone()],
+                    association: Option::None,
+                },
+            );
+            indexes.push((
+                format!("_{}_primary", &self.name),
+                IndexDefinition {
+                    name: "".to_string(),
+                    fields: field_with_primary.clone(),
+                    ty: IndexType::Primary,
+                    method: IndexMethod::BTree,
+                },
+            ));
+
+            generated_name
+        };
 
         Ok(ResolvedEntity {
             id: self.id,
@@ -87,7 +133,8 @@ impl UnassembledEntity {
                 definition_ty: DefinitionType::Normal,
                 fields: field_definitions,
                 indexes: indexes.into_iter().collect(),
-                primary: vec![],
+                unique_primary,
+                primary_fields: field_with_primary,
             },
             fields,
         })

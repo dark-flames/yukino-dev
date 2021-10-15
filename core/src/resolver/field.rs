@@ -15,14 +15,15 @@ pub type ReadyEntities = HashSet<usize>;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct FieldPath {
-    entity_id: usize,
-    field_name: String,
+    pub entity_id: usize,
+    pub field_name: String,
 }
 
 #[derive(Clone)]
 pub struct ResolvedField {
     pub path: FieldPath,
     pub definition: FieldDefinition,
+    pub primary: bool,
     pub indexes: HashMap<String, IndexDefinition>,
 }
 

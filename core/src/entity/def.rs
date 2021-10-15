@@ -1,3 +1,4 @@
+use crate::db::ty::DatabaseType;
 use crate::entity::attr::IndexMethod;
 use iroha::ToTokens;
 use std::collections::HashMap;
@@ -10,17 +11,18 @@ pub struct EntityDefinition {
     pub definition_ty: DefinitionType,
     pub fields: HashMap<String, FieldDefinition>,
     pub indexes: HashMap<String, IndexDefinition>,
-    pub primary: Vec<String>,
+    pub unique_primary: String,
+    pub primary_fields: Vec<String>,
 }
 
 #[derive(ToTokens, Clone)]
 #[Iroha(mod_path = "yukino::entity::def")]
 pub struct FieldDefinition {
     pub name: String,
-    pub ty: usize,
+    pub ty: String, // todo: replace with syn type
     pub auto_increase: bool,
     pub definition_ty: DefinitionType,
-    pub columns: Vec<String>,
+    pub columns: HashMap<String, ColumnDefinition>,
     pub identity_columns: Vec<String>,
     pub association: Option<AssociatedDefinition>,
 }
@@ -32,6 +34,15 @@ pub struct IndexDefinition {
     pub fields: Vec<String>,
     pub ty: IndexType,
     pub method: IndexMethod,
+}
+
+#[derive(ToTokens, Clone)]
+#[Iroha(mod_path = "yukino::entity::def")]
+pub struct ColumnDefinition {
+    pub name: String,
+    pub ty: DatabaseType,
+    pub nullable: bool,
+    pub auto_increase: bool,
 }
 
 #[derive(ToTokens, Copy, Clone)]
