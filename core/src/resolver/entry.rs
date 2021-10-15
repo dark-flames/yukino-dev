@@ -14,17 +14,15 @@ use syn::{parse_file, Fields, File as SynFile, Item};
 pub type CliResult<T> = Result<T, CliError>;
 
 pub struct ResolverConfig {
-    pub source_supplier: Box<dyn 'static + Fn() -> Vec<PathBuf>>,
+    pub source_supplier: Box<dyn Fn() -> Vec<PathBuf>>,
 }
 
-#[allow(dead_code)]
 pub struct DefinitionResolver {
     config: ResolverConfig,
     entity_resolver: EntityResolver,
     field_resolver: FieldResolver,
 }
 
-#[allow(dead_code)]
 pub struct AchievedSchemaResolver {
     statements: Vec<TokenStream>,
     definitions: Vec<EntityDefinition>,
@@ -46,54 +44,52 @@ impl DefinitionResolver {
             let mut content = String::new();
             file.read_to_string(&mut content)
                 .map_err(|e| ResolveError::FsError(e.to_string()).as_cli_err(None))?;
-            #[allow(unused_variables, unused_mut)]
             let mut type_resolver: FileTypePathResolver = Default::default();
 
             let syntax: SynFile = parse_file(content.as_str()).map_err(|e| {
-                ResolveError::ParseError(path.as_path().display().to_string(), e.to_string())
+                ResolveError::FileParseError(path.as_path().display().to_string(), e.to_string())
                     .as_cli_err(Some(e.span()))
             })?;
 
-            for item in syntax.items.iter().filter_map(|item| match item {
+            syntax.items.iter().filter_map(|item| match item {
                 Item::Use(item_use) => Some(item_use),
                 _ => None,
-            }) {
-                type_resolver.append_use_item(item)?;
-            }
+            }).try_for_each(|item| type_resolver.append_use_item(item))?;
 
-            for item in syntax.items.iter() {
+            syntax.items.iter().filter(
+                |item| if let Item::Use(_) = item { false } else { true }
+            ).try_for_each(|item| {
                 match item {
                     Item::Struct(item_struct) => {
-                        let (entity_id, count) = self.entity_resolver.resolve(item_struct);
+                        let (entity_id, count) = self.entity_resolver.resolve(item_struct)?;
                         self.field_resolver.set_entity_field_count(entity_id, count);
 
                         if let Fields::Named(fields) = &item_struct.fields {
-                            for field in fields.named.iter() {
+                            fields.named.iter().try_for_each(|field| {
                                 let field_path = FieldPath::create(
                                     entity_id,
                                     field.ident.as_ref().unwrap().to_string(),
                                 );
-                                let ready_entity = self.field_resolver.resolve(
+                                self.field_resolver.resolve(
                                     &type_resolver,
                                     field_path,
                                     field,
-                                )?;
-
-                                self.handle_ready_entities(ready_entity);
-                            }
+                                ).map(|ready_entity| {
+                                    self.handle_ready_entities(ready_entity);
+                                })
+                            })
                         } else {
-                            return Err(ResolveError::UnsupportedEntityStructType
-                                .as_cli_err(Some(item_struct.span())));
+                            Err(ResolveError::UnsupportedEntityStructType
+                                .as_cli_err(Some(item_struct.span())))?
                         }
                     }
-                    Item::Use(_) => {}
                     _ => {
-                        return Err(
+                        Err(
                             ResolveError::UnsupportedSyntaxBlock.as_cli_err(Some(item.span()))
-                        )
+                        )?
                     }
                 }
-            }
+            })?;
         }
 
         Ok(AchievedSchemaResolver {
@@ -114,10 +110,10 @@ impl DefinitionResolver {
 }
 
 impl AchievedSchemaResolver {
-    pub fn unwrap(self) -> TokenStream {
+    pub fn unwrap(self) -> (TokenStream, Vec<EntityDefinition>) {
         let statements = self.statements;
-        quote! {
+        (quote! {
             #(#statements)*
-        }
+        }, self.definitions)
     }
 }

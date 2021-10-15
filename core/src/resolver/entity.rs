@@ -1,11 +1,19 @@
+use crate::entity::attr::{Entity, Index};
 use crate::resolver::field::ResolvedField;
 use proc_macro2::TokenStream;
 use std::collections::HashMap;
 use syn::ItemStruct;
+use crate::resolver::entry::CliResult;
+use annotation_rs::AnnotationStructure;
+use heck::SnakeCase;
+use syn::spanned::Spanned;
+use crate::err::{ResolveError, YukinoError};
 
 #[allow(dead_code)]
 pub struct UnassembledEntity {
     id: usize,
+    name: String,
+    indexes: HashMap<String, Index>
 }
 
 pub struct ResolvedEntity {
@@ -37,15 +45,44 @@ impl UnassembledEntity {
 }
 
 impl EntityResolver {
-    #[allow(unreachable_code)]
-    pub fn resolve(&mut self, _entity: &ItemStruct) -> (usize, usize) {
-        todo!("Resolve entity");
-        let unassembled_entity = UnassembledEntity { id: self.counter };
+    pub fn resolve(&mut self, entity: &ItemStruct) -> CliResult<(usize, usize)> {
+        let entity_id = self.counter;
+        self.counter += 1;
+        let entity_name = entity.ident.to_string();
 
-        self.unassembled.insert(self.counter, unassembled_entity);
+        let attribute: Entity = entity
+            .attrs
+            .iter()
+            .filter_map(|attr| {
+                if attr.path == Entity::get_path() {
+                    Some(
+                        attr.parse_meta()
+                            .map_err(
+                                |e| ResolveError::EntityParseError(entity_name.clone(), e.to_string())
+                                    .as_cli_err(Some(e.span()))
+                            )
+                            .and_then(|meta| Entity::from_meta(&meta).map_err(
+                                |e| ResolveError::EntityParseError(entity_name.clone(), e.to_string())
+                                    .as_cli_err(Some(e.span()))
+                            ))
+                    )
+                } else {
+                    None
+                }
+            })
+            .next()
+            .ok_or_else(
+                || ResolveError::NoEntityAttribute(entity_name.clone()).as_cli_err(Some(entity.span()))
+            )??;
 
-        // (entity_id, field_count)
-        (self.counter, 0)
+        let unassembled_entity = UnassembledEntity {
+            id: entity_id,
+            name: attribute.name.clone().unwrap_or_else(|| entity_name.to_snake_case()),
+            indexes: attribute.indexes.unwrap_or_default()
+        };
+        self.unassembled.insert(entity_id, unassembled_entity);
+
+        Ok((entity_id, 0))
     }
 
     pub fn assembled(

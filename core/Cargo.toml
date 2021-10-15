@@ -12,6 +12,7 @@ serde = { version = "1.0", optional = true }
 serde_json = { version = "1.0", optional = true }
 iroha = "0.1.7"
 quote = "1.0"
+heck = "0.3.3"
 syn = { version = "1.0", features= ["full"] }
 proc-macro2 = { version = "1.0", features= ["span-locations"] }
 thiserror = "1.0"

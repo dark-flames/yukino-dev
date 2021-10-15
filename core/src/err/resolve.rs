@@ -13,8 +13,12 @@ pub enum ResolveError {
     UnsupportedEntityStructType,
     #[error("NoSuitableResolveCell: No suitable resolve cell for field `{0}`")]
     NoSuitableResolveCell(String),
-    #[error("ParseError: Parse error occur while parse file `{0}`: String")]
-    ParseError(String, String),
+    #[error("FileParseError: Parse error occur while parse file `{0}`: {1}")]
+    FileParseError(String, String),
+    #[error("EntityParseError: Parse error occur while parse entity `{0}`: {1}")]
+    EntityParseError(String, String),
+    #[error("NoEntityAttribute: Can not find a Entity attribute on entity `{0}`")]
+    NoEntityAttribute(String)
 }
 
 impl YukinoError for ResolveError {}
