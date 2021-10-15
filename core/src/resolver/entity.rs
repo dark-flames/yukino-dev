@@ -1,23 +1,27 @@
 use crate::entity::attr::{Entity, Index};
-use crate::resolver::field::ResolvedField;
-use proc_macro2::TokenStream;
-use std::collections::HashMap;
-use syn::ItemStruct;
+use crate::entity::def::{DefinitionType, EntityDefinition, IndexDefinition, IndexType};
+use crate::err::{ResolveError, YukinoError};
 use crate::resolver::entry::CliResult;
+use crate::resolver::field::ResolvedField;
 use annotation_rs::AnnotationStructure;
 use heck::SnakeCase;
+use proc_macro2::{Span, TokenStream};
+use std::collections::HashMap;
+use std::iter::Extend;
 use syn::spanned::Spanned;
-use crate::err::{ResolveError, YukinoError};
+use syn::ItemStruct;
 
 #[allow(dead_code)]
 pub struct UnassembledEntity {
     id: usize,
     name: String,
-    indexes: HashMap<String, Index>
+    indexes: HashMap<String, Index>,
+    span: Span,
 }
 
 pub struct ResolvedEntity {
     pub id: usize,
+    pub definition: EntityDefinition,
     pub fields: HashMap<String, ResolvedField>,
 }
 
@@ -36,11 +40,58 @@ pub trait EntityResolvePass {
 }
 
 impl UnassembledEntity {
-    pub fn assemble(self, fields: HashMap<String, ResolvedField>) -> ResolvedEntity {
-        ResolvedEntity {
+    pub fn assemble(self, fields: HashMap<String, ResolvedField>) -> CliResult<ResolvedEntity> {
+        let field_definitions = fields
+            .iter()
+            .map(|(name, f)| (name.clone(), f.definition.clone()))
+            .collect();
+
+        // Indexes defined by user
+        let mut indexes: Vec<_> = self
+            .indexes
+            .iter()
+            .map(|(name, index)| {
+                if let Some(index_field) = index.fields.iter().find(|&f| fields.contains_key(f)) {
+                    Err(
+                        ResolveError::IndexedFieldNotFound(index_field.clone(), name.clone())
+                            .as_cli_err(Some(self.span.clone())),
+                    )
+                } else {
+                    Ok((
+                        name.clone(),
+                        IndexDefinition {
+                            name: name.clone(),
+                            fields: index.fields.clone(),
+                            ty: if index.unique {
+                                IndexType::Unique
+                            } else {
+                                IndexType::Normal
+                            },
+                            method: index.method,
+                        },
+                    ))
+                }
+            })
+            .collect::<CliResult<Vec<_>>>()?;
+
+        // Generated indexes
+        indexes.extend(fields.values().flat_map(|f| f.indexes.clone().into_iter()));
+
+        todo!("generate primary");
+
+        Ok(ResolvedEntity {
             id: self.id,
+            definition: EntityDefinition {
+                id: self.id,
+                name: self.name.clone(),
+                definition_ty: DefinitionType::Normal,
+                fields: field_definitions,
+                indexes: indexes.into_iter().collect(),
+                primary: vec![],
+                table_name: "".to_string(),
+            },
             fields,
-        }
+        })
     }
 }
 
@@ -57,28 +108,37 @@ impl EntityResolver {
                 if attr.path == Entity::get_path() {
                     Some(
                         attr.parse_meta()
-                            .map_err(
-                                |e| ResolveError::EntityParseError(entity_name.clone(), e.to_string())
+                            .map_err(|e| {
+                                ResolveError::EntityParseError(entity_name.clone(), e.to_string())
                                     .as_cli_err(Some(e.span()))
-                            )
-                            .and_then(|meta| Entity::from_meta(&meta).map_err(
-                                |e| ResolveError::EntityParseError(entity_name.clone(), e.to_string())
+                            })
+                            .and_then(|meta| {
+                                Entity::from_meta(&meta).map_err(|e| {
+                                    ResolveError::EntityParseError(
+                                        entity_name.clone(),
+                                        e.to_string(),
+                                    )
                                     .as_cli_err(Some(e.span()))
-                            ))
+                                })
+                            }),
                     )
                 } else {
                     None
                 }
             })
             .next()
-            .ok_or_else(
-                || ResolveError::NoEntityAttribute(entity_name.clone()).as_cli_err(Some(entity.span()))
-            )??;
+            .ok_or_else(|| {
+                ResolveError::NoEntityAttribute(entity_name.clone()).as_cli_err(Some(entity.span()))
+            })??;
 
         let unassembled_entity = UnassembledEntity {
             id: entity_id,
-            name: attribute.name.clone().unwrap_or_else(|| entity_name.to_snake_case()),
-            indexes: attribute.indexes.unwrap_or_default()
+            name: attribute
+                .name
+                .clone()
+                .unwrap_or_else(|| entity_name.to_snake_case()),
+            indexes: attribute.indexes.unwrap_or_default(),
+            span: entity.span(),
         };
         self.unassembled.insert(entity_id, unassembled_entity);
 
@@ -89,16 +149,16 @@ impl EntityResolver {
         &mut self,
         entity_id: usize,
         fields: HashMap<String, ResolvedField>,
-    ) -> &ResolvedEntity {
+    ) -> CliResult<&ResolvedEntity> {
         let resolved = self
             .unassembled
             .remove(&entity_id)
             .unwrap()
-            .assemble(fields);
+            .assemble(fields)?;
 
         self.resolved.insert(entity_id, resolved);
 
-        self.resolved.get(&entity_id).unwrap()
+        Ok(self.resolved.get(&entity_id).unwrap())
     }
 
     pub fn all_finished(&self) -> bool {

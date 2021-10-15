@@ -1,3 +1,4 @@
+use crate::entity::def::{FieldDefinition, IndexDefinition};
 use crate::err::{ResolveError, YukinoError};
 use crate::resolver::entity::ResolvedEntity;
 use crate::resolver::entry::CliResult;
@@ -21,6 +22,8 @@ pub struct FieldPath {
 #[derive(Clone)]
 pub struct ResolvedField {
     pub path: FieldPath,
+    pub definition: FieldDefinition,
+    pub indexes: HashMap<String, IndexDefinition>,
 }
 
 #[derive(Default)]

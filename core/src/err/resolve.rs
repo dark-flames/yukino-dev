@@ -18,7 +18,9 @@ pub enum ResolveError {
     #[error("EntityParseError: Parse error occur while parse entity `{0}`: {1}")]
     EntityParseError(String, String),
     #[error("NoEntityAttribute: Can not find a Entity attribute on entity `{0}`")]
-    NoEntityAttribute(String)
+    NoEntityAttribute(String),
+    #[error("IndexedFieldNotFound: Field `{0}` of index `{1}` was not found in entity")]
+    IndexedFieldNotFound(String, String),
 }
 
 impl YukinoError for ResolveError {}

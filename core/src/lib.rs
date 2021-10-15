@@ -1,5 +1,5 @@
-#![feature(generic_associated_types)]
 #![feature(associated_type_bounds)]
+#![feature(extend_one)]
 
 pub mod db;
 pub mod entity;

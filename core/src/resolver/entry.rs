@@ -51,15 +51,20 @@ impl DefinitionResolver {
                     .as_cli_err(Some(e.span()))
             })?;
 
-            syntax.items.iter().filter_map(|item| match item {
-                Item::Use(item_use) => Some(item_use),
-                _ => None,
-            }).try_for_each(|item| type_resolver.append_use_item(item))?;
+            syntax
+                .items
+                .iter()
+                .filter_map(|item| match item {
+                    Item::Use(item_use) => Some(item_use),
+                    _ => None,
+                })
+                .try_for_each(|item| type_resolver.append_use_item(item))?;
 
-            syntax.items.iter().filter(
-                |item| if let Item::Use(_) = item { false } else { true }
-            ).try_for_each(|item| {
-                match item {
+            syntax
+                .items
+                .iter()
+                .filter(|item| if let Item::Use(_) = item { false } else { true })
+                .try_for_each(|item| match item {
                     Item::Struct(item_struct) => {
                         let (entity_id, count) = self.entity_resolver.resolve(item_struct)?;
                         self.field_resolver.set_entity_field_count(entity_id, count);
@@ -70,26 +75,17 @@ impl DefinitionResolver {
                                     entity_id,
                                     field.ident.as_ref().unwrap().to_string(),
                                 );
-                                self.field_resolver.resolve(
-                                    &type_resolver,
-                                    field_path,
-                                    field,
-                                ).map(|ready_entity| {
-                                    self.handle_ready_entities(ready_entity);
-                                })
+                                self.field_resolver
+                                    .resolve(&type_resolver, field_path, field)
+                                    .map(|ready_entity| self.handle_ready_entities(ready_entity))?
                             })
                         } else {
                             Err(ResolveError::UnsupportedEntityStructType
                                 .as_cli_err(Some(item_struct.span())))?
                         }
                     }
-                    _ => {
-                        Err(
-                            ResolveError::UnsupportedSyntaxBlock.as_cli_err(Some(item.span()))
-                        )?
-                    }
-                }
-            })?;
+                    _ => Err(ResolveError::UnsupportedSyntaxBlock.as_cli_err(Some(item.span())))?,
+                })?;
         }
 
         Ok(AchievedSchemaResolver {
@@ -98,22 +94,25 @@ impl DefinitionResolver {
         })
     }
     #[allow(dead_code)]
-    fn handle_ready_entities(&mut self, entities: ReadyEntities) {
-        for entity in entities.into_iter() {
+    fn handle_ready_entities(&mut self, entities: ReadyEntities) -> CliResult<()> {
+        entities.into_iter().try_for_each(|entity| {
             let ready_entities = self.field_resolver.apply_entity(
                 self.entity_resolver
-                    .assembled(entity, self.field_resolver.get_entity_fields(entity)),
+                    .assembled(entity, self.field_resolver.get_entity_fields(entity))?,
             );
-            self.handle_ready_entities(ready_entities);
-        }
+            self.handle_ready_entities(ready_entities)
+        })
     }
 }
 
 impl AchievedSchemaResolver {
     pub fn unwrap(self) -> (TokenStream, Vec<EntityDefinition>) {
         let statements = self.statements;
-        (quote! {
-            #(#statements)*
-        }, self.definitions)
+        (
+            quote! {
+                #(#statements)*
+            },
+            self.definitions,
+        )
     }
 }
