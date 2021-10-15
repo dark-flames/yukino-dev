@@ -77,7 +77,7 @@ impl UnassembledEntity {
         // Generated indexes
         indexes.extend(fields.values().flat_map(|f| f.indexes.clone().into_iter()));
 
-        todo!("generate primary");
+        // todo: generate primary
 
         Ok(ResolvedEntity {
             id: self.id,
@@ -88,7 +88,6 @@ impl UnassembledEntity {
                 fields: field_definitions,
                 indexes: indexes.into_iter().collect(),
                 primary: vec![],
-                table_name: "".to_string(),
             },
             fields,
         })

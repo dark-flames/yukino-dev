@@ -11,7 +11,6 @@ pub struct EntityDefinition {
     pub fields: HashMap<String, FieldDefinition>,
     pub indexes: HashMap<String, IndexDefinition>,
     pub primary: Vec<String>,
-    pub table_name: String,
 }
 
 #[derive(ToTokens, Clone)]
