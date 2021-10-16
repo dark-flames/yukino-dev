@@ -48,7 +48,6 @@ impl UnassembledEntity {
             .iter()
             .map(|(name, f)| (name.clone(), f.definition.clone()))
             .collect();
-
         // Indexes defined by user
         let mut indexes: Vec<_> = self
             .indexes
@@ -77,9 +76,6 @@ impl UnassembledEntity {
             })
             .collect::<CliResult<Vec<_>>>()?;
 
-        // Generated indexes
-        indexes.extend(fields.values().flat_map(|f| f.indexes.clone().into_iter()));
-
         let field_with_primary: Vec<_> = fields
             .iter()
             .filter_map(|(name, f)| f.primary.then(|| name.clone()))
@@ -89,7 +85,6 @@ impl UnassembledEntity {
             field_with_primary.first().unwrap().clone()
         } else {
             let generated_name = format!("_{}_id", &self.name);
-
             field_definitions.insert(
                 generated_name.clone(),
                 FieldDefinition {
@@ -112,15 +107,19 @@ impl UnassembledEntity {
                     association: Option::None,
                 },
             );
-            indexes.push((
-                format!("_{}_primary", &self.name),
-                IndexDefinition {
-                    name: "".to_string(),
-                    fields: field_with_primary.clone(),
-                    ty: IndexType::Primary,
-                    method: IndexMethod::BTree,
-                },
-            ));
+
+            if !field_with_primary.is_empty() {
+                let index_name = format!("_{}_primary", &self.name);
+                indexes.push((
+                    index_name.clone(),
+                    IndexDefinition {
+                        name: index_name,
+                        fields: field_with_primary.clone(),
+                        ty: IndexType::Primary,
+                        method: IndexMethod::BTree,
+                    },
+                ));
+            };
 
             generated_name
         };
