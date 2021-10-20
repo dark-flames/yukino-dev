@@ -11,8 +11,8 @@ pub enum ResolveError {
     UnsupportedSyntaxBlock,
     #[error("UnsupportedEntityStructType: Field of entity struct must be named field")]
     UnsupportedEntityStructType,
-    #[error("NoSuitableResolveCell: No suitable resolve cell for field `{0}`")]
-    NoSuitableResolveCell(String),
+    #[error("NoSuitableResolveSeed: No suitable resolve seed for field `{0}`")]
+    NoSuitableResolveSeed(String),
     #[error("FileParseError: Parse error occur while parse file `{0}`: {1}")]
     FileParseError(String, String),
     #[error("EntityParseError: Parse error occur while parse entity `{0}`: {1}")]

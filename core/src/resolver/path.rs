@@ -1,8 +1,11 @@
 use crate::err::{CliError, ResolveError, YukinoError};
 use proc_macro2::Ident;
+use quote::ToTokens;
 use std::collections::HashMap;
 use syn::spanned::Spanned;
-use syn::{ItemUse, PathSegment, Type, TypePath, UseTree};
+use syn::{
+    GenericArgument, ItemUse, PathArguments, PathSegment, ReturnType, Type, TypePath, UseTree,
+};
 
 pub type Entry = String;
 pub type FullPath = Vec<Ident>;
@@ -13,15 +16,6 @@ pub struct FileTypePathResolver {
 }
 
 impl FileTypePathResolver {
-    pub fn append_use_item(&mut self, item: &ItemUse) -> Result<(), CliError> {
-        let result =
-            Self::resolve_use_tree(&item.tree).map_err(|e| e.as_cli_err(Some(item.span())))?;
-
-        self.map.extend(result.into_iter());
-
-        Ok(())
-    }
-
     fn resolve_use_tree(tree: &UseTree) -> Result<Vec<(Entry, FullPath)>, ResolveError> {
         Ok(match tree {
             UseTree::Name(use_name) => {
@@ -73,12 +67,25 @@ impl FileTypePathResolver {
         })
     }
 
-    pub fn get_full_path(&self, ty: TypePath) -> TypePath {
+    pub fn append_use_item(&mut self, item: &ItemUse) -> Result<(), CliError> {
+        let result =
+            Self::resolve_use_tree(&item.tree).map_err(|e| e.as_cli_err(Some(item.span())))?;
+
+        self.map.extend(result.into_iter());
+
+        Ok(())
+    }
+
+    pub fn add_alias(&mut self, entry: Entry, path: FullPath) {
+        self.map.insert(entry, path);
+    }
+
+    pub fn get_full_path(&self, ty: &TypePath) -> TypePath {
         let first_segment = ty.path.segments.first().unwrap();
 
         if let Some(full) = self.map.get(first_segment.ident.to_string().as_str()) {
-            let mut result = ty;
-            let mut full_iter = full.iter();
+            let mut result = ty.clone();
+            let mut full_iter = full.iter().rev();
 
             if let Some(first) = result.path.segments.first_mut() {
                 if let Some(segment) = full_iter.next() {
@@ -94,15 +101,118 @@ impl FileTypePathResolver {
             }
 
             result
+                .path
+                .segments
+                .iter_mut()
+                .for_each(|seg| match &mut seg.arguments {
+                    PathArguments::AngleBracketed(args) => {
+                        args.args.iter_mut().for_each(|arg| match arg {
+                            GenericArgument::Type(ty) => {
+                                *ty = self.get_full_type(ty);
+                            }
+                            _ => {}
+                        })
+                    }
+                    PathArguments::Parenthesized(args) => {
+                        args.inputs.iter_mut().for_each(|ty| {
+                            *ty = self.get_full_type(ty);
+                        });
+                        match &mut args.output {
+                            ReturnType::Type(_, ty) => {
+                                *ty = Box::new(self.get_full_type(ty.as_ref()));
+                            }
+                            _ => {}
+                        }
+                    }
+                    _ => {}
+                });
+
+            result
         } else {
-            ty
+            ty.clone()
         }
     }
 
-    pub fn get_full_type(&self, ty: Type) -> Type {
+    pub fn get_full_type(&self, ty: &Type) -> Type {
         match ty {
             Type::Path(path) => Type::Path(self.get_full_path(path)),
-            others => others,
+            others => others.clone(),
         }
     }
+
+    pub fn compare_type_path(&self, l: &Type, r: &Type) -> bool {
+        match (l, r) {
+            (Type::Path(l_path), Type::Path(r_path)) => self
+                .get_full_path(l_path)
+                .path
+                .segments
+                .into_iter()
+                .zip(self.get_full_path(r_path).path.segments.into_iter())
+                .all(|(l_seg, r_seg)| {
+                    l_seg.ident == r_seg.ident
+                        && match (l_seg.arguments, r_seg.arguments) {
+                            (PathArguments::None, PathArguments::None) => true,
+                            (
+                                PathArguments::Parenthesized(l_args),
+                                PathArguments::Parenthesized(r_args),
+                            ) => {
+                                l_args
+                                    .inputs
+                                    .iter()
+                                    .zip(r_args.inputs.iter())
+                                    .all(|(l_ty, r_ty)| self.compare_type_path(l_ty, r_ty))
+                                    && match (l_args.output, r_args.output) {
+                                        (ReturnType::Default, ReturnType::Default) => true,
+                                        (
+                                            ReturnType::Type(_, l_ty_box),
+                                            ReturnType::Type(_, r_ty_box),
+                                        ) => self.compare_type_path(&l_ty_box, &r_ty_box),
+                                        _ => false,
+                                    }
+                            }
+                            (
+                                PathArguments::AngleBracketed(l_args),
+                                PathArguments::AngleBracketed(r_args),
+                            ) => l_args
+                                .args
+                                .iter()
+                                .zip(r_args.args.iter())
+                                .all(|ty| match ty {
+                                    (GenericArgument::Type(l_ty), GenericArgument::Type(r_ty)) => {
+                                        self.compare_type_path(l_ty, r_ty)
+                                    }
+                                    (left, right) => {
+                                        left.to_token_stream().to_string()
+                                            == right.to_token_stream().to_string()
+                                    }
+                                }),
+                            _ => false,
+                        }
+                }),
+            (left, right) => {
+                left.to_token_stream().to_string() == right.to_token_stream().to_string()
+            }
+        }
+    }
+}
+
+#[test]
+fn test_type_comparison() {
+    let mut resolver: FileTypePathResolver = Default::default();
+    use quote::format_ident;
+    resolver.add_alias(
+        "Option".to_string(),
+        vec![
+            format_ident!("core"),
+            format_ident!("option"),
+            format_ident!("Option"),
+        ],
+    );
+    use syn::parse_str;
+    use std::any::type_name;
+    let left = parse_str(type_name::<Option<u32>>()).unwrap();
+    let right1 = parse_str("Option<u32>").unwrap();
+    assert!(resolver.compare_type_path(&left, &right1));
+    let right2 = parse_str("Option<u64>").unwrap();
+    assert_eq!(resolver.compare_type_path(&left, &right2), false)
 }

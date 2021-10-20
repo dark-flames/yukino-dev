@@ -1,6 +1,6 @@
 [hooks]
 pre-commit = "cargo clippy -- -D warnings"
-pre-push = "cargo check && cargo test --all-features"
+pre-push = "cargo check && cargo test --all-features --all"
 
 [logging]
 verbose = true

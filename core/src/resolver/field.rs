@@ -12,6 +12,8 @@ use syn::Field;
 pub type EntityHandler = Box<dyn FnOnce(&ResolvedEntity) -> FieldResolveResult>;
 pub type FieldHandler = Box<dyn FnOnce(&ResolvedField) -> FieldResolveResult>;
 pub type ReadyEntities = HashSet<usize>;
+pub type FieldResolverSeedBox = Box<dyn FieldResolverSeed>;
+pub type FieldResolverCellBox = Box<dyn FieldResolverCell>;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct FieldPath {
@@ -28,7 +30,7 @@ pub struct ResolvedField {
 
 #[derive(Default)]
 pub struct FieldResolver {
-    cells: Vec<Box<dyn FieldResolverCell>>,
+    seeds: Vec<FieldResolverSeedBox>,
     waiting_for_field: HashMap<FieldPath, Vec<FieldHandler>>,
     waiting_for_entity: HashMap<usize, Vec<EntityHandler>>,
     finished: HashMap<usize, HashMap<String, ResolvedField>>,
@@ -41,14 +43,19 @@ pub enum FieldResolveResult {
     WaitingForField(FieldPath, FieldHandler),
 }
 
-pub trait FieldResolverCell {
-    fn match_field(&self, field: &Field, type_resolver: &FileTypePathResolver) -> bool;
+pub trait FieldResolverSeed {
+    fn match_field(
+        &self,
+        field: &Field,
+        type_resolver: &FileTypePathResolver,
+    ) -> Option<FieldResolverCellBox>;
+}
 
+pub trait FieldResolverCell {
     fn resolve(
         &self,
         type_resolver: &FileTypePathResolver,
         field_path: FieldPath,
-        field: &Field,
     ) -> CliResult<FieldResolveResult>;
 }
 
@@ -62,9 +69,9 @@ impl FieldPath {
 }
 
 impl FieldResolver {
-    pub fn create(cells: Vec<Box<dyn FieldResolverCell>>) -> Self {
+    pub fn create(seeds: Vec<FieldResolverSeedBox>) -> Self {
         FieldResolver {
-            cells,
+            seeds,
             waiting_for_field: Default::default(),
             waiting_for_entity: Default::default(),
             finished: Default::default(),
@@ -79,15 +86,16 @@ impl FieldResolver {
         field: &Field,
     ) -> CliResult<ReadyEntities> {
         let resolver = self
-            .cells
+            .seeds
             .iter()
-            .find(|c| c.match_field(field, type_resolver))
+            .filter_map(|s| s.match_field(field, type_resolver))
+            .next()
             .ok_or_else(|| {
-                ResolveError::NoSuitableResolveCell(field_path.field_name.clone())
+                ResolveError::NoSuitableResolveSeed(field_path.field_name.clone())
                     .as_cli_err(Some(field.span()))
             })?;
 
-        let result = resolver.resolve(type_resolver, field_path, field)?;
+        let result = resolver.resolve(type_resolver, field_path)?;
 
         Ok(self.handle_resolve_result(result))
     }
