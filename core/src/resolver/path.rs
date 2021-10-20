@@ -1,18 +1,53 @@
 use crate::err::{CliError, ResolveError, YukinoError};
 use proc_macro2::Ident;
 use quote::ToTokens;
+use std::any::type_name;
 use std::collections::HashMap;
 use syn::spanned::Spanned;
 use syn::{
-    GenericArgument, ItemUse, PathArguments, PathSegment, ReturnType, Type, TypePath, UseTree,
+    parse_quote, parse_str, File, GenericArgument, Item, ItemUse, PathArguments, PathSegment,
+    ReturnType, Type, TypePath, UseTree,
 };
 
 pub type Entry = String;
 pub type FullPath = Vec<Ident>;
 
-#[derive(Default)]
 pub struct FileTypePathResolver {
     map: HashMap<Entry, FullPath>,
+}
+
+pub enum TypeMatchResult {
+    Mismatch,
+    InOption,
+    Match,
+}
+
+impl Default for FileTypePathResolver {
+    fn default() -> Self {
+        let mut result = FileTypePathResolver {
+            map: Default::default(),
+        };
+
+        let item_use: File = parse_quote! {
+            use core::option::Option;
+        };
+
+        item_use
+            .items
+            .iter()
+            .map(|i| {
+                if let Item::Use(item) = i {
+                    item
+                } else {
+                    unreachable!()
+                }
+            })
+            .for_each(|i| {
+                result.append_use_item(i).unwrap();
+            });
+
+        result
+    }
 }
 
 impl FileTypePathResolver {
@@ -71,7 +106,7 @@ impl FileTypePathResolver {
         let result =
             Self::resolve_use_tree(&item.tree).map_err(|e| e.as_cli_err(Some(item.span())))?;
 
-        self.map.extend(result.into_iter());
+        self.map.extend(result.into_iter().rev());
 
         Ok(())
     }
@@ -85,7 +120,7 @@ impl FileTypePathResolver {
 
         if let Some(full) = self.map.get(first_segment.ident.to_string().as_str()) {
             let mut result = ty.clone();
-            let mut full_iter = full.iter().rev();
+            let mut full_iter = full.iter();
 
             if let Some(first) = result.path.segments.first_mut() {
                 if let Some(segment) = full_iter.next() {
@@ -194,22 +229,23 @@ impl FileTypePathResolver {
             }
         }
     }
+
+    pub fn match_ty<T>(&self, ty: &Type) -> TypeMatchResult {
+        let target_ty = parse_str(type_name::<T>()).unwrap();
+        let target_ty_option = parse_str(type_name::<Option<T>>()).unwrap();
+        if self.compare_type_path(ty, &target_ty) {
+            TypeMatchResult::Match
+        } else if self.compare_type_path(ty, &target_ty_option) {
+            TypeMatchResult::InOption
+        } else {
+            TypeMatchResult::Mismatch
+        }
+    }
 }
 
 #[test]
 fn test_type_comparison() {
-    let mut resolver: FileTypePathResolver = Default::default();
-    use quote::format_ident;
-    resolver.add_alias(
-        "Option".to_string(),
-        vec![
-            format_ident!("core"),
-            format_ident!("option"),
-            format_ident!("Option"),
-        ],
-    );
-    use syn::parse_str;
-    use std::any::type_name;
+    let resolver: FileTypePathResolver = Default::default();
     let left = parse_str(type_name::<Option<u32>>()).unwrap();
     let right1 = parse_str("Option<u32>").unwrap();
     assert!(resolver.compare_type_path(&left, &right1));
