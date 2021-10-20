@@ -16,6 +16,7 @@ pub struct FileTypePathResolver {
     map: HashMap<Entry, FullPath>,
 }
 
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum TypeMatchResult {
     Mismatch,
     InOption,
@@ -246,9 +247,12 @@ impl FileTypePathResolver {
 #[test]
 fn test_type_comparison() {
     let resolver: FileTypePathResolver = Default::default();
-    let left = parse_str(type_name::<Option<u32>>()).unwrap();
-    let right1 = parse_str("Option<u32>").unwrap();
-    assert!(resolver.compare_type_path(&left, &right1));
-    let right2 = parse_str("Option<u64>").unwrap();
-    assert_eq!(resolver.compare_type_path(&left, &right2), false)
+    let input1 = parse_str(type_name::<u32>()).unwrap();
+    assert_eq!(resolver.match_ty::<u32>(&input1), TypeMatchResult::Match);
+    let input2 = parse_str(type_name::<Option<u32>>()).unwrap();
+    assert_eq!(resolver.match_ty::<u32>(&input2), TypeMatchResult::InOption);
+    let input3 = parse_str(type_name::<u64>()).unwrap();
+    assert_eq!(resolver.match_ty::<u32>(&input3), TypeMatchResult::Mismatch);
+    let input4 = parse_str(type_name::<Option<u64>>()).unwrap();
+    assert_eq!(resolver.match_ty::<u32>(&input4), TypeMatchResult::Mismatch);
 }
