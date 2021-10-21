@@ -105,6 +105,7 @@ impl UnassembledEntity {
                     .collect(),
                     identity_columns: vec![generated_name.clone()],
                     association: Option::None,
+                    indexes: vec![],
                 },
             );
 

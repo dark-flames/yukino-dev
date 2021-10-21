@@ -23,6 +23,8 @@ pub enum ResolveError {
     IndexedFieldNotFound(String, String),
     #[error("NoPrimaryField: No primary field was found in entity `{0}`")]
     NoPrimaryField(String),
+    #[error("FieldParseError: Parse error occur while parse field `{0}`: {1}")]
+    FieldParseError(String, String),
 }
 
 impl YukinoError for ResolveError {}

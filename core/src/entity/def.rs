@@ -19,12 +19,13 @@ pub struct EntityDefinition {
 #[Iroha(mod_path = "yukino::entity::def")]
 pub struct FieldDefinition {
     pub name: String,
-    pub ty: String, // todo: replace with syn type
+    pub ty: String,
     pub auto_increase: bool,
     pub definition_ty: DefinitionType,
     pub columns: HashMap<String, ColumnDefinition>,
     pub identity_columns: Vec<String>,
     pub association: Option<AssociatedDefinition>,
+    pub indexes: Vec<IndexDefinition>,
 }
 
 #[derive(ToTokens, Clone)]

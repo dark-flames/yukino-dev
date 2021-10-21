@@ -1,5 +1,7 @@
-use annotation_rs::{Annotation, AnnotationEnumValue};
+use annotation_rs::{Annotation, AnnotationEnumValue, AnnotationStructure};
+use quote::ToTokens;
 use std::collections::HashMap;
+use syn::{Attribute, Error};
 
 #[derive(Annotation, Clone)]
 #[mod_path = "yukino::entity::attr"]
@@ -47,7 +49,6 @@ pub struct Field {
     pub unique: bool,
     #[field(default = false)]
     pub auto_increase: bool,
-    pub options: Option<HashMap<String, String>>,
 }
 
 #[derive(Annotation, Clone)]
@@ -62,4 +63,39 @@ pub struct Association {
 #[mod_path = "yukino::annotations"]
 pub struct InverseAssociation {
     pub inversed_by: String,
+}
+
+pub enum FieldAttribute {
+    ID(ID),
+    Field(Field),
+    Association(Association),
+    InverseAssociation(InverseAssociation),
+}
+
+impl FieldAttribute {
+    pub fn from_attr(attr: &Attribute) -> Result<Self, Error> {
+        if attr.path == ID::get_path() {
+            Ok(FieldAttribute::ID(ID))
+        } else if attr.path == Field::get_path() {
+            Ok(FieldAttribute::Field(Field::from_meta(
+                &attr.parse_meta()?,
+            )?))
+        } else if attr.path == Association::get_path() {
+            Ok(FieldAttribute::Association(Association::from_meta(
+                &attr.parse_meta()?,
+            )?))
+        } else if attr.path == InverseAssociation::get_path() {
+            Ok(FieldAttribute::InverseAssociation(
+                InverseAssociation::from_meta(&attr.parse_meta()?)?,
+            ))
+        } else {
+            Err(Error::new_spanned(
+                attr,
+                format!(
+                    "Unexpected attribute: {}",
+                    attr.path.to_token_stream().to_string()
+                ),
+            ))
+        }
+    }
 }

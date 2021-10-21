@@ -48,10 +48,17 @@ pub trait FieldResolverSeed {
         &self,
         field: &Field,
         type_resolver: &FileTypePathResolver,
-    ) -> Option<FieldResolverCellBox>;
+    ) -> CliResult<Option<FieldResolverCellBox>> where;
 }
 
 pub trait FieldResolverCell {
+    fn wrap(self) -> FieldResolverCellBox
+    where
+        Self: 'static + Sized,
+    {
+        Box::new(self)
+    }
+
     fn resolve(
         &self,
         type_resolver: &FileTypePathResolver,
@@ -85,10 +92,15 @@ impl FieldResolver {
         field_path: FieldPath,
         field: &Field,
     ) -> CliResult<ReadyEntities> {
-        let resolver = self
+        let resolver_result = self
             .seeds
             .iter()
-            .filter_map(|s| s.match_field(field, type_resolver))
+            .map(|s| s.match_field(field, type_resolver))
+            .collect::<CliResult<Vec<_>>>()?;
+
+        let resolver = resolver_result
+            .iter()
+            .filter_map(|r| r.as_ref())
             .next()
             .ok_or_else(|| {
                 ResolveError::NoSuitableResolveSeed(field_path.field_name.clone())
