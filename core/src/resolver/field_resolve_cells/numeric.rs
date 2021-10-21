@@ -1,5 +1,6 @@
-use crate::db::ty::DatabaseType;
+use crate::db::ty::{DatabaseType, DatabaseValue, ValuePack};
 use crate::entity::attr::{Field, FieldAttribute, IndexMethod};
+use crate::entity::converter::{DataConvertError, DataConverter};
 use crate::entity::def::{
     ColumnDefinition, DefinitionType, FieldDefinition, IndexDefinition, IndexType,
 };
@@ -11,6 +12,9 @@ use crate::resolver::field::{
 };
 use crate::resolver::path::{FileTypePathResolver, TypeMatchResult};
 use heck::SnakeCase;
+use iroha::ToTokens;
+use proc_macro2::TokenStream;
+use quote::ToTokens;
 use std::any::type_name;
 use syn::spanned::Spanned;
 use syn::{Field as SynField, Type};
@@ -131,6 +135,7 @@ impl FieldResolverCell for NumericFieldResolverCell {
                     vec![]
                 },
             },
+            converter: self.ty.converter(self.column.clone()).to_token_stream(),
             primary: self.primary,
         }))
     }
@@ -192,6 +197,23 @@ impl NumericType {
             .find(|r| r.is_some())
             .flatten()
     }
+
+    pub fn converter(&self, column_name: String) -> TokenStream {
+        match self {
+            NumericType::Short => ShortDataConverter { column_name }.to_token_stream(),
+            NumericType::UnsignedShort => {
+                UnsignedShortDataConverter { column_name }.to_token_stream()
+            }
+            NumericType::Int => IntDataConverter { column_name }.to_token_stream(),
+            NumericType::UnsignedInt => UnsignedIntDataConverter { column_name }.to_token_stream(),
+            NumericType::Long => LongDataConverter { column_name }.to_token_stream(),
+            NumericType::UnsignedLong => {
+                UnsignedLongDataConverter { column_name }.to_token_stream()
+            }
+            NumericType::Float => FloatDataConverter { column_name }.to_token_stream(),
+            NumericType::Double => DoubleDataConverter { column_name }.to_token_stream(),
+        }
+    }
 }
 
 impl From<&NumericType> for DatabaseType {
@@ -208,3 +230,52 @@ impl From<&NumericType> for DatabaseType {
         }
     }
 }
+
+macro_rules! converter_of {
+    ($field_type:ty, $name:ident, $enum_variant:ident) => {
+        #[derive(ToTokens, Clone)]
+        #[Iroha(mod_path = "yukino::resolver::field_resolve_cells::numeric")]
+        pub struct $name {
+            column_name: String,
+        }
+
+        impl DataConverter for $name {
+            type FieldType = $field_type;
+            fn to_field_value(
+                &self,
+                values: &ValuePack,
+            ) -> Result<Self::FieldType, DataConvertError> {
+                values
+                    .get(&self.column_name)
+                    .map(|data| match data {
+                        DatabaseValue::$enum_variant(data) => Ok(data.clone()),
+                        _ => Err(DataConvertError::UnexpectedValueType(
+                            self.column_name.clone(),
+                        )),
+                    })
+                    .ok_or_else(|| DataConvertError::ColumnDataNotFound(self.column_name.clone()))?
+            }
+
+            fn to_database_values_by_ref(
+                &self,
+                value: &Self::FieldType,
+            ) -> Result<ValuePack, DataConvertError> {
+                Ok([(
+                    self.column_name.clone(),
+                    DatabaseValue::$enum_variant(value.clone()),
+                )]
+                .into_iter()
+                .collect())
+            }
+        }
+    };
+}
+
+converter_of!(i16, ShortDataConverter, SmallInteger);
+converter_of!(u16, UnsignedShortDataConverter, UnsignedSmallInteger);
+converter_of!(i32, IntDataConverter, Integer);
+converter_of!(u32, UnsignedIntDataConverter, UnsignedInteger);
+converter_of!(i64, LongDataConverter, BigInteger);
+converter_of!(u64, UnsignedLongDataConverter, UnsignedBigInteger);
+converter_of!(f32, FloatDataConverter, Float);
+converter_of!(f64, DoubleDataConverter, Double);

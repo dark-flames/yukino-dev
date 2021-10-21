@@ -3,6 +3,7 @@ use crate::err::{ResolveError, YukinoError};
 use crate::resolver::entity::ResolvedEntity;
 use crate::resolver::entry::CliResult;
 use crate::resolver::path::FileTypePathResolver;
+use proc_macro2::TokenStream;
 use std::cmp::Eq;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
@@ -25,6 +26,7 @@ pub struct FieldPath {
 pub struct ResolvedField {
     pub path: FieldPath,
     pub definition: FieldDefinition,
+    pub converter: TokenStream,
     pub primary: bool,
 }
 
