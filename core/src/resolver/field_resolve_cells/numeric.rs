@@ -5,12 +5,12 @@ use crate::entity::def::{
     ColumnDefinition, DefinitionType, FieldDefinition, IndexDefinition, IndexType,
 };
 use crate::err::{ResolveError, YukinoError};
-use crate::resolver::entry::CliResult;
 use crate::resolver::field::{
     FieldPath, FieldResolveResult, FieldResolverCell, FieldResolverCellBox, FieldResolverSeed,
     ResolvedField,
 };
 use crate::resolver::path::{FileTypePathResolver, TypeMatchResult};
+use crate::resolver::CliResult;
 use heck::SnakeCase;
 use iroha::ToTokens;
 use proc_macro2::TokenStream;

@@ -1,7 +1,7 @@
 use crate::entity::def::EntityDefinition;
 use crate::err::{CliError, ResolveError, YukinoError};
-use crate::resolver::entity::EntityResolver;
-use crate::resolver::field::{FieldPath, FieldResolver, ReadyEntities};
+use crate::resolver::entity::{EntityResolvePass, EntityResolver};
+use crate::resolver::field::{FieldPath, FieldResolver, FieldResolverSeedBox, ReadyEntities};
 use crate::resolver::path::FileTypePathResolver;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -13,12 +13,8 @@ use syn::{parse_file, Fields, File as SynFile, Item};
 
 pub type CliResult<T> = Result<T, CliError>;
 
-pub struct ResolverConfig {
-    pub source_supplier: Box<dyn Fn() -> Vec<PathBuf>>,
-}
-
 pub struct DefinitionResolver {
-    config: ResolverConfig,
+    source: Vec<PathBuf>,
     entity_resolver: EntityResolver,
     field_resolver: FieldResolver,
 }
@@ -29,16 +25,20 @@ pub struct AchievedSchemaResolver {
 }
 
 impl DefinitionResolver {
-    pub fn create(config: ResolverConfig) -> Self {
+    pub fn create(
+        source: Vec<PathBuf>,
+        entity_passes: Vec<Box<dyn EntityResolvePass>>,
+        field_resolve_seeds: Vec<FieldResolverSeedBox>,
+    ) -> Self {
         DefinitionResolver {
-            config,
-            entity_resolver: Default::default(),
-            field_resolver: Default::default(),
+            source,
+            entity_resolver: EntityResolver::create(entity_passes),
+            field_resolver: FieldResolver::create(field_resolve_seeds),
         }
     }
 
     pub fn resolve(mut self) -> CliResult<AchievedSchemaResolver> {
-        for path in (self.config.source_supplier)().iter() {
+        for path in self.source.clone() {
             let mut file = File::open(&path)
                 .map_err(|e| ResolveError::FsError(e.to_string()).as_cli_err(None))?;
             let mut content = String::new();

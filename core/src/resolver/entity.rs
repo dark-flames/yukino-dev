@@ -4,8 +4,8 @@ use crate::entity::def::{
     ColumnDefinition, DefinitionType, EntityDefinition, FieldDefinition, IndexDefinition, IndexType,
 };
 use crate::err::{ResolveError, YukinoError};
-use crate::resolver::entry::CliResult;
 use crate::resolver::field::ResolvedField;
+use crate::resolver::CliResult;
 use annotation_rs::AnnotationStructure;
 use heck::SnakeCase;
 use proc_macro2::{Span, TokenStream};
@@ -142,6 +142,15 @@ impl UnassembledEntity {
 }
 
 impl EntityResolver {
+    pub fn create(passes: Vec<Box<dyn EntityResolvePass>>) -> Self {
+        EntityResolver {
+            counter: 0,
+            unassembled: Default::default(),
+            resolved: Default::default(),
+            passes,
+        }
+    }
+
     pub fn resolve(&mut self, entity: &ItemStruct) -> CliResult<(usize, usize)> {
         let entity_id = self.counter;
         self.counter += 1;
