@@ -24,7 +24,7 @@ pub struct UnassembledEntity {
 
 pub struct ResolvedEntity {
     pub id: usize,
-    pub definition: EntityDefinition,
+    pub definitions: Vec<EntityDefinition>,
     pub fields: HashMap<String, ResolvedField>,
 }
 
@@ -125,17 +125,24 @@ impl UnassembledEntity {
             generated_name
         };
 
+        let mut definitions: Vec<_> = fields
+            .values()
+            .flat_map(|f| f.entities.clone().into_iter())
+            .collect();
+
+        definitions.push(EntityDefinition {
+            id: self.id,
+            name: self.name.clone(),
+            definition_ty: DefinitionType::Normal,
+            fields: field_definitions,
+            indexes: indexes.into_iter().collect(),
+            unique_primary,
+            primary_fields: field_with_primary,
+        });
+
         Ok(ResolvedEntity {
             id: self.id,
-            definition: EntityDefinition {
-                id: self.id,
-                name: self.name.clone(),
-                definition_ty: DefinitionType::Normal,
-                fields: field_definitions,
-                indexes: indexes.into_iter().collect(),
-                unique_primary,
-                primary_fields: field_with_primary,
-            },
+            definitions,
             fields,
         })
     }
@@ -240,5 +247,14 @@ impl EntityResolver {
         );
 
         implements
+    }
+
+    pub fn get_definitions(&self) -> Vec<EntityDefinition> {
+        assert!(self.all_finished());
+
+        self.resolved
+            .values()
+            .flat_map(|entity| entity.definitions.clone().into_iter())
+            .collect()
     }
 }

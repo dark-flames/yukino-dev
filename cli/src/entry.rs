@@ -46,8 +46,8 @@ impl CommandLineEntry {
         })
     }
 
-    pub fn resolve(&mut self) -> CliResult<()> {
-        let achieved = self.resolver.resolve()?.unwrap().to_string();
+    pub fn export_implements(&mut self) -> CliResult<()> {
+        let achieved = self.resolver.resolve()?.to_token_stream().to_string();
 
         let path = Path::new(&self.output_file_path);
         if path.exists() {

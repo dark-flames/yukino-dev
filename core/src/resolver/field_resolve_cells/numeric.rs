@@ -137,6 +137,7 @@ impl FieldResolverCell for NumericFieldResolverCell {
             },
             converter: self.ty.converter(self.column.clone()).to_token_stream(),
             primary: self.primary,
+            entities: vec![],
         }))
     }
 }

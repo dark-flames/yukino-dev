@@ -1,4 +1,4 @@
-use crate::entity::def::FieldDefinition;
+use crate::entity::def::{EntityDefinition, FieldDefinition};
 use crate::err::{ResolveError, YukinoError};
 use crate::resolver::entity::ResolvedEntity;
 use crate::resolver::path::FileTypePathResolver;
@@ -28,6 +28,7 @@ pub struct ResolvedField {
     pub definition: FieldDefinition,
     pub converter: TokenStream,
     pub primary: bool,
+    pub entities: Vec<EntityDefinition>,
 }
 
 #[derive(Default)]

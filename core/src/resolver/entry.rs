@@ -21,8 +21,8 @@ pub struct DefinitionResolver {
 
 #[allow(dead_code)]
 pub struct AchievedSchemaResolver {
-    statements: Vec<TokenStream>,
-    definitions: Vec<EntityDefinition>,
+    pub statements: Vec<TokenStream>,
+    pub definitions: Vec<EntityDefinition>,
 }
 
 impl DefinitionResolver {
@@ -107,8 +107,8 @@ impl DefinitionResolver {
 }
 
 impl AchievedSchemaResolver {
-    pub fn unwrap(self) -> TokenStream {
-        let statements = self.statements;
+    pub fn to_token_stream(&self) -> TokenStream {
+        let statements = &self.statements;
         quote! {
             #(#statements)*
         }
