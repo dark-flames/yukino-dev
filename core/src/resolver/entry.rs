@@ -19,6 +19,7 @@ pub struct DefinitionResolver {
     field_resolver: FieldResolver,
 }
 
+#[allow(dead_code)]
 pub struct AchievedSchemaResolver {
     statements: Vec<TokenStream>,
     definitions: Vec<EntityDefinition>,
@@ -37,7 +38,7 @@ impl DefinitionResolver {
         }
     }
 
-    pub fn resolve(mut self) -> CliResult<AchievedSchemaResolver> {
+    pub fn resolve(&mut self) -> CliResult<AchievedSchemaResolver> {
         for path in self.source.clone() {
             let mut file = File::open(&path)
                 .map_err(|e| ResolveError::FsError(e.to_string()).as_cli_err(None))?;
@@ -106,13 +107,10 @@ impl DefinitionResolver {
 }
 
 impl AchievedSchemaResolver {
-    pub fn unwrap(self) -> (TokenStream, Vec<EntityDefinition>) {
+    pub fn unwrap(self) -> TokenStream {
         let statements = self.statements;
-        (
-            quote! {
-                #(#statements)*
-            },
-            self.definitions,
-        )
+        quote! {
+            #(#statements)*
+        }
     }
 }

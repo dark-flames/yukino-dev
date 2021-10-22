@@ -3,13 +3,13 @@ use core::resolver::entity::EntityResolvePass;
 use core::resolver::field::FieldResolverSeedBox;
 use core::resolver::{CliResult, DefinitionResolver};
 use std::ffi::OsStr;
-use std::fs::{read_dir, ReadDir};
-use std::io::Result as IoResult;
-use std::path::PathBuf;
+use std::fs::{read_dir, remove_file, File, ReadDir};
+use std::io::{Result as IoResult, Write};
+use std::path::{Path, PathBuf};
 
-#[allow(dead_code)]
 pub struct CommandLineEntry {
     resolver: DefinitionResolver,
+    output_file_path: String,
 }
 
 impl CommandLineEntry {
@@ -33,6 +33,7 @@ impl CommandLineEntry {
         entity_dir: ReadDir,
         entity_passes: Vec<Box<dyn EntityResolvePass>>,
         field_resolve_seeds: Vec<FieldResolverSeedBox>,
+        output_file_path: String,
     ) -> CliResult<Self> {
         Ok(CommandLineEntry {
             resolver: DefinitionResolver::create(
@@ -41,6 +42,25 @@ impl CommandLineEntry {
                 entity_passes,
                 field_resolve_seeds,
             ),
+            output_file_path,
         })
+    }
+
+    pub fn resolve(&mut self) -> CliResult<()> {
+        let achieved = self.resolver.resolve()?.unwrap().to_string();
+
+        let path = Path::new(&self.output_file_path);
+        if path.exists() {
+            remove_file(path).map_err(|e| ResolveError::FsError(e.to_string()).as_cli_err(None))?;
+        };
+
+        let mut output_file = File::create(path)
+            .map_err(|e| ResolveError::FsError(e.to_string()).as_cli_err(None))?;
+
+        output_file
+            .write_all(achieved.as_bytes())
+            .map_err(|e| ResolveError::FsError(e.to_string()).as_cli_err(None))?;
+
+        Ok(())
     }
 }
