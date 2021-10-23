@@ -24,6 +24,7 @@ pub struct UnassembledEntity {
 
 pub struct ResolvedEntity {
     pub id: usize,
+    pub name: String,
     pub definitions: Vec<EntityDefinition>,
     pub fields: HashMap<String, ResolvedField>,
 }
@@ -142,6 +143,7 @@ impl UnassembledEntity {
 
         Ok(ResolvedEntity {
             id: self.id,
+            name: self.name,
             definitions,
             fields,
         })

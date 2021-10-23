@@ -2,6 +2,7 @@ use crate::expr::Expr;
 use crate::query::calc::Computation;
 use crate::query::optimizer::QueryOptimizer;
 use std::any::type_name;
+use crate::entity::converter::DataConverter;
 
 pub trait FieldMarker: Sized + 'static {
     type Type;
@@ -9,6 +10,8 @@ pub trait FieldMarker: Sized + 'static {
     fn type_name() -> String {
         type_name::<Self::Type>().to_string()
     }
+
+    fn data_converter() -> Box<dyn DataConverter<FieldType=Self::Type>>;
 }
 
 pub trait Entity: Clone {
