@@ -43,3 +43,14 @@ impl<E: Entity> Expr for dyn EntityView<Entity = E> {
 pub trait FieldView {
     type Type;
 }
+
+impl<F: Clone> Expr for dyn FieldView<Type = F> {
+    type Output = F;
+    fn computation<'f>(&self) -> Computation<'f, Self::Output> {
+        todo!()
+    }
+
+    fn optimizer(&self) -> Box<dyn QueryOptimizer> {
+        todo!()
+    }
+}

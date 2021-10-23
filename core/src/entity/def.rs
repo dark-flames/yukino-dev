@@ -54,7 +54,7 @@ pub enum IndexType {
     Normal,
 }
 
-#[derive(ToTokens, Clone, Copy)]
+#[derive(ToTokens, Clone, Copy, Eq, PartialEq)]
 #[Iroha(mod_path = "yukino::entity::def")]
 pub enum DefinitionType {
     Normal,
