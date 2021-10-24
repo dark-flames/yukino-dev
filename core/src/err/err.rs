@@ -1,6 +1,11 @@
-use proc_macro2::Span;
 use std::error::Error as StdError;
 use std::fmt::{Debug, Display, Formatter};
+
+use proc_macro2::Span;
+
+
+pub type CliResult<T> = Result<T, CliError>;
+pub type RuntimeResult<T> = Result<T, RuntimeError>;
 
 pub trait YukinoError: StdError {
     fn as_runtime_err(&self) -> RuntimeError {

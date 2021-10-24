@@ -1,23 +1,26 @@
-use crate::db::ty::{DatabaseType, DatabaseValue, ValuePack};
-use crate::entity::attr::{Field, FieldAttribute, IndexMethod};
-use crate::entity::converter::{DataConvertError, DataConverter};
-use crate::entity::def::{
-    ColumnDefinition, DefinitionType, FieldDefinition, IndexDefinition, IndexType,
-};
-use crate::err::{ResolveError, YukinoError};
-use crate::resolver::field::{
-    FieldPath, FieldResolveResult, FieldResolverCell, FieldResolverCellBox, FieldResolverSeed,
-    ResolvedField,
-};
-use crate::resolver::path::{FileTypePathResolver, TypeMatchResult};
-use crate::resolver::CliResult;
+use std::any::type_name;
+
 use heck::SnakeCase;
 use iroha::ToTokens;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
-use std::any::type_name;
-use syn::spanned::Spanned;
 use syn::{Field as SynField, Type};
+use syn::spanned::Spanned;
+
+use crate::db::ty::{DatabaseType, DatabaseValue, ValuePack};
+use crate::entity::attr::{Field, FieldAttribute, IndexMethod};
+use crate::entity::converter::DataConverter;
+use crate::entity::def::{
+    ColumnDefinition, DefinitionType, FieldDefinition, IndexDefinition, IndexType,
+};
+use crate::err::{ResolveError, YukinoError};
+use crate::err::DataConvertError;
+use crate::err::{CliResult, RuntimeResult};
+use crate::resolver::field::{
+    FieldPath, FieldResolverCell, FieldResolverCellBox, FieldResolveResult, FieldResolverSeed,
+    ResolvedField,
+};
+use crate::resolver::path::{FileTypePathResolver, TypeMatchResult};
 
 pub struct NumericFieldResolverSeed {}
 
@@ -242,25 +245,27 @@ macro_rules! converter_of {
 
         impl DataConverter for $name {
             type FieldType = $field_type;
-            fn to_field_value(
-                &self,
-                values: &ValuePack,
-            ) -> Result<Self::FieldType, DataConvertError> {
-                values
-                    .get(&self.column_name)
+            fn field_value_converter(
+                &self
+            ) -> Box<dyn Fn(&ValuePack)->RuntimeResult<Self::FieldType>> {
+                let column_name = self.column_name.clone();
+                Box::new(move |values| {
+                    values
+                    .get(column_name.as_str())
                     .map(|data| match data {
                         DatabaseValue::$enum_variant(data) => Ok(data.clone()),
                         _ => Err(DataConvertError::UnexpectedValueType(
-                            self.column_name.clone(),
-                        )),
+                            column_name.clone(),
+                        ).as_runtime_err()),
                     })
-                    .ok_or_else(|| DataConvertError::ColumnDataNotFound(self.column_name.clone()))?
+                    .ok_or_else(|| DataConvertError::ColumnDataNotFound(column_name.clone()).as_runtime_err())?
+                })
             }
 
             fn to_database_values_by_ref(
                 &self,
                 value: &Self::FieldType,
-            ) -> Result<ValuePack, DataConvertError> {
+            ) -> RuntimeResult<ValuePack> {
                 Ok([(
                     self.column_name.clone(),
                     DatabaseValue::$enum_variant(value.clone()),

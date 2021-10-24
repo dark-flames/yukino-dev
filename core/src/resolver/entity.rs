@@ -5,7 +5,7 @@ use crate::entity::def::{
 };
 use crate::err::{ResolveError, YukinoError};
 use crate::resolver::field::ResolvedField;
-use crate::resolver::CliResult;
+use crate::err::CliResult;
 use annotation_rs::AnnotationStructure;
 use heck::SnakeCase;
 use proc_macro2::{Span, TokenStream};
@@ -38,6 +38,8 @@ pub struct EntityResolver {
 }
 
 pub trait EntityResolvePass {
+    fn get_dependencies(&self) -> Vec<TokenStream>;
+
     fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream>;
 
     fn get_additional_implements(&self) -> Vec<TokenStream>;

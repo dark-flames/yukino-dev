@@ -6,6 +6,7 @@ pub mod err;
 pub mod expr;
 pub mod query;
 pub mod resolver;
+mod view;
 
 #[cfg(test)]
 mod tests {

@@ -2,7 +2,7 @@ use crate::entity::def::{EntityDefinition, FieldDefinition};
 use crate::err::{ResolveError, YukinoError};
 use crate::resolver::entity::ResolvedEntity;
 use crate::resolver::path::FileTypePathResolver;
-use crate::resolver::CliResult;
+use crate::err::CliResult;
 use proc_macro2::TokenStream;
 use std::cmp::Eq;
 use std::collections::{HashMap, HashSet};

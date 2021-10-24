@@ -1,17 +1,17 @@
-use crate::entity::def::EntityDefinition;
-use crate::err::{CliError, ResolveError, YukinoError};
-use crate::resolver::entity::{EntityResolvePass, EntityResolver};
-use crate::resolver::field::{FieldPath, FieldResolver, FieldResolverSeedBox, ReadyEntities};
-use crate::resolver::path::FileTypePathResolver;
-use proc_macro2::TokenStream;
-use quote::quote;
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
-use syn::spanned::Spanned;
-use syn::{parse_file, Fields, File as SynFile, Item};
 
-pub type CliResult<T> = Result<T, CliError>;
+use proc_macro2::TokenStream;
+use quote::quote;
+use syn::{Fields, File as SynFile, Item, parse_file};
+use syn::spanned::Spanned;
+
+use crate::entity::def::EntityDefinition;
+use crate::err::{CliResult, ResolveError, YukinoError};
+use crate::resolver::entity::{EntityResolvePass, EntityResolver};
+use crate::resolver::field::{FieldPath, FieldResolver, FieldResolverSeedBox, ReadyEntities};
+use crate::resolver::path::FileTypePathResolver;
 
 pub struct DefinitionResolver {
     source: Vec<PathBuf>,

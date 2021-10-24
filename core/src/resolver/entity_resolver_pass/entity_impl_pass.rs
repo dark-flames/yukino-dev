@@ -4,11 +4,15 @@ use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
 pub struct EntityImplementPass {}
 
 impl EntityResolvePass for EntityImplementPass {
+    fn get_dependencies(&self) -> Vec<TokenStream> {
+        vec![]
+    }
+
     fn get_entity_implements(&self, _entity: &ResolvedEntity) -> Vec<TokenStream> {
-        todo!("impl Entity for entity")
+        vec![]
     }
 
     fn get_additional_implements(&self) -> Vec<TokenStream> {
-        todo!()
+        vec![]
     }
 }

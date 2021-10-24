@@ -1,50 +1,46 @@
-use crate::db::ty::DatabaseValue;
+use crate::db::ty::ValuePack;
 use crate::entity::{Entity, EntityView};
-use crate::expr::Expr;
-use crate::query::calc::Computation;
-use std::collections::HashMap;
+use crate::expr::{View, ViewBox};
 use std::marker::PhantomData;
-
-pub struct QueryResultRaw(HashMap<String, DatabaseValue>);
+use crate::err::RuntimeResult;
 
 pub struct Query {}
 
 impl Query {
-    pub fn execute(&self) -> QueryResultRaw {
+    pub fn execute(&self) -> ValuePack {
         unimplemented!()
     }
 }
 
-pub struct QueryResult<'f, E: Entity, V: 'f + Clone> {
+pub struct QueryResult<E: Entity, V: Clone> {
     query: Query,
-    calculate: Computation<'f, V>,
+    current_view: ViewBox<V>,
     _marker: PhantomData<E>,
 }
 
-impl<'f, E: Entity, V: 'f + Clone> QueryResult<'f, E, V> {
-    pub fn eval(self) -> V {
+impl<E: Entity, V: Clone> QueryResult<E, V> {
+    pub fn eval(self) -> RuntimeResult<V> {
         let result = self.query.execute();
-        self.calculate.eval(&result)
+        self.current_view.computation().eval(&result)
     }
 
     pub fn filter<F>(&mut self, f: F) -> &mut Self
     where
-        F: Fn(E::View) -> Box<dyn Expr<Output = V>>,
+        F: Fn(E::View) -> Box<dyn View<Output = V>>,
     {
         let optimizer = f(E::View::pure()).optimizer();
         optimizer.optimize(&mut self.query);
         self
     }
 
-    pub fn map<F, R: 'f + Clone>(self, f: F) -> QueryResult<'f, E, R>
+    pub fn map<F, R: Clone, P>(self, f: F) -> QueryResult<E, R>
     where
-        F: 'f + Fn(E::View, V) -> Box<dyn Expr<Output = R>>,
+        F: Fn(E::View, ViewBox<V>) -> ViewBox<R>,
     {
+        let new_view = f(E::View::pure(), self.current_view);
         QueryResult {
             query: self.query,
-            calculate: self
-                .calculate
-                .bind(move |v| f(E::View::pure(), v).computation()),
+            current_view: new_view,
             _marker: PhantomData,
         }
     }

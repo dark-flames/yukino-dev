@@ -1,29 +1,18 @@
-use crate::db::ty::ValuePack;
-use crate::err::YukinoError;
 use quote::ToTokens;
-use std::fmt::Debug;
-use thiserror::Error;
 
-#[derive(Error, Debug)]
-pub enum DataConvertError {
-    #[error("ColumnDataNotFound: data of column `{0}` was not found in value pack")]
-    ColumnDataNotFound(String),
-    #[error("UnexpectedValueType: Unexpected data type of column `{0}`")]
-    UnexpectedValueType(String),
-}
-
-impl YukinoError for DataConvertError {}
+use crate::db::ty::ValuePack;
+use crate::err::RuntimeResult;
 
 pub trait DataConverter: ToTokens {
     type FieldType;
-    fn to_field_value(&self, values: &ValuePack) -> Result<Self::FieldType, DataConvertError>;
+    fn field_value_converter(&self) -> Box<dyn Fn(&ValuePack)->RuntimeResult<Self::FieldType>>;
 
-    fn to_database_values(&self, value: Self::FieldType) -> Result<ValuePack, DataConvertError> {
+    fn to_database_values(&self, value: Self::FieldType) -> RuntimeResult<ValuePack> {
         self.to_database_values_by_ref(&value)
     }
 
     fn to_database_values_by_ref(
         &self,
         value: &Self::FieldType,
-    ) -> Result<ValuePack, DataConvertError>;
+    ) -> RuntimeResult<ValuePack>;
 }

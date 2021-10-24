@@ -7,6 +7,10 @@ use crate::entity::def::DefinitionType;
 pub struct EntityImplementPass {}
 
 impl EntityResolvePass for EntityImplementPass {
+    fn get_dependencies(&self) -> Vec<TokenStream> {
+        vec![]
+    }
+
     fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream> {
         let name = format_ident!("{}", entity.name);
         let fields = entity.fields.values().filter(
