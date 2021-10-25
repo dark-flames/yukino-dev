@@ -2,27 +2,41 @@ use crate::interface::def::DefinitionType;
 use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use syn::{parse_str, Type};
 
 pub struct EntityViewImplementPass {}
 
 impl EntityResolvePass for EntityViewImplementPass {
     fn get_dependencies(&self) -> Vec<TokenStream> {
-        vec![]
+        vec![quote! {
+            use yukino::view::*;
+            use yukino::interface::EntityView;
+        }]
     }
 
     fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream> {
         let name = format_ident!("{}View", entity.name);
+        let entity_name = format_ident!("{}", entity.name);
         let fields = entity
             .fields
             .values()
             .filter(|f| f.definition.definition_ty != DefinitionType::Generated)
             .map(|f| {
                 let name = format_ident!("{}", f.definition.name);
-                // todo: construct field view
-                let ty: Type = parse_str(f.definition.ty.as_str()).unwrap();
+                let ty = &f.view_type;
                 quote! {
                     pub #name: #ty
+                }
+            })
+            .collect::<Vec<_>>();
+        let construct_fields = entity
+            .fields
+            .values()
+            .filter(|f| f.definition.definition_ty != DefinitionType::Generated)
+            .map(|f| {
+                let name = format_ident!("{}", f.definition.name);
+                let converter = &f.converter;
+                quote! {
+                    #name: #converter
                 }
             })
             .collect::<Vec<_>>();
@@ -30,6 +44,26 @@ impl EntityResolvePass for EntityViewImplementPass {
         vec![quote! {
             pub struct #name {
                 #(#fields),*
+            }
+
+            impl View for #name {
+                type Output = #entity_name;
+                fn computation<'f>(&self) -> Computation<'f, Self::Output> {
+                    todo!()
+                }
+
+                fn optimizer(&self) -> Box<dyn QueryOptimizer> {
+                    todo!()
+                }
+            }
+
+            impl EntityView for #name {
+                type Entity = $entity_name;
+                fn pure() -> Self where Self: Sized {
+                    #name {
+                        #(#construct_fields),*
+                    }
+                }
             }
         }]
     }

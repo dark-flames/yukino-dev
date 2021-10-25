@@ -1,9 +1,9 @@
 use crate::interface::converter::DataConverter;
 use crate::interface::FieldView;
-use crate::expr::View;
 use crate::query::computation::Computation;
 use crate::query::optimizer::QueryOptimizer;
 use crate::resolver::field_resolve_cells::numeric::*;
+use crate::view::View;
 use iroha::ToTokens;
 
 macro_rules! implement_view_of {

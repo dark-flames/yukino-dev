@@ -1,10 +1,10 @@
 use crate::db::ty::DatabaseType;
+use crate::err::CliResult;
+use crate::err::{ResolveError, YukinoError};
 use crate::interface::attr::{Entity, Index, IndexMethod};
 use crate::interface::def::{
     ColumnDefinition, DefinitionType, EntityDefinition, FieldDefinition, IndexDefinition, IndexType,
 };
-use crate::err::CliResult;
-use crate::err::{ResolveError, YukinoError};
 use crate::resolver::field::ResolvedField;
 use annotation_rs::AnnotationStructure;
 use heck::SnakeCase;

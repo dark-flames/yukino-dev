@@ -1,6 +1,6 @@
-use crate::interface::def::{EntityDefinition, FieldDefinition};
 use crate::err::CliResult;
 use crate::err::{ResolveError, YukinoError};
+use crate::interface::def::{EntityDefinition, FieldDefinition};
 use crate::resolver::entity::ResolvedEntity;
 use crate::resolver::path::FileTypePathResolver;
 use proc_macro2::TokenStream;
@@ -27,6 +27,7 @@ pub struct ResolvedField {
     pub path: FieldPath,
     pub definition: FieldDefinition,
     pub converter: TokenStream,
+    pub view_type: TokenStream,
     pub view: TokenStream,
     pub primary: bool,
     pub entities: Vec<EntityDefinition>,

@@ -3,25 +3,25 @@ use std::any::type_name;
 use heck::SnakeCase;
 use iroha::ToTokens;
 use proc_macro2::TokenStream;
-use quote::ToTokens;
+use quote::{format_ident, ToTokens};
 use syn::spanned::Spanned;
 use syn::{Field as SynField, Type};
 
 use crate::db::ty::{DatabaseType, DatabaseValue, ValuePack};
+use crate::err::DataConvertError;
+use crate::err::{CliResult, RuntimeResult};
+use crate::err::{ResolveError, YukinoError};
 use crate::interface::attr::{Field, FieldAttribute, IndexMethod};
 use crate::interface::converter::DataConverter;
 use crate::interface::def::{
     ColumnDefinition, DefinitionType, FieldDefinition, IndexDefinition, IndexType,
 };
-use crate::err::DataConvertError;
-use crate::err::{CliResult, RuntimeResult};
-use crate::err::{ResolveError, YukinoError};
 use crate::resolver::field::{
     FieldPath, FieldResolveResult, FieldResolverCell, FieldResolverCellBox, FieldResolverSeed,
     ResolvedField,
 };
 use crate::resolver::path::{FileTypePathResolver, TypeMatchResult};
-use crate::view::numeric::{
+use crate::view::{
     DoubleFieldView, FloatFieldView, IntFieldView, LongFieldView, ShortFieldView,
     UnsignedIntFieldView, UnsignedLongFieldView, UnsignedShortFieldView,
 };
@@ -88,7 +88,9 @@ impl FieldResolverSeed for NumericFieldResolverSeed {
                 Ok(NumericFieldResolverCell {
                     ty,
                     optional,
-                    primary: attrs.iter().any(|attr| matches!(attr, FieldAttribute::ID(_))),
+                    primary: attrs
+                        .iter()
+                        .any(|attr| matches!(attr, FieldAttribute::ID(_))),
                     auto_increase: field.auto_increase,
                     unique: field.unique,
                     column: field.name.unwrap_or(field_name).to_snake_case(),
@@ -137,6 +139,7 @@ impl FieldResolverCell for NumericFieldResolverCell {
                 },
             },
             converter: self.ty.converter(self.column.clone()),
+            view_type: self.ty.view_ty(),
             view: self.ty.view(self.column.clone()),
             primary: self.primary,
             entities: vec![],
@@ -216,6 +219,23 @@ impl NumericType {
             NumericType::Float => FloatDataConverter { column_name }.to_token_stream(),
             NumericType::Double => DoubleDataConverter { column_name }.to_token_stream(),
         }
+    }
+
+    pub fn view_ty(&self) -> TokenStream {
+        format_ident!(
+            "{}",
+            match self {
+                NumericType::Short => "ShortDataConverter",
+                NumericType::UnsignedShort => "UnsignedShortDataConverter",
+                NumericType::Int => "IntDataConverter",
+                NumericType::UnsignedInt => "UnsignedIntDataConverter",
+                NumericType::Long => "LongDataConverter",
+                NumericType::UnsignedLong => "UnsignedLongDataConverter",
+                NumericType::Float => "FloatDataConverter",
+                NumericType::Double => "DoubleDataConverter",
+            }
+        )
+            .to_token_stream()
     }
 
     pub fn view(&self, column_name: String) -> TokenStream {

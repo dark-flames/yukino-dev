@@ -1,7 +1,7 @@
-mod convert;
 mod base;
+mod convert;
 mod resolve;
 
-pub use convert::*;
 pub use base::*;
+pub use convert::*;
 pub use resolve::*;

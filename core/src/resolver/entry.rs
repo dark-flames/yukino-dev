@@ -7,8 +7,8 @@ use quote::quote;
 use syn::spanned::Spanned;
 use syn::{parse_file, Fields, File as SynFile, Item};
 
-use crate::interface::def::EntityDefinition;
 use crate::err::{CliResult, ResolveError, YukinoError};
+use crate::interface::def::EntityDefinition;
 use crate::resolver::entity::{EntityResolvePass, EntityResolver};
 use crate::resolver::field::{FieldPath, FieldResolver, FieldResolverSeedBox, ReadyEntities};
 use crate::resolver::path::FileTypePathResolver;
