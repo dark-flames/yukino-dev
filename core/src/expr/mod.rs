@@ -1,4 +1,4 @@
-use crate::query::calc::Computation;
+use crate::query::computation::Computation;
 use crate::query::optimizer::QueryOptimizer;
 
 pub trait View {

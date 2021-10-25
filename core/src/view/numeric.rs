@@ -1,7 +1,7 @@
 use crate::entity::converter::DataConverter;
 use crate::entity::FieldView;
 use crate::expr::View;
-use crate::query::calc::Computation;
+use crate::query::computation::Computation;
 use crate::query::optimizer::QueryOptimizer;
 use crate::resolver::field_resolve_cells::numeric::ShortDataConverter;
 
