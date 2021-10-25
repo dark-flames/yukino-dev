@@ -1,11 +1,11 @@
 use crate::db::ty::DatabaseType;
-use crate::entity::attr::{Entity, Index, IndexMethod};
-use crate::entity::def::{
+use crate::interface::attr::{Entity, Index, IndexMethod};
+use crate::interface::def::{
     ColumnDefinition, DefinitionType, EntityDefinition, FieldDefinition, IndexDefinition, IndexType,
 };
+use crate::err::CliResult;
 use crate::err::{ResolveError, YukinoError};
 use crate::resolver::field::ResolvedField;
-use crate::err::CliResult;
 use annotation_rs::AnnotationStructure;
 use heck::SnakeCase;
 use proc_macro2::{Span, TokenStream};
@@ -59,7 +59,7 @@ impl UnassembledEntity {
                 if let Some(index_field) = index.fields.iter().find(|&f| fields.contains_key(f)) {
                     Err(
                         ResolveError::IndexedFieldNotFound(index_field.clone(), name.clone())
-                            .as_cli_err(Some(self.span.clone())),
+                            .as_cli_err(Some(self.span)),
                     )
                 } else {
                     Ok((

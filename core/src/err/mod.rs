@@ -1,7 +1,7 @@
-mod err;
-mod resolve;
 mod convert;
+mod base;
+mod resolve;
 
-pub use err::*;
-pub use resolve::*;
 pub use convert::*;
+pub use base::*;
+pub use resolve::*;

@@ -1,5 +1,5 @@
-use proc_macro2::TokenStream;
 use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
+use proc_macro2::TokenStream;
 
 pub struct EntityImplementPass {}
 

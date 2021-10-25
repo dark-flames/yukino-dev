@@ -1,3 +1,4 @@
+pub use core::*;
 #[cfg(test)]
 mod tests {
     #[test]

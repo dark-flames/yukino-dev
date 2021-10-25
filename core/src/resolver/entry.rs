@@ -4,10 +4,10 @@ use std::path::PathBuf;
 
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Fields, File as SynFile, Item, parse_file};
 use syn::spanned::Spanned;
+use syn::{parse_file, Fields, File as SynFile, Item};
 
-use crate::entity::def::EntityDefinition;
+use crate::interface::def::EntityDefinition;
 use crate::err::{CliResult, ResolveError, YukinoError};
 use crate::resolver::entity::{EntityResolvePass, EntityResolver};
 use crate::resolver::field::{FieldPath, FieldResolver, FieldResolverSeedBox, ReadyEntities};
@@ -64,7 +64,7 @@ impl DefinitionResolver {
             syntax
                 .items
                 .iter()
-                .filter(|item| if let Item::Use(_) = item { false } else { true })
+                .filter(|item| !matches!(item, Item::Use(_)))
                 .try_for_each(|item| match item {
                     Item::Struct(item_struct) => {
                         let (entity_id, count) = self.entity_resolver.resolve(item_struct)?;
@@ -82,10 +82,10 @@ impl DefinitionResolver {
                             })
                         } else {
                             Err(ResolveError::UnsupportedEntityStructType
-                                .as_cli_err(Some(item_struct.span())))?
+                                .as_cli_err(Some(item_struct.span())))
                         }
                     }
-                    _ => Err(ResolveError::UnsupportedSyntaxBlock.as_cli_err(Some(item.span())))?,
+                    _ => Err(ResolveError::UnsupportedSyntaxBlock.as_cli_err(Some(item.span()))),
                 })?;
         }
 

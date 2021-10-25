@@ -1,8 +1,8 @@
-use proc_macro2::TokenStream;
-use syn::{parse_str, Type};
-use crate::entity::def::DefinitionType;
+use crate::interface::def::DefinitionType;
 use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
+use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
+use syn::{parse_str, Type};
 
 pub struct EntityViewImplementPass {}
 
@@ -13,17 +13,19 @@ impl EntityResolvePass for EntityViewImplementPass {
 
     fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream> {
         let name = format_ident!("{}View", entity.name);
-        let fields = entity.fields.values().filter(
-            |f| f.definition.definition_ty != DefinitionType::Generated
-        ).map(|f| {
-            let name = format_ident!("{}", f.definition.name);
-            // todo: construct field view
-            let ty: Type = parse_str(f.definition.ty.as_str()).unwrap();
-            quote! {
-                pub #name: #ty
-            }
-        }).collect::<Vec<_>>();
-
+        let fields = entity
+            .fields
+            .values()
+            .filter(|f| f.definition.definition_ty != DefinitionType::Generated)
+            .map(|f| {
+                let name = format_ident!("{}", f.definition.name);
+                // todo: construct field view
+                let ty: Type = parse_str(f.definition.ty.as_str()).unwrap();
+                quote! {
+                    pub #name: #ty
+                }
+            })
+            .collect::<Vec<_>>();
 
         vec![quote! {
             pub struct #name {

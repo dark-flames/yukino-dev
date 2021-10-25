@@ -1,8 +1,8 @@
 pub mod entity;
+mod entity_resolver_pass;
 mod entry;
 pub mod field;
 pub mod field_resolve_cells;
 pub mod path;
-mod entity_resolver_pass;
 
 pub use entry::*;

@@ -1,12 +1,12 @@
 use std::ffi::OsStr;
-use std::fs::{File, read_dir, ReadDir, remove_file};
+use std::fs::{read_dir, remove_file, File, ReadDir};
 use std::io::{Result as IoResult, Write};
 use std::path::{Path, PathBuf};
 
 use core::err::{CliResult, ResolveError, YukinoError};
-use core::resolver::DefinitionResolver;
 use core::resolver::entity::EntityResolvePass;
 use core::resolver::field::FieldResolverSeedBox;
+use core::resolver::DefinitionResolver;
 
 pub struct CommandLineEntry {
     resolver: DefinitionResolver,

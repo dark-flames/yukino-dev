@@ -142,22 +142,16 @@ impl FileTypePathResolver {
                 .iter_mut()
                 .for_each(|seg| match &mut seg.arguments {
                     PathArguments::AngleBracketed(args) => {
-                        args.args.iter_mut().for_each(|arg| match arg {
-                            GenericArgument::Type(ty) => {
-                                *ty = self.get_full_type(ty);
-                            }
-                            _ => {}
+                        args.args.iter_mut().for_each(|arg| if let GenericArgument::Type(ty) = arg {
+                            *ty = self.get_full_type(ty);
                         })
                     }
                     PathArguments::Parenthesized(args) => {
                         args.inputs.iter_mut().for_each(|ty| {
                             *ty = self.get_full_type(ty);
                         });
-                        match &mut args.output {
-                            ReturnType::Type(_, ty) => {
-                                *ty = Box::new(self.get_full_type(ty.as_ref()));
-                            }
-                            _ => {}
+                        if let ReturnType::Type(_, ty) = &mut args.output {
+                            *ty = Box::new(self.get_full_type(ty.as_ref()));
                         }
                     }
                     _ => {}

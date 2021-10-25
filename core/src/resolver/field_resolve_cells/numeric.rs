@@ -4,23 +4,27 @@ use heck::SnakeCase;
 use iroha::ToTokens;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
-use syn::{Field as SynField, Type};
 use syn::spanned::Spanned;
+use syn::{Field as SynField, Type};
 
 use crate::db::ty::{DatabaseType, DatabaseValue, ValuePack};
-use crate::entity::attr::{Field, FieldAttribute, IndexMethod};
-use crate::entity::converter::DataConverter;
-use crate::entity::def::{
+use crate::interface::attr::{Field, FieldAttribute, IndexMethod};
+use crate::interface::converter::DataConverter;
+use crate::interface::def::{
     ColumnDefinition, DefinitionType, FieldDefinition, IndexDefinition, IndexType,
 };
-use crate::err::{ResolveError, YukinoError};
 use crate::err::DataConvertError;
 use crate::err::{CliResult, RuntimeResult};
+use crate::err::{ResolveError, YukinoError};
 use crate::resolver::field::{
-    FieldPath, FieldResolverCell, FieldResolverCellBox, FieldResolveResult, FieldResolverSeed,
+    FieldPath, FieldResolveResult, FieldResolverCell, FieldResolverCellBox, FieldResolverSeed,
     ResolvedField,
 };
 use crate::resolver::path::{FileTypePathResolver, TypeMatchResult};
+use crate::view::numeric::{
+    DoubleFieldView, FloatFieldView, IntFieldView, LongFieldView, ShortFieldView,
+    UnsignedIntFieldView, UnsignedLongFieldView, UnsignedShortFieldView,
+};
 
 pub struct NumericFieldResolverSeed {}
 
@@ -75,7 +79,7 @@ impl FieldResolverSeed for NumericFieldResolverSeed {
                         }
                     })
                     .next()
-                    .unwrap_or_else(|| Field {
+                    .unwrap_or(Field {
                         name: Option::None,
                         unique: false,
                         auto_increase: false,
@@ -84,16 +88,10 @@ impl FieldResolverSeed for NumericFieldResolverSeed {
                 Ok(NumericFieldResolverCell {
                     ty,
                     optional,
-                    primary: attrs.iter().any(|attr| {
-                        if let FieldAttribute::ID(_) = attr {
-                            true
-                        } else {
-                            false
-                        }
-                    }),
+                    primary: attrs.iter().any(|attr| matches!(attr, FieldAttribute::ID(_))),
                     auto_increase: field.auto_increase,
                     unique: field.unique,
-                    column: field.name.unwrap_or_else(|| field_name).to_snake_case(),
+                    column: field.name.unwrap_or(field_name).to_snake_case(),
                 }
                 .wrap())
             })
@@ -138,7 +136,8 @@ impl FieldResolverCell for NumericFieldResolverCell {
                     vec![]
                 },
             },
-            converter: self.ty.converter(self.column.clone()).to_token_stream(),
+            converter: self.ty.converter(self.column.clone()),
+            view: self.ty.view(self.column.clone()),
             primary: self.primary,
             entities: vec![],
         }))
@@ -218,6 +217,38 @@ impl NumericType {
             NumericType::Double => DoubleDataConverter { column_name }.to_token_stream(),
         }
     }
+
+    pub fn view(&self, column_name: String) -> TokenStream {
+        match self {
+            NumericType::Short => {
+                ShortFieldView::new(ShortDataConverter { column_name }).to_token_stream()
+            }
+            NumericType::UnsignedShort => {
+                UnsignedShortFieldView::new(UnsignedShortDataConverter { column_name })
+                    .to_token_stream()
+            }
+            NumericType::Int => {
+                IntFieldView::new(IntDataConverter { column_name }).to_token_stream()
+            }
+            NumericType::UnsignedInt => {
+                UnsignedIntFieldView::new(UnsignedIntDataConverter { column_name })
+                    .to_token_stream()
+            }
+            NumericType::Long => {
+                LongFieldView::new(LongDataConverter { column_name }).to_token_stream()
+            }
+            NumericType::UnsignedLong => {
+                UnsignedLongFieldView::new(UnsignedLongDataConverter { column_name })
+                    .to_token_stream()
+            }
+            NumericType::Float => {
+                FloatFieldView::new(FloatDataConverter { column_name }).to_token_stream()
+            }
+            NumericType::Double => {
+                DoubleFieldView::new(DoubleDataConverter { column_name }).to_token_stream()
+            }
+        }
+    }
 }
 
 impl From<&NumericType> for DatabaseType {
@@ -246,19 +277,21 @@ macro_rules! converter_of {
         impl DataConverter for $name {
             type FieldType = $field_type;
             fn field_value_converter(
-                &self
-            ) -> Box<dyn Fn(&ValuePack)->RuntimeResult<Self::FieldType>> {
+                &self,
+            ) -> Box<dyn Fn(&ValuePack) -> RuntimeResult<Self::FieldType>> {
                 let column_name = self.column_name.clone();
                 Box::new(move |values| {
                     values
-                    .get(column_name.as_str())
-                    .map(|data| match data {
-                        DatabaseValue::$enum_variant(data) => Ok(data.clone()),
-                        _ => Err(DataConvertError::UnexpectedValueType(
-                            column_name.clone(),
-                        ).as_runtime_err()),
-                    })
-                    .ok_or_else(|| DataConvertError::ColumnDataNotFound(column_name.clone()).as_runtime_err())?
+                        .get(column_name.as_str())
+                        .map(|data| match data {
+                            DatabaseValue::$enum_variant(data) => Ok(data.clone()),
+                            _ => Err(DataConvertError::UnexpectedValueType(column_name.clone())
+                                .as_runtime_err()),
+                        })
+                        .ok_or_else(|| {
+                            DataConvertError::ColumnDataNotFound(column_name.clone())
+                                .as_runtime_err()
+                        })?
                 })
             }
 

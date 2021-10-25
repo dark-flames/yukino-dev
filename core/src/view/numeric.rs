@@ -1,14 +1,17 @@
-use crate::entity::converter::DataConverter;
-use crate::entity::FieldView;
+use crate::interface::converter::DataConverter;
+use crate::interface::FieldView;
 use crate::expr::View;
 use crate::query::computation::Computation;
 use crate::query::optimizer::QueryOptimizer;
 use crate::resolver::field_resolve_cells::numeric::*;
+use iroha::ToTokens;
 
 macro_rules! implement_view_of {
     ($ty: ty, $name: ident, $converter: ty) => {
+        #[derive(ToTokens, Clone)]
+        #[Iroha(mod_path = "yukino::view::numeric")]
         pub struct $name {
-            converter: $converter
+            converter: $converter,
         }
 
         impl View for $name {
@@ -26,7 +29,7 @@ macro_rules! implement_view_of {
         impl FieldView for $name {
             type Type = $ty;
         }
-    }
+    };
 }
 
 implement_view_of!(i16, ShortFieldView, ShortDataConverter);
@@ -35,5 +38,5 @@ implement_view_of!(i32, IntFieldView, IntDataConverter);
 implement_view_of!(u32, UnsignedIntFieldView, UnsignedIntDataConverter);
 implement_view_of!(i64, LongFieldView, LongDataConverter);
 implement_view_of!(u64, UnsignedLongFieldView, UnsignedLongDataConverter);
-
-
+implement_view_of!(f32, FloatFieldView, FloatDataConverter);
+implement_view_of!(f64, DoubleFieldView, DoubleDataConverter);

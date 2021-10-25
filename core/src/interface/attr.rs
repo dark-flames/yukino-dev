@@ -4,14 +4,14 @@ use std::collections::HashMap;
 use syn::{Attribute, Error};
 
 #[derive(Annotation, Clone)]
-#[mod_path = "yukino::entity::attr"]
+#[mod_path = "yukino::interface::attr"]
 pub struct Entity {
     pub name: Option<String>,
     pub indexes: Option<HashMap<String, Index>>,
 }
 
 #[derive(Annotation, Clone)]
-#[mod_path = "yukino::entity::attr"]
+#[mod_path = "yukino::interface::attr"]
 pub struct Index {
     pub fields: Vec<String>,
     #[field(enum_value = true, default = "b_tree")]
@@ -21,7 +21,7 @@ pub struct Index {
 }
 
 #[derive(AnnotationEnumValue, Copy, Clone, Debug)]
-#[mod_path = "yukino::entity::attr"]
+#[mod_path = "yukino::interface::attr"]
 pub enum IndexMethod {
     BTree,
     #[cfg(any(feature = "mysql", feature = "postgre-sql"))]
@@ -38,7 +38,7 @@ pub enum IndexMethod {
 }
 
 #[derive(Annotation, Clone)]
-#[mod_path = "yukino::entity::attr"]
+#[mod_path = "yukino::interface::attr"]
 pub struct ID;
 
 #[derive(Annotation, Clone)]

@@ -1,12 +1,12 @@
 #![feature(associated_type_bounds)]
 
 pub mod db;
-pub mod entity;
+pub mod interface;
 pub mod err;
 pub mod expr;
 pub mod query;
 pub mod resolver;
-mod view;
+pub mod view;
 
 #[cfg(test)]
 mod tests {

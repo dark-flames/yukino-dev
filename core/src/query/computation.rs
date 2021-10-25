@@ -8,9 +8,7 @@ pub struct Computation<'f, V: 'f + Clone> {
 
 impl<'f, V: 'f + Clone> Computation<'f, V> {
     pub fn create(run: Box<dyn 'f + Fn(&ValuePack) -> RuntimeResult<V>>) -> Self {
-        Computation {
-            run
-        }
+        Computation { run }
     }
 
     pub fn pure(v: V) -> Self {

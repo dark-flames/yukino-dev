@@ -1,5 +1,5 @@
 pub mod computation;
 pub mod optimizer;
-pub mod query;
-pub mod select;
+pub mod queries;
 pub mod result;
+pub mod select;

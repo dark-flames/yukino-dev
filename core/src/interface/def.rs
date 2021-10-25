@@ -1,10 +1,10 @@
 use crate::db::ty::DatabaseType;
-use crate::entity::attr::IndexMethod;
+use crate::interface::attr::IndexMethod;
 use iroha::ToTokens;
 use std::collections::HashMap;
 
 #[derive(ToTokens, Clone)]
-#[Iroha(mod_path = "yukino::entity::def")]
+#[Iroha(mod_path = "yukino::interface::def")]
 pub struct EntityDefinition {
     pub id: usize,
     pub name: String,
@@ -16,7 +16,7 @@ pub struct EntityDefinition {
 }
 
 #[derive(ToTokens, Clone)]
-#[Iroha(mod_path = "yukino::entity::def")]
+#[Iroha(mod_path = "yukino::interface::def")]
 pub struct FieldDefinition {
     pub name: String,
     pub ty: String,
@@ -29,7 +29,7 @@ pub struct FieldDefinition {
 }
 
 #[derive(ToTokens, Clone)]
-#[Iroha(mod_path = "yukino::entity::def")]
+#[Iroha(mod_path = "yukino::interface::def")]
 pub struct IndexDefinition {
     pub name: String,
     pub fields: Vec<String>,
@@ -38,7 +38,7 @@ pub struct IndexDefinition {
 }
 
 #[derive(ToTokens, Clone)]
-#[Iroha(mod_path = "yukino::entity::def")]
+#[Iroha(mod_path = "yukino::interface::def")]
 pub struct ColumnDefinition {
     pub name: String,
     pub ty: DatabaseType,
@@ -47,7 +47,7 @@ pub struct ColumnDefinition {
 }
 
 #[derive(ToTokens, Copy, Clone)]
-#[Iroha(mod_path = "yukino::entity::def")]
+#[Iroha(mod_path = "yukino::interface::def")]
 pub enum IndexType {
     Primary,
     Unique,
@@ -55,7 +55,7 @@ pub enum IndexType {
 }
 
 #[derive(ToTokens, Clone, Copy, Eq, PartialEq)]
-#[Iroha(mod_path = "yukino::entity::def")]
+#[Iroha(mod_path = "yukino::interface::def")]
 pub enum DefinitionType {
     Normal,
     Visual,
@@ -63,7 +63,7 @@ pub enum DefinitionType {
 }
 
 #[derive(ToTokens, Clone)]
-#[Iroha(mod_path = "yukino::entity::def")]
+#[Iroha(mod_path = "yukino::interface::def")]
 pub enum AssociatedDefinition {
     AssociatedEntity {
         entity_id: usize,

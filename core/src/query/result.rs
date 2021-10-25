@@ -1,8 +1,8 @@
-use std::marker::PhantomData;
-use crate::entity::{Entity, EntityView};
+use crate::interface::{Entity, EntityView};
 use crate::err::RuntimeResult;
 use crate::expr::{View, ViewBox};
-use crate::query::query::Query;
+use crate::query::queries::Query;
+use std::marker::PhantomData;
 
 pub struct QueryResult<E: Entity, V: Clone> {
     query: Query,

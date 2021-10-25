@@ -1,8 +1,8 @@
-use crate::entity::def::{EntityDefinition, FieldDefinition};
+use crate::interface::def::{EntityDefinition, FieldDefinition};
+use crate::err::CliResult;
 use crate::err::{ResolveError, YukinoError};
 use crate::resolver::entity::ResolvedEntity;
 use crate::resolver::path::FileTypePathResolver;
-use crate::err::CliResult;
 use proc_macro2::TokenStream;
 use std::cmp::Eq;
 use std::collections::{HashMap, HashSet};
@@ -27,6 +27,7 @@ pub struct ResolvedField {
     pub path: FieldPath,
     pub definition: FieldDefinition,
     pub converter: TokenStream,
+    pub view: TokenStream,
     pub primary: bool,
     pub entities: Vec<EntityDefinition>,
 }

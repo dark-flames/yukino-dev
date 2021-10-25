@@ -7,6 +7,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+core = { package = "yukino-core", path = "./core", version = "0.1.0" }
 
 [workspace]
 members = [
