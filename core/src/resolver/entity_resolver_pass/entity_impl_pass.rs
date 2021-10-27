@@ -1,15 +1,24 @@
 use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
 use proc_macro2::TokenStream;
+use quote::{format_ident, quote};
 
 pub struct EntityImplementPass {}
 
 impl EntityResolvePass for EntityImplementPass {
     fn get_dependencies(&self) -> Vec<TokenStream> {
-        vec![]
+        vec![quote! {
+            use yukino::interface::Entity;
+        }]
     }
 
-    fn get_entity_implements(&self, _entity: &ResolvedEntity) -> Vec<TokenStream> {
-        vec![]
+    fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream> {
+        let name = format_ident!("{}", &entity.name);
+        let view_name = format_ident!("{}View", &entity.name);
+        vec![quote! {
+            impl Entity for #name {
+                type View = #view_name;
+            }
+        }]
     }
 
     fn get_additional_implements(&self) -> Vec<TokenStream> {
