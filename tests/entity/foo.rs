@@ -1,4 +1,4 @@
-#[Entity(name = "bar")]
+#[Entity()]
 pub struct Numeric {
     #[ID]
     id: u32,

@@ -5,7 +5,10 @@ use quote::{format_ident, quote};
 pub struct EntityImplementPass();
 
 impl EntityResolvePass for EntityImplementPass {
-    fn instance() -> Box<dyn EntityResolvePass> where Self: Sized {
+    fn instance() -> Box<dyn EntityResolvePass>
+    where
+        Self: Sized,
+    {
         Box::new(EntityImplementPass())
     }
 

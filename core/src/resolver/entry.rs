@@ -19,7 +19,6 @@ pub struct DefinitionResolver {
     field_resolver: FieldResolver,
 }
 
-#[allow(dead_code)]
 pub struct AchievedSchemaResolver {
     pub statements: Vec<TokenStream>,
     pub definitions: Vec<EntityDefinition>,
@@ -94,7 +93,7 @@ impl DefinitionResolver {
             definitions: vec![],
         })
     }
-    #[allow(dead_code)]
+
     fn handle_ready_entities(&mut self, entities: ReadyEntities) -> CliResult<()> {
         entities.into_iter().try_for_each(|entity| {
             let ready_entities = self.field_resolver.apply_entity(

@@ -11,4 +11,4 @@ pub trait View {
     fn optimizer(&self) -> Box<dyn QueryOptimizer>;
 }
 
-pub type ViewBox<V> = Box<dyn View<Output=V>>;
+pub type ViewBox<V> = Box<dyn View<Output = V>>;

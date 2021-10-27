@@ -17,8 +17,8 @@ impl<E: Entity, V: Clone> QueryResult<E, V> {
     }
 
     pub fn filter<F>(&mut self, f: F) -> &mut Self
-        where
-            F: Fn(E::View) -> Box<dyn View<Output=V>>,
+    where
+        F: Fn(E::View) -> Box<dyn View<Output = V>>,
     {
         let optimizer = f(E::View::pure()).optimizer();
         optimizer.optimize(&mut self.query);
@@ -26,8 +26,8 @@ impl<E: Entity, V: Clone> QueryResult<E, V> {
     }
 
     pub fn map<F, R: Clone, P>(self, f: F) -> QueryResult<E, R>
-        where
-            F: Fn(E::View, ViewBox<V>) -> ViewBox<R>,
+    where
+        F: Fn(E::View, ViewBox<V>) -> ViewBox<R>,
     {
         let new_view = f(E::View::pure(), self.current_view);
         QueryResult {

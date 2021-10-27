@@ -4,20 +4,21 @@ pub mod entry;
 macro_rules! cli_entry {
     (
         dir = $dir: literal,
-        output_file = $output_path: literal,
-        after_setup = [$($after_setup: literal),*]
+        output_file = $output_path: literal
     ) => {
-        use yukino::entry::CommandLineEntry;
         use std::collections::HashMap;
+        use yukino::entry::CommandLineEntry;
         pub fn main() {
             let crate_path = env!("CARGO_MANIFEST_DIR");
             CommandLineEntry::create(
                 format!("{}/{}", crate_path, $dir),
                 format!("{}/{}", crate_path, $output_path),
-                vec![$($after_setup.to_string()),*],
                 vec![],
-                vec![]
-            ).unwrap().process().unwrap();
+                vec![],
+            )
+            .unwrap()
+            .process()
+            .unwrap();
         }
-    }
+    };
 }

@@ -3,7 +3,7 @@ use std::any::type_name;
 use heck::SnakeCase;
 use iroha::ToTokens;
 use proc_macro2::TokenStream;
-use quote::ToTokens;
+use quote::{quote, ToTokens};
 use syn::spanned::Spanned;
 use syn::{Field as SynField, Type};
 
@@ -16,9 +16,11 @@ use crate::interface::converter::DataConverter;
 use crate::interface::def::{
     ColumnDefinition, DefinitionType, FieldDefinition, IndexDefinition, IndexType,
 };
-use crate::resolver::field::{FieldPath, FieldResolveResult, FieldResolverCell, FieldResolverCellBox, FieldResolverSeed, ResolvedField, FieldResolverSeedBox};
+use crate::resolver::field::{
+    FieldPath, FieldResolveResult, FieldResolverCell, FieldResolverCellBox, FieldResolverSeed,
+    FieldResolverSeedBox, ResolvedField,
+};
 use crate::resolver::path::{FileTypePathResolver, TypeMatchResult};
-use crate::view::ShortFieldView;
 
 pub struct NumericFieldResolverSeed();
 
@@ -44,7 +46,10 @@ pub enum NumericType {
 }
 
 impl FieldResolverSeed for NumericFieldResolverSeed {
-    fn instance() -> FieldResolverSeedBox where Self: Sized {
+    fn instance() -> FieldResolverSeedBox
+    where
+        Self: Sized,
+    {
         Box::new(NumericFieldResolverSeed())
     }
 
@@ -105,7 +110,7 @@ impl FieldResolverCell for NumericFieldResolverCell {
         _type_resolver: &FileTypePathResolver,
         field_path: FieldPath,
     ) -> CliResult<FieldResolveResult> {
-        Ok(FieldResolveResult::Finished(ResolvedField {
+        Ok(FieldResolveResult::Finished(Box::new(ResolvedField {
             path: field_path.clone(),
             definition: FieldDefinition {
                 name: field_path.field_name.clone(),
@@ -140,7 +145,7 @@ impl FieldResolverCell for NumericFieldResolverCell {
             view_type: self.ty.view_ty(),
             primary: self.primary,
             entities: vec![],
-        }))
+        })))
     }
 }
 
@@ -220,15 +225,15 @@ impl NumericType {
 
     pub fn view_ty(&self) -> TokenStream {
         match self {
-            NumericType::Short => type_name::<ShortFieldView>(),
-            NumericType::UnsignedShort => type_name::<UnsignedShortDataConverter>(),
-            NumericType::Int => type_name::<IntDataConverter>(),
-            NumericType::UnsignedInt => type_name::<UnsignedIntDataConverter>(),
-            NumericType::Long => type_name::<LongDataConverter>(),
-            NumericType::UnsignedLong => type_name::<UnsignedLongDataConverter>(),
-            NumericType::Float => type_name::<FloatDataConverter>(),
-            NumericType::Double => type_name::<DoubleDataConverter>(),
-        }.to_token_stream()
+            NumericType::Short => quote! { ShortFieldView },
+            NumericType::UnsignedShort => quote! { UnsignedShortFieldView },
+            NumericType::Int => quote! { IntFieldView },
+            NumericType::UnsignedInt => quote! { UnsignedIntFieldView },
+            NumericType::Long => quote! { LongFieldView },
+            NumericType::UnsignedLong => quote! { UnsignedLongFieldView },
+            NumericType::Float => quote! { FloatFieldView },
+            NumericType::Double => quote! { DoubleFieldView },
+        }
     }
 }
 

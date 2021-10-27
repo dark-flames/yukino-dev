@@ -7,15 +7,16 @@ use std::process::Command;
 
 use core::err::{CliError, CliResult, ResolveError, YukinoError};
 use core::resolver::entity::EntityResolvePass;
+use core::resolver::entity_resolver_pass::{
+    EntityImplementPass, EntityStructPass, EntityViewImplementPass, FieldMakerPass,
+};
 use core::resolver::field::{FieldResolverSeed, FieldResolverSeedBox};
-use core::resolver::DefinitionResolver;
-use core::resolver::entity_resolver_pass::{EntityImplementPass, EntityStructPass, EntityViewImplementPass, FieldMakerPass};
 use core::resolver::field_resolve_cells::numeric::NumericFieldResolverSeed;
+use core::resolver::DefinitionResolver;
 
 pub struct CommandLineEntry {
     resolver: DefinitionResolver,
     output_file_path: PathBuf,
-    after_setup: Vec<Command>,
 }
 
 impl CommandLineEntry {
@@ -38,23 +39,23 @@ impl CommandLineEntry {
     pub fn create(
         entity_dir: String,
         output_file_path: String,
-        after_setup: Vec<String>,
         mut entity_passes: Vec<Box<dyn EntityResolvePass>>,
         mut field_resolve_seeds: Vec<FieldResolverSeedBox>,
     ) -> CliResult<Self> {
         let entity_dir = read_dir(Path::new(&entity_dir))
             .map_err(|e| ResolveError::FsError(e.to_string()).as_cli_err(None))?;
 
-        entity_passes.extend([
-            EntityImplementPass::instance(),
-            EntityStructPass::instance(),
-            EntityViewImplementPass::instance(),
-            FieldMakerPass::instance()
-        ].into_iter());
+        entity_passes.extend(
+            [
+                EntityStructPass::instance(),
+                EntityViewImplementPass::instance(),
+                FieldMakerPass::instance(),
+                EntityImplementPass::instance(),
+            ]
+            .into_iter(),
+        );
 
-        field_resolve_seeds.extend([
-            NumericFieldResolverSeed::instance()
-        ].into_iter());
+        field_resolve_seeds.extend([NumericFieldResolverSeed::instance()].into_iter());
 
         Ok(CommandLineEntry {
             resolver: DefinitionResolver::create(
@@ -64,17 +65,11 @@ impl CommandLineEntry {
                 field_resolve_seeds,
             ),
             output_file_path: PathBuf::from(output_file_path),
-
-            after_setup: after_setup
-                .into_iter()
-                .map(Command::new)
-                .collect(),
         })
     }
 
     pub fn export_implements(&mut self) -> CliResult<()> {
         let achieved = self.resolver.resolve()?.to_token_stream().to_string();
-
         if self.output_file_path.exists() {
             remove_file(&self.output_file_path)
                 .map_err(|e| ResolveError::FsError(e.to_string()).as_cli_err(None))?;
@@ -87,14 +82,14 @@ impl CommandLineEntry {
             .write_all(achieved.as_bytes())
             .map_err(|e| ResolveError::FsError(e.to_string()).as_cli_err(None))
             .and_then(|_| {
-                self.after_setup.iter_mut().try_for_each(|cmd| {
-                    cmd.output()
-                        .map_err(|e| CliError {
-                            msg: e.to_string(),
-                            pos: None,
-                        })
-                        .map(|_| ())
-                })
+                Command::new("cargo")
+                    .arg("fmt")
+                    .output()
+                    .map_err(|e| CliError {
+                        msg: e.to_string(),
+                        pos: None,
+                    })
+                    .map(|_| ())
             })?;
 
         Ok(())

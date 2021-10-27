@@ -14,10 +14,10 @@ use std::iter::Extend;
 use syn::spanned::Spanned;
 use syn::ItemStruct;
 
-#[allow(dead_code)]
 pub struct UnassembledEntity {
     id: usize,
     name: String,
+    struct_name: String,
     indexes: HashMap<String, Index>,
     span: Span,
 }
@@ -38,7 +38,9 @@ pub struct EntityResolver {
 }
 
 pub trait EntityResolvePass {
-    fn instance() -> Box<dyn EntityResolvePass> where Self: Sized;
+    fn instance() -> Box<dyn EntityResolvePass>
+    where
+        Self: Sized;
 
     fn get_dependencies(&self) -> Vec<TokenStream>;
 
@@ -147,7 +149,7 @@ impl UnassembledEntity {
 
         Ok(ResolvedEntity {
             id: self.id,
-            name: self.name,
+            name: self.struct_name,
             definitions,
             fields,
         })
@@ -205,12 +207,13 @@ impl EntityResolver {
                 .name
                 .clone()
                 .unwrap_or_else(|| entity_name.to_snake_case()),
+            struct_name: entity_name,
             indexes: attribute.indexes.unwrap_or_default(),
             span: entity.span(),
         };
         self.unassembled.insert(entity_id, unassembled_entity);
 
-        Ok((entity_id, 0))
+        Ok((entity_id, entity.fields.len()))
     }
 
     pub fn assembled(
@@ -235,16 +238,17 @@ impl EntityResolver {
 
     pub fn get_implements(&self) -> Vec<TokenStream> {
         assert!(self.all_finished());
-
         let mut implements: Vec<_> = self
-            .resolved
-            .values()
-            .flat_map(|entity| {
-                self.passes
-                    .iter()
-                    .flat_map(|pass| pass.get_entity_implements(entity))
-            })
+            .passes
+            .iter()
+            .flat_map(|pass| pass.get_dependencies())
             .collect();
+
+        implements.extend(self.resolved.values().flat_map(|entity| {
+            self.passes
+                .iter()
+                .flat_map(|pass| pass.get_entity_implements(entity))
+        }));
 
         implements.extend(
             self.passes

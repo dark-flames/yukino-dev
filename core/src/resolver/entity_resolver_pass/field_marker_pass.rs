@@ -8,14 +8,15 @@ use syn::{parse_str, Type};
 pub struct FieldMakerPass();
 
 impl EntityResolvePass for FieldMakerPass {
-    fn instance() -> Box<dyn EntityResolvePass> where Self: Sized {
+    fn instance() -> Box<dyn EntityResolvePass>
+    where
+        Self: Sized,
+    {
         Box::new(FieldMakerPass())
     }
 
     fn get_dependencies(&self) -> Vec<TokenStream> {
-        vec![quote! {
-            use yukino::interface::FieldMarker;
-        }]
+        vec![]
     }
 
     fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream> {
@@ -33,7 +34,8 @@ impl EntityResolvePass for FieldMakerPass {
                 let definition = &field.definition;
 
                 quote! {
-                    struct #marker_name();
+                    #[allow(non_camel_case_types)]
+                    pub struct #marker_name();
 
                     impl FieldMarker for #marker_name {
                         type Type = #ty;
@@ -56,6 +58,10 @@ impl EntityResolvePass for FieldMakerPass {
 
         vec![quote! {
             pub mod #mod_name {
+                use yukino::interface::FieldMarker;
+                use yukino::interface::def::FieldDefinition;
+                use yukino::interface::converter::DataConverter;
+
                 #(#markers)*
             }
         }]

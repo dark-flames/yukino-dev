@@ -7,7 +7,10 @@ use syn::{parse_str, Type};
 pub struct EntityStructPass();
 
 impl EntityResolvePass for EntityStructPass {
-    fn instance() -> Box<dyn EntityResolvePass> where Self: Sized {
+    fn instance() -> Box<dyn EntityResolvePass>
+    where
+        Self: Sized,
+    {
         Box::new(EntityStructPass())
     }
 
@@ -31,6 +34,7 @@ impl EntityResolvePass for EntityStructPass {
             .collect::<Vec<_>>();
 
         vec![quote! {
+            #[derive(Clone)]
             pub struct #name {
                 #(#fields),*
             }

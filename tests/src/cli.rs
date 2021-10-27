@@ -1,7 +1,3 @@
 use yukino::cli_entry;
 
-cli_entry!(
-    dir = "entity",
-    output_file = "src/schema.rs",
-    after_setup = ["cargo fmt"]
-);
+cli_entry!(dir = "entity", output_file = "src/schema.rs");

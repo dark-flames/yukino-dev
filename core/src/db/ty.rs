@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use time::{Date, PrimitiveDateTime, Time};
 
 #[derive(Copy, Clone, ToTokens, Debug, Eq, PartialEq)]
-#[Iroha(mod_path = "yukino::types")]
+#[Iroha(mod_path = "yukino::db::ty")]
 pub enum DatabaseType {
     Bool,
     SmallInteger,

@@ -42,13 +42,15 @@ pub struct FieldResolver {
 }
 
 pub enum FieldResolveResult {
-    Finished(ResolvedField),
+    Finished(Box<ResolvedField>),
     WaitingForEntity(usize, EntityHandler),
     WaitingForField(FieldPath, FieldHandler),
 }
 
 pub trait FieldResolverSeed {
-    fn instance() -> FieldResolverSeedBox where Self: Sized;
+    fn instance() -> FieldResolverSeedBox
+    where
+        Self: Sized;
     fn match_field(
         &self,
         field: &Field,
@@ -159,7 +161,7 @@ impl FieldResolver {
                 self.finished
                     .entry(entity_id)
                     .or_default()
-                    .insert(resolved.path.field_name.clone(), resolved);
+                    .insert(resolved.path.field_name.clone(), *resolved);
 
                 if self.finish_resolved_entity_fields(entity_id) {
                     ready_entities.insert(entity_id);

@@ -8,7 +8,10 @@ use unzip3::Unzip3;
 pub struct EntityViewImplementPass();
 
 impl EntityResolvePass for EntityViewImplementPass {
-    fn instance() -> Box<dyn EntityResolvePass> where Self: Sized {
+    fn instance() -> Box<dyn EntityResolvePass>
+    where
+        Self: Sized,
+    {
         Box::new(EntityViewImplementPass())
     }
 
@@ -18,6 +21,7 @@ impl EntityResolvePass for EntityViewImplementPass {
             use yukino::interface::EntityView;
             use yukino::query::computation::Computation;
             use yukino::query::optimizer::{QueryOptimizer, SelectAppendOptimizer};
+            use yukino::interface::FieldMarker;
         }]
     }
 
@@ -39,7 +43,9 @@ impl EntityResolvePass for EntityViewImplementPass {
                         pub #name: #ty
                     },
                     quote! {
-                        #name: #view_ty::new(#marker_mod::#marker_name::data_converter())
+                        #name: #view_ty::new(
+                            #marker_mod::#marker_name::data_converter()
+                        )
                     },
                     quote! {
                         #name: {
@@ -71,11 +77,13 @@ impl EntityResolvePass for EntityViewImplementPass {
             impl View for #name {
                 type Output = #entity_name;
                 fn computation<'f>(&self) -> Computation<'f, Self::Output> {
-                    Computation::create(|v| {
-                        Ok(#entity_name {
-                            #(#computations),*
-                        })
-                    })
+                    Computation::create(Box::new(
+                        |v| {
+                            Ok(#entity_name {
+                                #(#computations),*
+                            })
+                        }
+                    ))
                 }
 
                 fn optimizer(&self) -> Box<dyn QueryOptimizer> {
@@ -88,7 +96,7 @@ impl EntityResolvePass for EntityViewImplementPass {
             }
 
             impl EntityView for #name {
-                type Entity = $entity_name;
+                type Entity = #entity_name;
                 fn pure() -> Self where Self: Sized {
                     #name {
                         #(#construct_fields),*

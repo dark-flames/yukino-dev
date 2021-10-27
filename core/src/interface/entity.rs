@@ -12,7 +12,7 @@ pub trait FieldMarker {
         type_name::<Self::Type>().to_string()
     }
 
-    fn data_converter() -> Box<dyn DataConverter<FieldType=Self::Type>>;
+    fn data_converter() -> Box<dyn DataConverter<FieldType = Self::Type>>;
 
     fn definition() -> FieldDefinition;
 }
@@ -21,13 +21,13 @@ pub trait Entity: Clone {
     type View: EntityView<Entity = Self>;
 }
 
-pub trait EntityView: View<Output=Self::Entity> {
+pub trait EntityView: View<Output = Self::Entity> {
     type Entity: Entity;
     fn pure() -> Self
-        where
-            Self: Sized;
+    where
+        Self: Sized;
 }
 
-pub trait FieldView: View<Output=Self::Type> {
+pub trait FieldView: View<Output = Self::Type> {
     type Type;
 }
