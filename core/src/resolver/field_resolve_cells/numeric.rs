@@ -21,10 +21,7 @@ use crate::resolver::field::{
     ResolvedField,
 };
 use crate::resolver::path::{FileTypePathResolver, TypeMatchResult};
-use crate::view::{
-    DoubleFieldView, FloatFieldView, IntFieldView, LongFieldView, ShortFieldView,
-    UnsignedIntFieldView, UnsignedLongFieldView, UnsignedShortFieldView,
-};
+use crate::view::ShortFieldView;
 
 pub struct NumericFieldResolverSeed {}
 
@@ -140,7 +137,6 @@ impl FieldResolverCell for NumericFieldResolverCell {
             },
             converter: self.ty.converter(self.column.clone()),
             view_type: self.ty.view_ty(),
-            view: self.ty.view(self.column.clone()),
             primary: self.primary,
             entities: vec![],
         }))
@@ -225,49 +221,16 @@ impl NumericType {
         format_ident!(
             "{}",
             match self {
-                NumericType::Short => "ShortDataConverter",
-                NumericType::UnsignedShort => "UnsignedShortDataConverter",
-                NumericType::Int => "IntDataConverter",
-                NumericType::UnsignedInt => "UnsignedIntDataConverter",
-                NumericType::Long => "LongDataConverter",
-                NumericType::UnsignedLong => "UnsignedLongDataConverter",
-                NumericType::Float => "FloatDataConverter",
-                NumericType::Double => "DoubleDataConverter",
+                NumericType::Short => type_name::<ShortFieldView>(),
+                NumericType::UnsignedShort => type_name::<UnsignedShortDataConverter>(),
+                NumericType::Int => type_name::<IntDataConverter>(),
+                NumericType::UnsignedInt => type_name::<UnsignedIntDataConverter>(),
+                NumericType::Long => type_name::<LongDataConverter>(),
+                NumericType::UnsignedLong => type_name::<UnsignedLongDataConverter>(),
+                NumericType::Float => type_name::<FloatDataConverter>(),
+                NumericType::Double => type_name::<DoubleDataConverter>(),
             }
-        )
-            .to_token_stream()
-    }
-
-    pub fn view(&self, column_name: String) -> TokenStream {
-        match self {
-            NumericType::Short => {
-                ShortFieldView::new(ShortDataConverter { column_name }).to_token_stream()
-            }
-            NumericType::UnsignedShort => {
-                UnsignedShortFieldView::new(UnsignedShortDataConverter { column_name })
-                    .to_token_stream()
-            }
-            NumericType::Int => {
-                IntFieldView::new(IntDataConverter { column_name }).to_token_stream()
-            }
-            NumericType::UnsignedInt => {
-                UnsignedIntFieldView::new(UnsignedIntDataConverter { column_name })
-                    .to_token_stream()
-            }
-            NumericType::Long => {
-                LongFieldView::new(LongDataConverter { column_name }).to_token_stream()
-            }
-            NumericType::UnsignedLong => {
-                UnsignedLongFieldView::new(UnsignedLongDataConverter { column_name })
-                    .to_token_stream()
-            }
-            NumericType::Float => {
-                FloatFieldView::new(FloatDataConverter { column_name }).to_token_stream()
-            }
-            NumericType::Double => {
-                DoubleFieldView::new(DoubleDataConverter { column_name }).to_token_stream()
-            }
-        }
+        ).to_token_stream()
     }
 }
 

@@ -28,7 +28,6 @@ pub struct ResolvedField {
     pub definition: FieldDefinition,
     pub converter: TokenStream,
     pub view_type: TokenStream,
-    pub view: TokenStream,
     pub primary: bool,
     pub entities: Vec<EntityDefinition>,
 }

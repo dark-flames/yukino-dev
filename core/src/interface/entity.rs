@@ -2,7 +2,7 @@ use crate::interface::converter::DataConverter;
 use crate::view::View;
 use std::any::type_name;
 
-pub trait FieldMarker: Sized + 'static {
+pub trait FieldMarker {
     type Type;
 
     fn field_name() -> String;

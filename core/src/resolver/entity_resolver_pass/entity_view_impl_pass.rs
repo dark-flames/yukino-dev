@@ -2,6 +2,7 @@ use crate::interface::def::DefinitionType;
 use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
+use heck::SnakeCase;
 
 pub struct EntityViewImplementPass {}
 
@@ -16,20 +17,22 @@ impl EntityResolvePass for EntityViewImplementPass {
     fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream> {
         let name = format_ident!("{}View", entity.name);
         let entity_name = format_ident!("{}", entity.name);
+        let marker_mod = format_ident!("{}", entity.name.to_snake_case());
         let (fields, construct_fields) = entity
             .fields
             .values()
             .filter(|f| f.definition.definition_ty != DefinitionType::Generated)
             .map(|f| {
-                let name = format_ident!("{}", f.definition.name);
+                let name = format_ident!("{}", f.path.field_name);
                 let ty = &f.view_type;
-                let converter = &f.converter;
+                let marker_name = format_ident!("{}", f.path.field_name.to_snake_case());
+                let view_ty = &f.view_type;
                 (
                     quote! {
                         pub #name: #ty
                     },
                     quote! {
-                        #name: #converter
+                        #name: #view_ty::new(#marker_mod::#marker_name::data_converter())
                     }
                 )
             }).unzip::<_, _, Vec<_>, Vec<_>>();
