@@ -230,7 +230,8 @@ impl NumericType {
                 NumericType::Float => type_name::<FloatDataConverter>(),
                 NumericType::Double => type_name::<DoubleDataConverter>(),
             }
-        ).to_token_stream()
+        )
+            .to_token_stream()
     }
 }
 

@@ -10,7 +10,7 @@ macro_rules! implement_view_of {
         #[derive(ToTokens)]
         #[Iroha(mod_path = "yukino::view::numeric")]
         pub struct $name {
-            converter: Box<dyn DataConverter<FieldType=$ty>>
+            converter: Box<dyn DataConverter<FieldType = $ty>>,
         }
 
         impl View for $name {
