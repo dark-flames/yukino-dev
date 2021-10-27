@@ -1,6 +1,7 @@
 use crate::interface::converter::DataConverter;
 use crate::view::View;
 use std::any::type_name;
+use crate::interface::def::FieldDefinition;
 
 pub trait FieldMarker {
     type Type;
@@ -12,6 +13,8 @@ pub trait FieldMarker {
     }
 
     fn data_converter() -> Box<dyn DataConverter<FieldType=Self::Type>>;
+
+    fn definition() -> FieldDefinition;
 }
 
 pub trait Entity: Clone {

@@ -26,6 +26,7 @@ impl EntityResolvePass for EntityViewImplementPass {
                 let converter = &field.converter;
                 let field_name = &field.path.field_name;
                 let ty: Type = parse_str(field.definition.ty.as_str()).unwrap();
+                let definition = &field.definition;
 
                 quote! {
                     struct #marker_name();
@@ -39,6 +40,10 @@ impl EntityResolvePass for EntityViewImplementPass {
 
                         fn data_converter() -> Box<dyn DataConverter<FieldType = Self::Type>> {
                             Box::new(#converter)
+                        }
+
+                        fn definition() -> FieldDefinition {
+                            #definition
                         }
                     }
                 }
