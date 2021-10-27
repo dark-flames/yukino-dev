@@ -5,9 +5,13 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use unzip3::Unzip3;
 
-pub struct EntityViewImplementPass {}
+pub struct EntityViewImplementPass();
 
 impl EntityResolvePass for EntityViewImplementPass {
+    fn instance() -> Box<dyn EntityResolvePass> where Self: Sized {
+        Box::new(EntityViewImplementPass())
+    }
+
     fn get_dependencies(&self) -> Vec<TokenStream> {
         vec![quote! {
             use yukino::view::*;

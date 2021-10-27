@@ -38,6 +38,8 @@ pub struct EntityResolver {
 }
 
 pub trait EntityResolvePass {
+    fn instance() -> Box<dyn EntityResolvePass> where Self: Sized;
+
     fn get_dependencies(&self) -> Vec<TokenStream>;
 
     fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream>;

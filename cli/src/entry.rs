@@ -7,8 +7,10 @@ use std::process::Command;
 
 use core::err::{CliError, CliResult, ResolveError, YukinoError};
 use core::resolver::entity::EntityResolvePass;
-use core::resolver::field::FieldResolverSeedBox;
+use core::resolver::field::{FieldResolverSeed, FieldResolverSeedBox};
 use core::resolver::DefinitionResolver;
+use core::resolver::entity_resolver_pass::{EntityImplementPass, EntityStructPass, EntityViewImplementPass, FieldMakerPass};
+use core::resolver::field_resolve_cells::numeric::NumericFieldResolverSeed;
 
 pub struct CommandLineEntry {
     resolver: DefinitionResolver,
@@ -37,11 +39,22 @@ impl CommandLineEntry {
         entity_dir: String,
         output_file_path: String,
         after_setup: Vec<String>,
-        entity_passes: Vec<Box<dyn EntityResolvePass>>,
-        field_resolve_seeds: Vec<FieldResolverSeedBox>,
+        mut entity_passes: Vec<Box<dyn EntityResolvePass>>,
+        mut field_resolve_seeds: Vec<FieldResolverSeedBox>,
     ) -> CliResult<Self> {
         let entity_dir = read_dir(Path::new(&entity_dir))
             .map_err(|e| ResolveError::FsError(e.to_string()).as_cli_err(None))?;
+
+        entity_passes.extend([
+            EntityImplementPass::instance(),
+            EntityStructPass::instance(),
+            EntityViewImplementPass::instance(),
+            FieldMakerPass::instance()
+        ].into_iter());
+
+        field_resolve_seeds.extend([
+            NumericFieldResolverSeed::instance()
+        ].into_iter());
 
         Ok(CommandLineEntry {
             resolver: DefinitionResolver::create(

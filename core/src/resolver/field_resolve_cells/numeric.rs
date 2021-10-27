@@ -3,7 +3,7 @@ use std::any::type_name;
 use heck::SnakeCase;
 use iroha::ToTokens;
 use proc_macro2::TokenStream;
-use quote::{format_ident, ToTokens};
+use quote::ToTokens;
 use syn::spanned::Spanned;
 use syn::{Field as SynField, Type};
 
@@ -16,14 +16,11 @@ use crate::interface::converter::DataConverter;
 use crate::interface::def::{
     ColumnDefinition, DefinitionType, FieldDefinition, IndexDefinition, IndexType,
 };
-use crate::resolver::field::{
-    FieldPath, FieldResolveResult, FieldResolverCell, FieldResolverCellBox, FieldResolverSeed,
-    ResolvedField,
-};
+use crate::resolver::field::{FieldPath, FieldResolveResult, FieldResolverCell, FieldResolverCellBox, FieldResolverSeed, ResolvedField, FieldResolverSeedBox};
 use crate::resolver::path::{FileTypePathResolver, TypeMatchResult};
 use crate::view::ShortFieldView;
 
-pub struct NumericFieldResolverSeed {}
+pub struct NumericFieldResolverSeed();
 
 pub struct NumericFieldResolverCell {
     ty: NumericType,
@@ -47,6 +44,10 @@ pub enum NumericType {
 }
 
 impl FieldResolverSeed for NumericFieldResolverSeed {
+    fn instance() -> FieldResolverSeedBox where Self: Sized {
+        Box::new(NumericFieldResolverSeed())
+    }
+
     fn match_field(
         &self,
         field: &SynField,
@@ -218,20 +219,16 @@ impl NumericType {
     }
 
     pub fn view_ty(&self) -> TokenStream {
-        format_ident!(
-            "{}",
-            match self {
-                NumericType::Short => type_name::<ShortFieldView>(),
-                NumericType::UnsignedShort => type_name::<UnsignedShortDataConverter>(),
-                NumericType::Int => type_name::<IntDataConverter>(),
-                NumericType::UnsignedInt => type_name::<UnsignedIntDataConverter>(),
-                NumericType::Long => type_name::<LongDataConverter>(),
-                NumericType::UnsignedLong => type_name::<UnsignedLongDataConverter>(),
-                NumericType::Float => type_name::<FloatDataConverter>(),
-                NumericType::Double => type_name::<DoubleDataConverter>(),
-            }
-        )
-            .to_token_stream()
+        match self {
+            NumericType::Short => type_name::<ShortFieldView>(),
+            NumericType::UnsignedShort => type_name::<UnsignedShortDataConverter>(),
+            NumericType::Int => type_name::<IntDataConverter>(),
+            NumericType::UnsignedInt => type_name::<UnsignedIntDataConverter>(),
+            NumericType::Long => type_name::<LongDataConverter>(),
+            NumericType::UnsignedLong => type_name::<UnsignedLongDataConverter>(),
+            NumericType::Float => type_name::<FloatDataConverter>(),
+            NumericType::Double => type_name::<DoubleDataConverter>(),
+        }.to_token_stream()
     }
 }
 

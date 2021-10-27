@@ -48,6 +48,7 @@ pub enum FieldResolveResult {
 }
 
 pub trait FieldResolverSeed {
+    fn instance() -> FieldResolverSeedBox where Self: Sized;
     fn match_field(
         &self,
         field: &Field,

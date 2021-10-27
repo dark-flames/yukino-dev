@@ -2,9 +2,13 @@ use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 
-pub struct EntityImplementPass {}
+pub struct EntityImplementPass();
 
 impl EntityResolvePass for EntityImplementPass {
+    fn instance() -> Box<dyn EntityResolvePass> where Self: Sized {
+        Box::new(EntityImplementPass())
+    }
+
     fn get_dependencies(&self) -> Vec<TokenStream> {
         vec![quote! {
             use yukino::interface::Entity;

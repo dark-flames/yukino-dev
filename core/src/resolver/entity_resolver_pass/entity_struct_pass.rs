@@ -4,9 +4,13 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{parse_str, Type};
 
-pub struct EntityImplementPass {}
+pub struct EntityStructPass();
 
-impl EntityResolvePass for EntityImplementPass {
+impl EntityResolvePass for EntityStructPass {
+    fn instance() -> Box<dyn EntityResolvePass> where Self: Sized {
+        Box::new(EntityStructPass())
+    }
+
     fn get_dependencies(&self) -> Vec<TokenStream> {
         vec![]
     }

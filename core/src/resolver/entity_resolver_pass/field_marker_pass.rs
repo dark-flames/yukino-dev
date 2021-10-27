@@ -5,9 +5,13 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{parse_str, Type};
 
-pub struct EntityViewImplementPass {}
+pub struct FieldMakerPass();
 
-impl EntityResolvePass for EntityViewImplementPass {
+impl EntityResolvePass for FieldMakerPass {
+    fn instance() -> Box<dyn EntityResolvePass> where Self: Sized {
+        Box::new(FieldMakerPass())
+    }
+
     fn get_dependencies(&self) -> Vec<TokenStream> {
         vec![quote! {
             use yukino::interface::FieldMarker;
