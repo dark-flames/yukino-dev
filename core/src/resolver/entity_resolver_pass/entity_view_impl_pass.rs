@@ -12,6 +12,8 @@ impl EntityResolvePass for EntityViewImplementPass {
         vec![quote! {
             use yukino::view::*;
             use yukino::interface::EntityView;
+            use yukino::query::computation::Computation;
+            use yukino::query::optimizer::{QueryOptimizer, SelectAppendOptimizer};
         }]
     }
 
@@ -44,6 +46,19 @@ impl EntityResolvePass for EntityViewImplementPass {
             })
             .unzip3();
 
+        let append_optimizer: Vec<_> = entity
+            .fields
+            .values()
+            .filter(|f| f.definition.definition_ty != DefinitionType::Generated)
+            .map(|f| {
+                let marker_name = format_ident!("{}", f.path.field_name.to_snake_case());
+
+                quote! {
+                    .append::<#marker_mod::#marker_name>()
+                }
+            })
+            .collect();
+
         vec![quote! {
             pub struct #name {
                 #(#fields),*
@@ -60,7 +75,11 @@ impl EntityResolvePass for EntityViewImplementPass {
                 }
 
                 fn optimizer(&self) -> Box<dyn QueryOptimizer> {
-                    todo!()
+                    let mut optimizer: SelectAppendOptimizer = Default::default();
+                    optimizer
+                        #(#append_optimizer)*;
+
+                    Box::new(optimizer)
                 }
             }
 

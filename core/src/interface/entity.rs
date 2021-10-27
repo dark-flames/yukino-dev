@@ -1,7 +1,7 @@
 use crate::interface::converter::DataConverter;
+use crate::interface::def::FieldDefinition;
 use crate::view::View;
 use std::any::type_name;
-use crate::interface::def::FieldDefinition;
 
 pub trait FieldMarker {
     type Type;
