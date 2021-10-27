@@ -5,6 +5,8 @@ use std::any::type_name;
 pub trait FieldMarker: Sized + 'static {
     type Type;
 
+    fn field_name() -> String;
+
     fn type_name() -> String {
         type_name::<Self::Type>().to_string()
     }
