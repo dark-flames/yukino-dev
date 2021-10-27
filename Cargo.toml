@@ -8,10 +8,12 @@ edition = "2021"
 
 [dependencies]
 core = { package = "yukino-core", path = "./core", version = "0.1.0" }
+cli = { package = "yukino-cli", path = "./cli", version = "0.1.0" }
 
 [workspace]
 members = [
     "core",
     "macro",
-    "cli"
+    "cli",
+    "tests"
 ]
