@@ -12,4 +12,6 @@ pub trait DataConverter: ToTokens {
     }
 
     fn to_database_values_by_ref(&self, value: &Self::FieldType) -> RuntimeResult<ValuePack>;
+
+    fn get_columns(&self) -> Vec<String>;
 }

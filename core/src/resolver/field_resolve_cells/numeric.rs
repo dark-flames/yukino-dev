@@ -290,6 +290,10 @@ macro_rules! converter_of {
                 .into_iter()
                 .collect())
             }
+
+            fn get_columns(&self) -> Vec<String> {
+                vec![self.column_name.clone()]
+            }
         }
     };
 }

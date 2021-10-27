@@ -1,7 +1,7 @@
 use crate::interface::converter::DataConverter;
 use crate::interface::FieldView;
 use crate::query::computation::Computation;
-use crate::query::optimizer::QueryOptimizer;
+use crate::query::optimizer::{QueryOptimizer, SelectAppendOptimizer};
 use crate::view::View;
 use iroha::ToTokens;
 
@@ -21,7 +21,10 @@ macro_rules! implement_view_of {
             }
 
             fn optimizer(&self) -> Box<dyn QueryOptimizer> {
-                todo!("add column in select list")
+                let mut optimizer: SelectAppendOptimizer = Default::default();
+                optimizer.append_by_columns(self.converter.get_columns());
+
+                Box::new(optimizer)
             }
         }
 

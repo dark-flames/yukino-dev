@@ -20,4 +20,9 @@ impl SelectAppendOptimizer {
         self.0.extend(F::definition().columns.keys().cloned());
         self
     }
+
+    pub fn append_by_columns(&mut self, columns: Vec<String>) -> &mut Self {
+        self.0.extend(columns);
+        self
+    }
 }
