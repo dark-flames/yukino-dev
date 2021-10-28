@@ -142,6 +142,7 @@ impl FieldResolverCell for NumericFieldResolverCell {
                 },
             },
             converter: self.ty.converter(self.column.clone()),
+            converter_type: self.ty.converter_ty(),
             view_type: self.ty.view_ty(),
             primary: self.primary,
             entities: vec![],
@@ -220,6 +221,19 @@ impl NumericType {
             }
             NumericType::Float => FloatDataConverter { column_name }.to_token_stream(),
             NumericType::Double => DoubleDataConverter { column_name }.to_token_stream(),
+        }
+    }
+
+    pub fn converter_ty(&self) -> TokenStream {
+        match self {
+            NumericType::Short => quote! { ShortDataConverter },
+            NumericType::UnsignedShort => quote! { UnsignedShortDataConverter },
+            NumericType::Int => quote! { IntDataConverter },
+            NumericType::UnsignedInt => quote! { UnsignedIntDataConverter },
+            NumericType::Long => quote! { LongDataConverter},
+            NumericType::UnsignedLong => quote! { UnsignedLongDataConverter },
+            NumericType::Float => quote! { FloatDataConverter },
+            NumericType::Double => quote! { DoubleDataConverter },
         }
     }
 

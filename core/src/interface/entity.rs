@@ -6,15 +6,15 @@ use std::any::type_name;
 pub trait FieldMarker {
     type Type;
 
-    fn field_name() -> String;
+    fn field_name() -> &'static str;
 
     fn type_name() -> String {
         type_name::<Self::Type>().to_string()
     }
 
-    fn data_converter() -> Box<dyn DataConverter<FieldType = Self::Type>>;
+    fn data_converter() -> &'static dyn DataConverter<FieldType = Self::Type>;
 
-    fn definition() -> FieldDefinition;
+    fn definition() -> &'static FieldDefinition;
 }
 
 pub trait Entity: Clone {
@@ -30,4 +30,8 @@ pub trait EntityView: View<Output = Self::Entity> {
 
 pub trait FieldView: View<Output = Self::Type> {
     type Type;
+
+    fn create(converter: &'static dyn DataConverter<FieldType = Self::Type>) -> Self
+    where
+        Self: Sized;
 }

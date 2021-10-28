@@ -1,4 +1,3 @@
-use clap::{crate_authors, crate_description, crate_version, App, SubCommand};
 use std::ffi::OsStr;
 use std::fs::{read_dir, remove_file, File, ReadDir};
 use std::io::{Result as IoResult, Write};
@@ -96,24 +95,6 @@ impl CommandLineEntry {
     }
 
     pub fn process(&mut self) -> CliResult<()> {
-        let application = App::new("Yukino CommandLine Tool")
-            .version(crate_version!())
-            .author(crate_authors!())
-            .about(crate_description!())
-            .subcommand(
-                SubCommand::with_name("setup")
-                    .about("Setup entities")
-                    .version(crate_version!())
-                    .author(crate_authors!()),
-            );
-        let matches = application.get_matches();
-        if matches.subcommand_matches("setup").is_some() {
-            self.export_implements()
-        } else {
-            Err(CliError {
-                msg: "Unsupported method".to_string(),
-                pos: None,
-            })
-        }
+        self.export_implements()
     }
 }

@@ -21,7 +21,7 @@ impl EntityResolvePass for EntityViewImplementPass {
             use yukino::interface::EntityView;
             use yukino::query::computation::Computation;
             use yukino::query::optimizer::{QueryOptimizer, SelectAppendOptimizer};
-            use yukino::interface::FieldMarker;
+            use yukino::interface::{FieldMarker, FieldView};
         }]
     }
 
@@ -43,7 +43,7 @@ impl EntityResolvePass for EntityViewImplementPass {
                         pub #name: #ty
                     },
                     quote! {
-                        #name: #view_ty::new(
+                        #name: #view_ty::create(
                             #marker_mod::#marker_name::data_converter()
                         )
                     },

@@ -32,24 +32,33 @@ impl EntityResolvePass for FieldMakerPass {
                 let field_name = &field.path.field_name;
                 let ty: Type = parse_str(field.definition.ty.as_str()).unwrap();
                 let definition = &field.definition;
-
+                let converter_static_name =
+                    format_ident!("{}_CONVERTER", field.path.field_name.to_uppercase());
+                let definition_static_name =
+                    format_ident!("{}_DEFINITION", field.path.field_name.to_uppercase());
+                let converter_type = &field.converter_type;
                 quote! {
                     #[allow(non_camel_case_types)]
                     pub struct #marker_name();
+                    lazy_static! {
+                        static ref #converter_static_name: #converter_type = #converter;
+                        static ref #definition_static_name: FieldDefinition = #definition;
+                    }
+
 
                     impl FieldMarker for #marker_name {
                         type Type = #ty;
 
-                        fn field_name() -> String {
-                            #field_name.to_string()
+                        fn field_name() -> &'static str {
+                            #field_name
                         }
 
-                        fn data_converter() -> Box<dyn DataConverter<FieldType = Self::Type>> {
-                            Box::new(#converter)
+                        fn data_converter() -> &'static dyn DataConverter<FieldType = Self::Type> {
+                            &*#converter_static_name
                         }
 
-                        fn definition() -> FieldDefinition {
-                            #definition
+                        fn definition() -> &'static FieldDefinition {
+                            &*#definition_static_name
                         }
                     }
                 }
@@ -61,6 +70,8 @@ impl EntityResolvePass for FieldMakerPass {
                 use yukino::interface::FieldMarker;
                 use yukino::interface::def::FieldDefinition;
                 use yukino::interface::converter::DataConverter;
+                use yukino::resolver::field_resolve_cells::numeric::*;
+                use lazy_static::lazy_static;
 
                 #(#markers)*
             }

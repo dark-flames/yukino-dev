@@ -3,14 +3,11 @@ use crate::interface::FieldView;
 use crate::query::computation::Computation;
 use crate::query::optimizer::{QueryOptimizer, SelectAppendOptimizer};
 use crate::view::View;
-use iroha::ToTokens;
 
 macro_rules! implement_view_of {
     ($ty: ty, $name: ident, $converter: ty) => {
-        #[derive(ToTokens)]
-        #[Iroha(mod_path = "yukino::view::numeric")]
         pub struct $name {
-            converter: Box<dyn DataConverter<FieldType = $ty>>,
+            converter: &'static dyn DataConverter<FieldType = $ty>,
         }
 
         impl View for $name {
@@ -30,6 +27,13 @@ macro_rules! implement_view_of {
 
         impl FieldView for $name {
             type Type = $ty;
+
+            fn create(converter: &'static dyn DataConverter<FieldType = Self::Type>) -> Self
+            where
+                Self: Sized,
+            {
+                $name { converter }
+            }
         }
     };
 }
