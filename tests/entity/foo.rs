@@ -10,4 +10,6 @@ pub struct Numeric {
     long: i64,
     float: f32,
     double: f64,
+    string: String,
+    character: char
 }

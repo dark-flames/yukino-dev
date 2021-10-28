@@ -46,3 +46,5 @@ implement_view_of!(i64, LongFieldView, LongDataConverter);
 implement_view_of!(u64, UnsignedLongFieldView, UnsignedLongDataConverter);
 implement_view_of!(f32, FloatFieldView, FloatDataConverter);
 implement_view_of!(f64, DoubleFieldView, DoubleDataConverter);
+implement_view_of!(String, StringFieldView, StringDataConverter);
+implement_view_of!(char, CharFieldView, CharDataConverter);

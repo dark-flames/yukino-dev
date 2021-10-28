@@ -1,11 +1,9 @@
-use std::any::type_name;
-
 use heck::SnakeCase;
 use iroha::ToTokens;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::spanned::Spanned;
-use syn::{Field as SynField, Type};
+use syn::{parse_str, Field as SynField, Type};
 
 use crate::db::ty::{DatabaseType, DatabaseValue, ValuePack};
 use crate::err::DataConvertError;
@@ -43,6 +41,8 @@ pub enum NumericType {
     UnsignedLong,
     Float,
     Double,
+    String,
+    Char,
 }
 
 impl FieldResolverSeed for NumericFieldResolverSeed {
@@ -153,14 +153,16 @@ impl FieldResolverCell for NumericFieldResolverCell {
 impl ToString for NumericType {
     fn to_string(&self) -> String {
         match self {
-            NumericType::Short => type_name::<i16>(),
-            NumericType::UnsignedShort => type_name::<u16>(),
-            NumericType::Int => type_name::<i32>(),
-            NumericType::UnsignedInt => type_name::<u32>(),
-            NumericType::Long => type_name::<i64>(),
-            NumericType::UnsignedLong => type_name::<u64>(),
-            NumericType::Float => type_name::<f32>(),
-            NumericType::Double => type_name::<f64>(),
+            NumericType::Short => "i16",
+            NumericType::UnsignedShort => "u16",
+            NumericType::Int => "i32",
+            NumericType::UnsignedInt => "u32",
+            NumericType::Long => "i64",
+            NumericType::UnsignedLong => "u64",
+            NumericType::Float => "f32",
+            NumericType::Double => "f64",
+            NumericType::String => "String",
+            NumericType::Char => "char",
         }
         .to_string()
     }
@@ -168,7 +170,7 @@ impl ToString for NumericType {
 
 impl NumericType {
     pub fn from_ty(ty: &Type, resolver: &FileTypePathResolver) -> Option<(Self, bool)> {
-        let branch: [(NumericType, Box<dyn Fn() -> TypeMatchResult>); 8] = [
+        let branch: [(NumericType, Box<dyn Fn() -> TypeMatchResult>); 10] = [
             (
                 NumericType::Short,
                 Box::new(|| resolver.match_ty::<i16>(ty)),
@@ -194,6 +196,17 @@ impl NumericType {
             (
                 NumericType::Double,
                 Box::new(|| resolver.match_ty::<f64>(ty)),
+            ),
+            (
+                NumericType::String,
+                Box::new(|| {
+                    let str = parse_str("String").unwrap();
+                    resolver.match_ty_by_param(ty, &str)
+                }),
+            ),
+            (
+                NumericType::Char,
+                Box::new(|| resolver.match_ty::<char>(ty)),
             ),
         ];
         branch
@@ -221,6 +234,8 @@ impl NumericType {
             }
             NumericType::Float => FloatDataConverter { column_name }.to_token_stream(),
             NumericType::Double => DoubleDataConverter { column_name }.to_token_stream(),
+            NumericType::String => StringDataConverter { column_name }.to_token_stream(),
+            NumericType::Char => CharDataConverter { column_name }.to_token_stream(),
         }
     }
 
@@ -234,6 +249,8 @@ impl NumericType {
             NumericType::UnsignedLong => quote! { UnsignedLongDataConverter },
             NumericType::Float => quote! { FloatDataConverter },
             NumericType::Double => quote! { DoubleDataConverter },
+            NumericType::String => quote! { StringDataConverter },
+            NumericType::Char => quote! { CharDataConverter },
         }
     }
 
@@ -247,6 +264,8 @@ impl NumericType {
             NumericType::UnsignedLong => quote! { UnsignedLongFieldView },
             NumericType::Float => quote! { FloatFieldView },
             NumericType::Double => quote! { DoubleFieldView },
+            NumericType::String => quote! { StringFieldView },
+            NumericType::Char => quote! { CharFieldView },
         }
     }
 }
@@ -262,6 +281,8 @@ impl From<&NumericType> for DatabaseType {
             NumericType::UnsignedLong => DatabaseType::UnsignedBigInteger,
             NumericType::Float => DatabaseType::Float,
             NumericType::Double => DatabaseType::Double,
+            NumericType::String => DatabaseType::String,
+            NumericType::Char => DatabaseType::Character,
         }
     }
 }
@@ -322,3 +343,5 @@ converter_of!(i64, LongDataConverter, BigInteger);
 converter_of!(u64, UnsignedLongDataConverter, UnsignedBigInteger);
 converter_of!(f32, FloatDataConverter, Float);
 converter_of!(f64, DoubleDataConverter, Double);
+converter_of!(String, StringDataConverter, String);
+converter_of!(char, CharDataConverter, Character);

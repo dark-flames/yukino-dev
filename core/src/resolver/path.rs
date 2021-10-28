@@ -227,10 +227,16 @@ impl FileTypePathResolver {
 
     pub fn match_ty<T>(&self, ty: &Type) -> TypeMatchResult {
         let target_ty = parse_str(type_name::<T>()).unwrap();
-        let target_ty_option = parse_str(type_name::<Option<T>>()).unwrap();
-        if self.compare_type_path(ty, &target_ty) {
+        self.match_ty_by_param(ty, &target_ty)
+    }
+
+    pub fn match_ty_by_param(&self, ty: &Type, target: &Type) -> TypeMatchResult {
+        let target_option = parse_quote! {
+            Option<#target>
+        };
+        if self.compare_type_path(ty, target) {
             TypeMatchResult::Match
-        } else if self.compare_type_path(ty, &target_ty_option) {
+        } else if self.compare_type_path(ty, &target_option) {
             TypeMatchResult::InOption
         } else {
             TypeMatchResult::Mismatch

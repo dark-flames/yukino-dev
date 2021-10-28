@@ -49,7 +49,7 @@ impl CommandLineEntry {
                 EntityStructPass::instance(),
                 EntityViewImplementPass::instance(),
                 EntityImplementPass::instance(),
-                FieldMakerPass::instance()
+                FieldMakerPass::instance(),
             ]
             .into_iter(),
         );
