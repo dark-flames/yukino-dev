@@ -38,6 +38,7 @@ impl DefinitionResolver {
     }
 
     pub fn resolve(&mut self) -> CliResult<AchievedSchemaResolver> {
+        let mut impls = vec![];
         for path in self.source.clone() {
             let mut file = File::open(&path)
                 .map_err(|e| ResolveError::FsError(e.to_string()).as_cli_err(None))?;
@@ -59,6 +60,8 @@ impl DefinitionResolver {
                     _ => None,
                 })
                 .try_for_each(|item| type_resolver.append_use_item(item))?;
+
+            impls.extend(type_resolver.export_dependency());
 
             syntax
                 .items
@@ -88,9 +91,11 @@ impl DefinitionResolver {
                 })?;
         }
 
+        impls.extend(self.entity_resolver.get_implements());
+
         Ok(AchievedSchemaResolver {
-            statements: self.entity_resolver.get_implements(),
-            definitions: vec![],
+            statements: impls,
+            definitions: self.entity_resolver.get_definitions(),
         })
     }
 

@@ -1,17 +1,19 @@
 use crate::err::{CliError, ResolveError, YukinoError};
-use proc_macro2::Ident;
+use proc_macro2::{Ident, TokenStream};
+use quote::quote;
 use quote::ToTokens;
 use std::any::type_name;
 use std::collections::HashMap;
 use syn::spanned::Spanned;
 use syn::{
-    parse_quote, parse_str, File, GenericArgument, Item, ItemUse, PathArguments, PathSegment,
-    ReturnType, Type, TypePath, UseTree,
+    parse_quote, parse_str, GenericArgument, ItemUse, PathArguments, PathSegment, ReturnType, Type,
+    TypePath, UseTree,
 };
 
 pub type Entry = String;
 pub type FullPath = Vec<Ident>;
 
+#[derive(Default)]
 pub struct FileTypePathResolver {
     map: HashMap<Entry, FullPath>,
 }
@@ -21,34 +23,6 @@ pub enum TypeMatchResult {
     Mismatch,
     InOption,
     Match,
-}
-
-impl Default for FileTypePathResolver {
-    fn default() -> Self {
-        let mut result = FileTypePathResolver {
-            map: Default::default(),
-        };
-
-        let item_use: File = parse_quote! {
-            use core::option::Option;
-        };
-
-        item_use
-            .items
-            .iter()
-            .map(|i| {
-                if let Item::Use(item) = i {
-                    item
-                } else {
-                    unreachable!()
-                }
-            })
-            .for_each(|i| {
-                result.append_use_item(i).unwrap();
-            });
-
-        result
-    }
 }
 
 impl FileTypePathResolver {
@@ -170,6 +144,18 @@ impl FileTypePathResolver {
         }
     }
 
+    pub fn export_dependency(&self) -> Vec<TokenStream> {
+        self.map
+            .values()
+            .map(|path| {
+                let use_path = path.iter().rev();
+                quote! {
+                    use #(#use_path)::*;
+                }
+            })
+            .collect()
+    }
+
     pub fn compare_type_path(&self, l: &Type, r: &Type) -> bool {
         match (l, r) {
             (Type::Path(l_path), Type::Path(r_path)) => self
@@ -249,10 +235,10 @@ fn test_type_comparison() {
     let resolver: FileTypePathResolver = Default::default();
     let input1 = parse_str(type_name::<u32>()).unwrap();
     assert_eq!(resolver.match_ty::<u32>(&input1), TypeMatchResult::Match);
-    let input2 = parse_str(type_name::<Option<u32>>()).unwrap();
+    let input2 = parse_str("Option<u32>").unwrap();
     assert_eq!(resolver.match_ty::<u32>(&input2), TypeMatchResult::InOption);
     let input3 = parse_str(type_name::<u64>()).unwrap();
     assert_eq!(resolver.match_ty::<u32>(&input3), TypeMatchResult::Mismatch);
-    let input4 = parse_str(type_name::<Option<u64>>()).unwrap();
+    let input4 = parse_str("Option<u64>").unwrap();
     assert_eq!(resolver.match_ty::<u32>(&input4), TypeMatchResult::Mismatch);
 }
