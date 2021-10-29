@@ -7,7 +7,7 @@ use crate::view::View;
 macro_rules! implement_view_of {
     ($ty: ty, $name: ident, $converter: ty) => {
         pub struct $name {
-            converter: &'static dyn DataConverter<FieldType = $ty>,
+            converter: &'static dyn DataConverter<Output = $ty>,
         }
 
         impl View for $name {
@@ -26,13 +26,17 @@ macro_rules! implement_view_of {
         }
 
         impl FieldView for $name {
-            type Type = $ty;
+            type ConverterType = $ty;
 
-            fn create(converter: &'static dyn DataConverter<FieldType = Self::Type>) -> Self
+            fn create(converter: &'static dyn DataConverter<Output = Self::ConverterType>) -> Self
             where
                 Self: Sized,
             {
                 $name { converter }
+            }
+
+            fn get_converter(&self) -> &'static dyn DataConverter<Output = Self::ConverterType> {
+                self.converter
             }
         }
     };
@@ -48,3 +52,36 @@ implement_view_of!(f32, FloatFieldView, FloatDataConverter);
 implement_view_of!(f64, DoubleFieldView, DoubleDataConverter);
 implement_view_of!(String, StringFieldView, StringDataConverter);
 implement_view_of!(char, CharFieldView, CharDataConverter);
+
+pub struct OptionalFieldWrapper<V: FieldView> {
+    view: V,
+}
+
+impl<V: FieldView> View for OptionalFieldWrapper<V> {
+    type Output = Option<V::ConverterType>;
+
+    fn computation<'f>(&self) -> Computation<'f, Self::Output> {
+        Computation::create(self.view.get_converter().nullable_field_value_converter())
+    }
+
+    fn optimizer(&self) -> Box<dyn QueryOptimizer> {
+        self.view.optimizer()
+    }
+}
+
+impl<V: FieldView> FieldView for OptionalFieldWrapper<V> {
+    type ConverterType = V::ConverterType;
+
+    fn create(converter: &'static dyn DataConverter<Output=Self::ConverterType>) -> Self
+        where
+            Self: Sized,
+    {
+        OptionalFieldWrapper {
+            view: V::create(converter),
+        }
+    }
+
+    fn get_converter(&self) -> &'static dyn DataConverter<Output=Self::ConverterType> {
+        self.view.get_converter()
+    }
+}

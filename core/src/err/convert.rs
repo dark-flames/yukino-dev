@@ -8,6 +8,8 @@ pub enum DataConvertError {
     ColumnDataNotFound(String),
     #[error("UnexpectedValueType: Unexpected data type of column `{0}`")]
     UnexpectedValueType(String),
+    #[error("GotNullOnNotNullField: Got Null on not null field by columns `{0}`")]
+    GotNullOnNotNullField(String),
 }
 
 impl YukinoError for DataConvertError {}

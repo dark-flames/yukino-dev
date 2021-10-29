@@ -14,16 +14,17 @@ macro_rules! converter_of {
         }
 
         impl DataConverter for $name {
-            type FieldType = $field_type;
-            fn field_value_converter(
+            type Output = $field_type;
+            fn nullable_field_value_converter(
                 &self,
-            ) -> Box<dyn Fn(&ValuePack) -> RuntimeResult<Self::FieldType>> {
+            ) -> Box<dyn Fn(&ValuePack) -> RuntimeResult<Option<Self::Output>>> {
                 let column_name = self.column_name.clone();
                 Box::new(move |values| {
                     values
                         .get(column_name.as_str())
                         .map(|data| match data {
-                            DatabaseValue::$enum_variant(data) => Ok(data.clone()),
+                            DatabaseValue::$enum_variant(data) => Ok(Some(data.clone())),
+                            DatabaseValue::Null(DatabaseType::$enum_variant) => Ok(None),
                             _ => Err(DataConvertError::UnexpectedValueType(column_name.clone())
                                 .as_runtime_err()),
                         })
@@ -34,17 +35,7 @@ macro_rules! converter_of {
                 })
             }
 
-            fn is_null(&self, values: &ValuePack) -> bool {
-                values
-                    .get(self.column_name.as_str())
-                    .map(|data| matches!(data, DatabaseValue::Null(DatabaseType::$enum_variant)))
-                    .unwrap_or(false)
-            }
-
-            fn to_database_values_by_ref(
-                &self,
-                value: &Self::FieldType,
-            ) -> RuntimeResult<ValuePack> {
+            fn to_database_values_by_ref(&self, value: &Self::Output) -> RuntimeResult<ValuePack> {
                 Ok([(
                     self.column_name.clone(),
                     DatabaseValue::$enum_variant(value.clone()),

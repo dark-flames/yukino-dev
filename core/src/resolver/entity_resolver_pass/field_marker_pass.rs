@@ -3,7 +3,6 @@ use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
 use heck::SnakeCase;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use syn::{parse_str, Type};
 
 pub struct FieldMakerPass();
 
@@ -30,7 +29,7 @@ impl EntityResolvePass for FieldMakerPass {
                 let marker_name = format_ident!("{}", field.path.field_name.to_snake_case());
                 let converter = &field.converter;
                 let field_name = &field.path.field_name;
-                let ty: Type = parse_str(field.definition.ty.as_str()).unwrap();
+                let ty = &field.value_type;
                 let definition = &field.definition;
                 let converter_static_name =
                     format_ident!("{}_CONVERTER", field.path.field_name.to_uppercase());
@@ -47,13 +46,13 @@ impl EntityResolvePass for FieldMakerPass {
 
 
                     impl FieldMarker for #marker_name {
-                        type Type = #ty;
+                        type ValueType = #ty;
 
                         fn field_name() -> &'static str {
                             #field_name
                         }
 
-                        fn data_converter() -> &'static dyn DataConverter<FieldType = Self::Type> {
+                        fn data_converter() -> &'static dyn DataConverter<Output = Self::ValueType> {
                             &*#converter_static_name
                         }
 

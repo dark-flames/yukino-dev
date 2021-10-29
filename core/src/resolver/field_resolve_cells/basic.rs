@@ -112,7 +112,7 @@ impl FieldResolverCell for BasicFieldResolverCell {
             path: field_path.clone(),
             definition: FieldDefinition {
                 name: field_path.field_name.clone(),
-                ty: self.ty.to_string(),
+                ty: self.ty.field_ty(self.optional).to_string(),
                 auto_increase: self.auto_increase,
                 definition_ty: DefinitionType::Normal,
                 columns: [(
@@ -141,28 +141,11 @@ impl FieldResolverCell for BasicFieldResolverCell {
             },
             converter: self.ty.converter(self.column.clone()),
             converter_type: self.ty.converter_ty(),
-            view_type: self.ty.view_ty(),
+            value_type: self.ty.field_ty(false),
+            view_type: self.ty.view_ty(self.optional),
             primary: self.primary,
             entities: vec![],
         })))
-    }
-}
-
-impl ToString for FieldType {
-    fn to_string(&self) -> String {
-        match self {
-            FieldType::Short => "i16",
-            FieldType::UnsignedShort => "u16",
-            FieldType::Int => "i32",
-            FieldType::UnsignedInt => "u32",
-            FieldType::Long => "i64",
-            FieldType::UnsignedLong => "u64",
-            FieldType::Float => "f32",
-            FieldType::Double => "f64",
-            FieldType::String => "String",
-            FieldType::Char => "char",
-        }
-        .to_string()
     }
 }
 
@@ -244,8 +227,8 @@ impl FieldType {
         }
     }
 
-    pub fn view_ty(&self) -> TokenStream {
-        match self {
+    pub fn view_ty(&self, optional: bool) -> TokenStream {
+        let inside = match self {
             FieldType::Short => quote! { ShortFieldView },
             FieldType::UnsignedShort => quote! { UnsignedShortFieldView },
             FieldType::Int => quote! { IntFieldView },
@@ -256,6 +239,36 @@ impl FieldType {
             FieldType::Double => quote! { DoubleFieldView },
             FieldType::String => quote! { StringFieldView },
             FieldType::Char => quote! { CharFieldView },
+        };
+
+        if optional {
+            quote! {OptionalFieldWrapper::<#inside>}
+        } else {
+            inside
+        }
+    }
+
+    pub fn field_ty(&self, optional: bool) -> TokenStream {
+        let inside: TokenStream = parse_str(match self {
+            FieldType::Short => "i16",
+            FieldType::UnsignedShort => "u16",
+            FieldType::Int => "i32",
+            FieldType::UnsignedInt => "u32",
+            FieldType::Long => "i64",
+            FieldType::UnsignedLong => "u64",
+            FieldType::Float => "f32",
+            FieldType::Double => "f64",
+            FieldType::String => "String",
+            FieldType::Char => "char",
+        })
+            .unwrap();
+
+        if optional {
+            quote! {
+                Option<#inside>
+            }
+        } else {
+            inside
         }
     }
 }

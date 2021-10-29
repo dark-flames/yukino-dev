@@ -11,5 +11,6 @@ pub struct Numeric {
     float: f32,
     double: f64,
     string: String,
-    character: char
+    character: char,
+    optional: Option<u32>
 }

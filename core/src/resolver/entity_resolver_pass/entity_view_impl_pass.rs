@@ -26,59 +26,63 @@ impl EntityResolvePass for EntityViewImplementPass {
     }
 
     fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream> {
-        let name = format_ident!("{}View", entity.name);
+        let view_name = format_ident!("{}View", entity.name);
         let entity_name = format_ident!("{}", entity.name);
         let marker_mod = format_ident!("{}", entity.name.to_snake_case());
-        let (fields, construct_fields, computations): (Vec<_>, Vec<_>, Vec<_>) = entity
+        let (fields, computation_tmp, computations): (Vec<_>, Vec<_>, Vec<_>) = entity
             .fields
             .values()
             .filter(|f| f.definition.definition_ty != DefinitionType::Generated)
             .map(|f| {
                 let name = format_ident!("{}", f.path.field_name);
+                let tmp_name = format_ident!("{}_computation", f.path.field_name);
                 let ty = &f.view_type;
+                (
+                    quote! {
+                        pub #name: #ty
+                    },
+                    quote! {
+                        let #tmp_name = self.#name.computation()
+                    },
+                    quote! {
+                        #name: #tmp_name.eval(v)?
+                    },
+                )
+            })
+            .unzip3();
+
+        let (append_optimizer, construct_fields): (Vec<_>, Vec<_>) = entity
+            .fields
+            .values()
+            .filter(|f| f.definition.definition_ty != DefinitionType::Generated)
+            .map(|f| {
+                let name = format_ident!("{}", f.path.field_name);
                 let marker_name = format_ident!("{}", f.path.field_name.to_snake_case());
                 let view_ty = &f.view_type;
                 (
                     quote! {
-                        pub #name: #ty
+                        .append::<#marker_mod::#marker_name>()
                     },
                     quote! {
                         #name: #view_ty::create(
                             #marker_mod::#marker_name::data_converter()
                         )
                     },
-                    quote! {
-                        #name: {
-                            (*#marker_mod::#marker_name::data_converter().field_value_converter())(v)?
-                        }
-                    }
                 )
             })
-            .unzip3();
-
-        let append_optimizer: Vec<_> = entity
-            .fields
-            .values()
-            .filter(|f| f.definition.definition_ty != DefinitionType::Generated)
-            .map(|f| {
-                let marker_name = format_ident!("{}", f.path.field_name.to_snake_case());
-
-                quote! {
-                    .append::<#marker_mod::#marker_name>()
-                }
-            })
-            .collect();
+            .unzip();
 
         vec![quote! {
-            pub struct #name {
+            pub struct #view_name {
                 #(#fields),*
             }
 
-            impl View for #name {
+            impl View for #view_name {
                 type Output = #entity_name;
                 fn computation<'f>(&self) -> Computation<'f, Self::Output> {
+                    #(#computation_tmp;)*
                     Computation::create(Box::new(
-                        |v| {
+                        move |v| {
                             Ok(#entity_name {
                                 #(#computations),*
                             })
@@ -95,10 +99,10 @@ impl EntityResolvePass for EntityViewImplementPass {
                 }
             }
 
-            impl EntityView for #name {
+            impl EntityView for #view_name {
                 type Entity = #entity_name;
                 fn pure() -> Self where Self: Sized {
-                    #name {
+                    #view_name {
                         #(#construct_fields),*
                     }
                 }

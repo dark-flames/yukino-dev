@@ -1,18 +1,13 @@
 use crate::interface::converter::DataConverter;
 use crate::interface::def::FieldDefinition;
 use crate::view::View;
-use std::any::type_name;
 
 pub trait FieldMarker {
-    type Type;
+    type ValueType;
 
     fn field_name() -> &'static str;
 
-    fn type_name() -> String {
-        type_name::<Self::Type>().to_string()
-    }
-
-    fn data_converter() -> &'static dyn DataConverter<FieldType = Self::Type>;
+    fn data_converter() -> &'static dyn DataConverter<Output=Self::ValueType>;
 
     fn definition() -> &'static FieldDefinition;
 }
@@ -28,10 +23,12 @@ pub trait EntityView: View<Output = Self::Entity> {
         Self: Sized;
 }
 
-pub trait FieldView: View<Output = Self::Type> {
-    type Type;
+pub trait FieldView: View {
+    type ConverterType: 'static + Clone;
 
-    fn create(converter: &'static dyn DataConverter<FieldType = Self::Type>) -> Self
-    where
-        Self: Sized;
+    fn create(converter: &'static dyn DataConverter<Output=Self::ConverterType>) -> Self
+        where
+            Self: Sized;
+
+    fn get_converter(&self) -> &'static dyn DataConverter<Output=Self::ConverterType>;
 }
