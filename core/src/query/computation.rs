@@ -1,6 +1,7 @@
 use crate::db::ty::ValuePack;
 use crate::err::RuntimeResult;
 use crate::query::optimizer::QueryOptimizer;
+use crate::view::View;
 
 pub struct Computation<'f, V: 'f + Clone> {
     run: Box<dyn 'f + Fn(&ValuePack) -> RuntimeResult<V>>,
@@ -32,5 +33,11 @@ impl<'f, V: 'f + Clone> Computation<'f, V> {
 
     pub fn optimizer(&self) -> Box<dyn QueryOptimizer> {
         unimplemented!()
+    }
+}
+
+impl<'f, V: 'f + Clone> From<&dyn View<Output=V>> for Computation<'f, V> {
+    fn from(view: &dyn View<Output=V>) -> Self {
+        view.computation()
     }
 }

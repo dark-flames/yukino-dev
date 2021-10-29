@@ -26,7 +26,7 @@ pub trait EntityView: View<Output = Self::Entity> {
 pub trait FieldView: View {
     type ConverterType: 'static + Clone;
 
-    fn create(converter: &'static dyn DataConverter<Output=Self::ConverterType>) -> Self
+    fn create(converter: &'static dyn DataConverter<Output=Self::ConverterType>) -> Box<Self>
         where
             Self: Sized;
 

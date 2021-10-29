@@ -1,9 +1,11 @@
 use crate::interface::FieldMarker;
 use crate::query::queries::Query;
 
-// todo: alias
-#[derive(Default)]
+pub type OptimizerBox = Box<dyn QueryOptimizer>;
+
 pub struct SelectAppendOptimizer(Vec<String>);
+
+pub struct OptimizerCombinator(OptimizerBox, OptimizerBox);
 
 pub trait QueryOptimizer {
     fn optimize(&self, query: &mut Query);
@@ -15,7 +17,24 @@ impl QueryOptimizer for SelectAppendOptimizer {
     }
 }
 
+impl QueryOptimizer for OptimizerCombinator {
+    fn optimize(&self, query: &mut Query) {
+        self.0.optimize(query);
+        self.1.optimize(query)
+    }
+}
+
+impl OptimizerCombinator {
+    pub fn create(first: OptimizerBox, second: OptimizerBox) -> Box<Self> {
+        Box::new(OptimizerCombinator(first, second))
+    }
+}
+
 impl SelectAppendOptimizer {
+    pub fn create() -> Box<Self> {
+        Box::new(SelectAppendOptimizer(vec![]))
+    }
+
     pub fn append<F: FieldMarker>(&mut self) -> &mut Self {
         self.0.extend(F::definition().columns.keys().cloned());
         self

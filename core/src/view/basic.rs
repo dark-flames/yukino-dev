@@ -18,21 +18,23 @@ macro_rules! implement_view_of {
             }
 
             fn optimizer(&self) -> Box<dyn QueryOptimizer> {
-                let mut optimizer: SelectAppendOptimizer = Default::default();
+                let mut optimizer = SelectAppendOptimizer::create();
                 optimizer.append_by_columns(self.converter.get_columns());
 
-                Box::new(optimizer)
+                optimizer
             }
         }
 
         impl FieldView for $name {
             type ConverterType = $ty;
 
-            fn create(converter: &'static dyn DataConverter<Output = Self::ConverterType>) -> Self
+            fn create(
+                converter: &'static dyn DataConverter<Output = Self::ConverterType>,
+            ) -> Box<Self>
             where
                 Self: Sized,
             {
-                $name { converter }
+                Box::new($name { converter })
             }
 
             fn get_converter(&self) -> &'static dyn DataConverter<Output = Self::ConverterType> {
@@ -54,7 +56,7 @@ implement_view_of!(String, StringFieldView, StringDataConverter);
 implement_view_of!(char, CharFieldView, CharDataConverter);
 
 pub struct OptionalFieldWrapper<V: FieldView> {
-    view: V,
+    view: Box<V>,
 }
 
 impl<V: FieldView> View for OptionalFieldWrapper<V> {
@@ -72,13 +74,13 @@ impl<V: FieldView> View for OptionalFieldWrapper<V> {
 impl<V: FieldView> FieldView for OptionalFieldWrapper<V> {
     type ConverterType = V::ConverterType;
 
-    fn create(converter: &'static dyn DataConverter<Output=Self::ConverterType>) -> Self
+    fn create(converter: &'static dyn DataConverter<Output=Self::ConverterType>) -> Box<Self>
         where
             Self: Sized,
     {
-        OptionalFieldWrapper {
+        Box::new(OptionalFieldWrapper {
             view: V::create(converter),
-        }
+        })
     }
 
     fn get_converter(&self) -> &'static dyn DataConverter<Output=Self::ConverterType> {

@@ -14,8 +14,9 @@ pub trait DataConverter: ToTokens {
         let columns: String = self.get_columns().join(", ");
 
         Box::new(move |v| {
-            (*converter)(v)?
-                .ok_or_else(|| DataConvertError::GotNullOnNotNullField(columns.clone()).as_runtime_err())
+            (*converter)(v)?.ok_or_else(|| {
+                DataConvertError::GotNullOnNotNullField(columns.clone()).as_runtime_err()
+            })
         })
     }
 

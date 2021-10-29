@@ -20,7 +20,7 @@ impl EntityResolvePass for EntityViewImplementPass {
             use yukino::view::*;
             use yukino::interface::EntityView;
             use yukino::query::computation::Computation;
-            use yukino::query::optimizer::{QueryOptimizer, SelectAppendOptimizer};
+            use yukino::query::optimizer::{SelectAppendOptimizer, OptimizerBox};
             use yukino::interface::{FieldMarker, FieldView};
         }]
     }
@@ -39,7 +39,7 @@ impl EntityResolvePass for EntityViewImplementPass {
                 let ty = &f.view_type;
                 (
                     quote! {
-                        pub #name: #ty
+                        pub #name: Box<#ty>
                     },
                     quote! {
                         let #tmp_name = self.#name.computation()
@@ -81,21 +81,19 @@ impl EntityResolvePass for EntityViewImplementPass {
                 type Output = #entity_name;
                 fn computation<'f>(&self) -> Computation<'f, Self::Output> {
                     #(#computation_tmp;)*
-                    Computation::create(Box::new(
-                        move |v| {
-                            Ok(#entity_name {
-                                #(#computations),*
-                            })
-                        }
-                    ))
+                    Computation::create(Box::new(move |v| {
+                        Ok(#entity_name {
+                            #(#computations),*
+                        })
+                    }))
                 }
 
-                fn optimizer(&self) -> Box<dyn QueryOptimizer> {
-                    let mut optimizer: SelectAppendOptimizer = Default::default();
+                fn optimizer(&self) -> OptimizerBox {
+                    let mut optimizer = SelectAppendOptimizer::create();
                     optimizer
                         #(#append_optimizer)*;
 
-                    Box::new(optimizer)
+                    optimizer
                 }
             }
 
