@@ -1,8 +1,8 @@
-mod numeric;
+mod basic;
 
 use crate::query::computation::Computation;
 use crate::query::optimizer::QueryOptimizer;
-pub use numeric::*;
+pub use basic::*;
 
 pub trait View {
     type Output: Clone;

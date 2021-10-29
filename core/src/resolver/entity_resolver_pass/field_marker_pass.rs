@@ -70,7 +70,6 @@ impl EntityResolvePass for FieldMakerPass {
                 use yukino::interface::FieldMarker;
                 use yukino::interface::def::FieldDefinition;
                 use yukino::interface::converter::DataConverter;
-                use yukino::resolver::field_resolve_cells::numeric::*;
                 use lazy_static::lazy_static;
 
                 #(#markers)*

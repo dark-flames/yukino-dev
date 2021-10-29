@@ -10,7 +10,7 @@ use core::resolver::entity_resolver_pass::{
     EntityImplementPass, EntityStructPass, EntityViewImplementPass, FieldMakerPass,
 };
 use core::resolver::field::{FieldResolverSeed, FieldResolverSeedBox};
-use core::resolver::field_resolve_cells::numeric::NumericFieldResolverSeed;
+use core::resolver::field_resolve_cells::basic::BasicFieldResolverSeed;
 use core::resolver::DefinitionResolver;
 
 pub struct CommandLineEntry {
@@ -54,7 +54,7 @@ impl CommandLineEntry {
             .into_iter(),
         );
 
-        field_resolve_seeds.extend([NumericFieldResolverSeed::instance()].into_iter());
+        field_resolve_seeds.extend([BasicFieldResolverSeed::instance()].into_iter());
 
         Ok(CommandLineEntry {
             resolver: DefinitionResolver::create(
