@@ -1,10 +1,9 @@
 use heck::SnakeCase;
-use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
+use proc_macro2::{Ident, TokenStream};
+use quote::{format_ident, quote};
 use syn::spanned::Spanned;
 use syn::{parse_str, Field as SynField, Type};
 
-use crate::converter::basic::*;
 use crate::db::ty::DatabaseType;
 use crate::err::CliResult;
 use crate::err::{ResolveError, YukinoError};
@@ -106,8 +105,10 @@ impl FieldResolverCell for BasicFieldResolverCell {
     fn resolve(
         &self,
         _type_resolver: &FileTypePathResolver,
+        entity_name: &str,
         field_path: FieldPath,
     ) -> CliResult<FieldResolveResult> {
+        let marker_name = format_ident!("{}", field_path.field_name.to_snake_case());
         Ok(FieldResolveResult::Finished(Box::new(ResolvedField {
             path: field_path.clone(),
             definition: FieldDefinition {
@@ -139,10 +140,12 @@ impl FieldResolverCell for BasicFieldResolverCell {
                     vec![]
                 },
             },
-            converter: self.ty.converter(self.column.clone()),
-            converter_type: self.ty.converter_ty(),
-            value_type: self.ty.field_ty(false),
-            view_type: self.ty.view_ty(self.optional),
+            converter: self.ty.converter(self.optional),
+            converter_type: self.ty.converter_ty(self.optional),
+            value_type: self.ty.field_ty(self.optional),
+            node_type: self.ty.node_ty(self.optional),
+            node: self.ty.node(entity_name, &marker_name, &self.column),
+            marker_name,
             primary: self.primary,
             entities: vec![],
         })))
@@ -189,37 +192,27 @@ impl FieldType {
             .flatten()
     }
 
-    pub fn converter(&self, column_name: String) -> TokenStream {
-        match self {
-            FieldType::Short => ShortDataConverter::new(column_name).to_token_stream(),
-            FieldType::UnsignedShort => {
-                UnsignedShortDataConverter::new(column_name).to_token_stream()
-            }
-            FieldType::Int => IntDataConverter::new(column_name).to_token_stream(),
-            FieldType::UnsignedInt => UnsignedIntDataConverter::new(column_name).to_token_stream(),
-            FieldType::Long => LongDataConverter::new(column_name).to_token_stream(),
-            FieldType::UnsignedLong => {
-                UnsignedLongDataConverter::new(column_name).to_token_stream()
-            }
-            FieldType::Float => FloatDataConverter::new(column_name).to_token_stream(),
-            FieldType::Double => DoubleDataConverter::new(column_name).to_token_stream(),
-            FieldType::String => StringDataConverter::new(column_name).to_token_stream(),
-            FieldType::Char => CharDataConverter::new(column_name).to_token_stream(),
+    pub fn converter(&self, optional: bool) -> TokenStream {
+        let ty = self.converter_ty(optional);
+
+        quote! {
+            #ty()
         }
     }
 
-    pub fn converter_ty(&self) -> TokenStream {
+    pub fn converter_ty(&self, optional: bool) -> TokenStream {
+        let prefix = if optional { "Optional" } else { "" };
         let name = match self {
-            FieldType::Short => quote! { ShortDataConverter },
-            FieldType::UnsignedShort => quote! { UnsignedShortDataConverter },
-            FieldType::Int => quote! { IntDataConverter },
-            FieldType::UnsignedInt => quote! { UnsignedIntDataConverter },
-            FieldType::Long => quote! { LongDataConverter},
-            FieldType::UnsignedLong => quote! { UnsignedLongDataConverter },
-            FieldType::Float => quote! { FloatDataConverter },
-            FieldType::Double => quote! { DoubleDataConverter },
-            FieldType::String => quote! { StringDataConverter },
-            FieldType::Char => quote! { CharDataConverter },
+            FieldType::Short => format_ident!("{}ShortConverter", prefix),
+            FieldType::UnsignedShort => format_ident!("{}UnsignedShortConverter", prefix),
+            FieldType::Int => format_ident!("{}IntConverter", prefix),
+            FieldType::UnsignedInt => format_ident!("{}UnsignedIntConverter", prefix),
+            FieldType::Long => format_ident!("{}LongConverter", prefix),
+            FieldType::UnsignedLong => format_ident!("{}UnsignedLongConverter", prefix),
+            FieldType::Float => format_ident!("{}FloatConverter", prefix),
+            FieldType::Double => format_ident!("{}DoubleConverter", prefix),
+            FieldType::String => format_ident!("{}StringConverter", prefix),
+            FieldType::Char => format_ident!("{}CharConverter", prefix),
         };
 
         quote! {
@@ -227,24 +220,22 @@ impl FieldType {
         }
     }
 
-    pub fn view_ty(&self, optional: bool) -> TokenStream {
-        let inside = match self {
-            FieldType::Short => quote! { ShortFieldView },
-            FieldType::UnsignedShort => quote! { UnsignedShortFieldView },
-            FieldType::Int => quote! { IntFieldView },
-            FieldType::UnsignedInt => quote! { UnsignedIntFieldView },
-            FieldType::Long => quote! { LongFieldView },
-            FieldType::UnsignedLong => quote! { UnsignedLongFieldView },
-            FieldType::Float => quote! { FloatFieldView },
-            FieldType::Double => quote! { DoubleFieldView },
-            FieldType::String => quote! { StringFieldView },
-            FieldType::Char => quote! { CharFieldView },
-        };
+    pub fn node_ty(&self, optional: bool) -> TokenStream {
+        let field_ty = self.field_ty(optional);
 
-        if optional {
-            quote! {OptionalFieldWrapper::<#inside>}
-        } else {
-            inside
+        quote! {
+            Expr<#field_ty>
+        }
+    }
+
+    pub fn node(&self, entity_name: &str, marker: &Ident, column: &str) -> TokenStream {
+        let marker_mod = format_ident!("{}", entity_name.to_snake_case());
+
+        quote! {
+            Expr::QueryResult(QueryResultNode {
+                converter: #marker_mod::#marker::converter(),
+                aliases: vec![#column.to_string()]
+            })
         }
     }
 

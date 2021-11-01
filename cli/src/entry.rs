@@ -7,7 +7,7 @@ use std::process::Command;
 use core::err::{CliError, CliResult, ResolveError, YukinoError};
 use core::resolver::entity::EntityResolvePass;
 use core::resolver::entity_resolver_pass::{
-    EntityImplementPass, EntityStructPass, EntityViewImplementPass, FieldMakerPass,
+    EntityImplementPass, EntityStructPass, EntityViewPass, FieldMakerPass,
 };
 use core::resolver::field::{FieldResolverSeed, FieldResolverSeedBox};
 use core::resolver::field_resolve_cells::basic::BasicFieldResolverSeed;
@@ -47,7 +47,7 @@ impl CommandLineEntry {
         entity_passes.extend(
             [
                 EntityStructPass::instance(),
-                EntityViewImplementPass::instance(),
+                EntityViewPass::instance(),
                 EntityImplementPass::instance(),
                 FieldMakerPass::instance(),
             ]

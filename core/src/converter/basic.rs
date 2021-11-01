@@ -1,63 +1,97 @@
-use crate::db::ty::{DatabaseType, DatabaseValue, ValuePack};
-use crate::err::DataConvertError;
+use crate::converter::Converter;
+use crate::db::ty::{DatabaseType, DatabaseValue};
 use crate::err::RuntimeResult;
-use crate::err::YukinoError;
-use crate::interface::converter::DataConverter;
 use iroha::ToTokens;
 
-macro_rules! converter_of {
+macro_rules! basic_ty_converter {
     ($field_type:ty, $name:ident, $enum_variant:ident) => {
         #[derive(ToTokens, Clone)]
         #[Iroha(mod_path = "yukino::converter::basic")]
-        pub struct $name {
-            column_name: String,
-        }
+        pub struct $name();
 
-        impl DataConverter for $name {
+        unsafe impl Sync for $name {}
+
+        impl Converter for $name {
             type Output = $field_type;
-            fn nullable_field_value_converter(
+
+            fn deserializer(
                 &self,
-            ) -> Box<dyn Fn(&ValuePack) -> RuntimeResult<Option<Self::Output>>> {
-                let column_name = self.column_name.clone();
-                Box::new(move |values| {
-                    values
-                        .get(column_name.as_str())
-                        .map(|data| match data {
-                            DatabaseValue::$enum_variant(data) => Ok(Some(data.clone())),
-                            DatabaseValue::Null(DatabaseType::$enum_variant) => Ok(None),
-                            _ => Err(DataConvertError::UnexpectedValueType(column_name.clone())
-                                .as_runtime_err()),
+            ) -> Box<dyn Fn(&[&DatabaseValue]) -> RuntimeResult<Self::Output>> {
+                Box::new(|v| {
+                    v.first()
+                        .map(|value| {
+                            if let DatabaseValue::$enum_variant(nested) = value {
+                                Ok(nested.clone())
+                            } else {
+                                panic!("error handle");
+                            }
                         })
-                        .ok_or_else(|| {
-                            DataConvertError::ColumnDataNotFound(column_name.clone())
-                                .as_runtime_err()
-                        })?
+                        .ok_or_else(|| panic!("error handle"))?
                 })
             }
 
-            fn to_database_values_by_ref(&self, value: &Self::Output) -> RuntimeResult<ValuePack> {
-                Ok([(
-                    self.column_name.clone(),
-                    DatabaseValue::$enum_variant(value.clone()),
-                )]
-                .into_iter()
-                .collect())
-            }
-
-            fn get_columns(&self) -> Vec<String> {
-                vec![self.column_name.clone()]
+            fn serialize(&self, value: &Self::Output) -> RuntimeResult<Vec<DatabaseValue>> {
+                Ok(vec![DatabaseValue::$enum_variant(value.clone())])
             }
         }
     };
 }
 
-converter_of!(i16, ShortDataConverter, SmallInteger);
-converter_of!(u16, UnsignedShortDataConverter, UnsignedSmallInteger);
-converter_of!(i32, IntDataConverter, Integer);
-converter_of!(u32, UnsignedIntDataConverter, UnsignedInteger);
-converter_of!(i64, LongDataConverter, BigInteger);
-converter_of!(u64, UnsignedLongDataConverter, UnsignedBigInteger);
-converter_of!(f32, FloatDataConverter, Float);
-converter_of!(f64, DoubleDataConverter, Double);
-converter_of!(String, StringDataConverter, String);
-converter_of!(char, CharDataConverter, Character);
+macro_rules! optional_basic_ty_converter {
+    ($field_type:ty, $name:ident, $enum_variant:ident) => {
+        #[derive(ToTokens, Clone)]
+        #[Iroha(mod_path = "yukino::converter::basic")]
+        pub struct $name();
+
+        unsafe impl Sync for $name {}
+
+        impl Converter for $name {
+            type Output = Option<$field_type>;
+
+            fn deserializer(
+                &self,
+            ) -> Box<dyn Fn(&[&DatabaseValue]) -> RuntimeResult<Self::Output>> {
+                Box::new(|v| {
+                    v.first()
+                        .map(|value| match value {
+                            DatabaseValue::$enum_variant(nested) => Ok(Some(nested.clone())),
+                            DatabaseValue::Null(DatabaseType::$enum_variant) => Ok(None),
+                            _ => {
+                                panic!("error handle")
+                            }
+                        })
+                        .ok_or_else(|| panic!("error handle"))?
+                })
+            }
+
+            fn serialize(&self, value: &Self::Output) -> RuntimeResult<Vec<DatabaseValue>> {
+                if let Some(nested) = value {
+                    Ok(vec![DatabaseValue::$enum_variant(nested.clone())])
+                } else {
+                    Ok(vec![DatabaseValue::Null(DatabaseType::$enum_variant)])
+                }
+            }
+        }
+    };
+}
+
+basic_ty_converter!(i16, ShortConverter, SmallInteger);
+basic_ty_converter!(u16, UnsignedShortConverter, UnsignedSmallInteger);
+basic_ty_converter!(i32, IntConverter, Integer);
+basic_ty_converter!(u32, UnsignedIntConverter, UnsignedInteger);
+basic_ty_converter!(i64, LongConverter, BigInteger);
+basic_ty_converter!(u64, UnsignedLongConverter, UnsignedBigInteger);
+basic_ty_converter!(f32, FloatConverter, Float);
+basic_ty_converter!(f64, DoubleConverter, Double);
+basic_ty_converter!(String, StringConverter, String);
+basic_ty_converter!(char, CharConverter, Character);
+optional_basic_ty_converter!(i16, OptionalShortConverter, SmallInteger);
+optional_basic_ty_converter!(u16, OptionalUnsignedShortConverter, UnsignedSmallInteger);
+optional_basic_ty_converter!(i32, OptionalIntConverter, Integer);
+optional_basic_ty_converter!(u32, OptionalUnsignedIntConverter, UnsignedInteger);
+optional_basic_ty_converter!(i64, OptionalLongConverter, BigInteger);
+optional_basic_ty_converter!(u64, OptionalUnsignedLongConverter, UnsignedBigInteger);
+optional_basic_ty_converter!(f32, OptionalFloatConverter, Float);
+optional_basic_ty_converter!(f64, OptionalDoubleConverter, Double);
+optional_basic_ty_converter!(String, OptionalStringConverter, String);
+optional_basic_ty_converter!(char, OptionalChar, Character);

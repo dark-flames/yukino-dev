@@ -1,14 +1,10 @@
 mod basic;
-
-use crate::query::computation::Computation;
-use crate::query::optimizer::OptimizerBox;
+use crate::expr::Expr;
 pub use basic::*;
 
 pub trait View {
-    type Output: Clone;
-    fn computation<'f>(&self) -> Computation<'f, Self::Output>;
-
-    fn optimizer(&self) -> OptimizerBox;
+    type Output: 'static + Clone;
+    fn expr(&self) -> Expr<Self::Output>;
 }
 
 pub type ViewBox<V> = Box<dyn View<Output = V>>;

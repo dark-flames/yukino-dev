@@ -1,110 +1,158 @@
+use lazy_static::lazy_static;
+use yukino::db::ty::ValuePack;
+use yukino::err::RuntimeResult;
+use yukino::expr::Expr;
+use yukino::expr::{Computation, ComputationNode, Node, QueryResultNode};
 use yukino::interface::Entity;
 use yukino::interface::EntityView;
-use yukino::interface::{FieldMarker, FieldView};
-use yukino::query::computation::Computation;
-use yukino::query::optimizer::{OptimizerBox, SelectAppendOptimizer};
-use yukino::view::*;
+use yukino::interface::FieldMarker;
+use yukino::query::SelectedItem;
+use yukino::view::View;
+
 #[derive(Clone)]
 pub struct Numeric {
-    pub optional: Option<u32>,
-    pub int: i32,
+    pub double: f64,
+    pub float: f32,
     pub long: i64,
     pub string: String,
     pub character: char,
-    pub short: i16,
     pub u_short: u16,
     pub u_int: u32,
-    pub u_long: u64,
-    pub float: f32,
-    pub double: f64,
+    pub optional: Option<u32>,
+    pub short: i16,
     pub id: u32,
+    pub int: i32,
+    pub u_long: u64,
 }
+
+#[derive(Clone)]
 pub struct NumericView {
-    pub optional: Box<OptionalFieldWrapper<UnsignedIntFieldView>>,
-    pub int: Box<IntFieldView>,
-    pub long: Box<LongFieldView>,
-    pub string: Box<StringFieldView>,
-    pub character: Box<CharFieldView>,
-    pub short: Box<ShortFieldView>,
-    pub u_short: Box<UnsignedShortFieldView>,
-    pub u_int: Box<UnsignedIntFieldView>,
-    pub u_long: Box<UnsignedLongFieldView>,
-    pub float: Box<FloatFieldView>,
-    pub double: Box<DoubleFieldView>,
-    pub id: Box<UnsignedIntFieldView>,
+    pub double: Expr<f64>,
+    pub float: Expr<f32>,
+    pub long: Expr<i64>,
+    pub string: Expr<String>,
+    pub character: Expr<char>,
+    pub u_short: Expr<u16>,
+    pub u_int: Expr<u32>,
+    pub optional: Expr<Option<u32>>,
+    pub short: Expr<i16>,
+    pub id: Expr<u32>,
+    pub int: Expr<i32>,
+    pub u_long: Expr<u64>,
+}
+
+unsafe impl Sync for NumericView {}
+
+impl Node for NumericView {
+    fn collect_selected_items(&self) -> Vec<SelectedItem> {
+        let mut result = vec![];
+        result.extend(self.double.collect_selected_items());
+        result.extend(self.float.collect_selected_items());
+        result.extend(self.long.collect_selected_items());
+        result.extend(self.string.collect_selected_items());
+        result.extend(self.character.collect_selected_items());
+        result.extend(self.u_short.collect_selected_items());
+        result.extend(self.u_int.collect_selected_items());
+        result.extend(self.optional.collect_selected_items());
+        result.extend(self.short.collect_selected_items());
+        result.extend(self.id.collect_selected_items());
+        result.extend(self.int.collect_selected_items());
+        result.extend(self.u_long.collect_selected_items());
+        result
+    }
+}
+
+impl Computation for NumericView {
+    type Output = Numeric;
+    fn eval(&self, v: &ValuePack) -> RuntimeResult<Self::Output> {
+        Ok(Numeric {
+            double: self.double.eval(v)?,
+            float: self.float.eval(v)?,
+            long: self.long.eval(v)?,
+            string: self.string.eval(v)?,
+            character: self.character.eval(v)?,
+            u_short: self.u_short.eval(v)?,
+            u_int: self.u_int.eval(v)?,
+            optional: self.optional.eval(v)?,
+            short: self.short.eval(v)?,
+            id: self.id.eval(v)?,
+            int: self.int.eval(v)?,
+            u_long: self.u_long.eval(v)?,
+        })
+    }
+}
+lazy_static! {
+    static ref NUMERIC_VIEW: NumericView = NumericView {
+        double: Expr::QueryResult(QueryResultNode {
+            converter: numeric::double::converter(),
+            aliases: vec!["double".to_string()]
+        }),
+        float: Expr::QueryResult(QueryResultNode {
+            converter: numeric::float::converter(),
+            aliases: vec!["float".to_string()]
+        }),
+        long: Expr::QueryResult(QueryResultNode {
+            converter: numeric::long::converter(),
+            aliases: vec!["long".to_string()]
+        }),
+        string: Expr::QueryResult(QueryResultNode {
+            converter: numeric::string::converter(),
+            aliases: vec!["string".to_string()]
+        }),
+        character: Expr::QueryResult(QueryResultNode {
+            converter: numeric::character::converter(),
+            aliases: vec!["character".to_string()]
+        }),
+        u_short: Expr::QueryResult(QueryResultNode {
+            converter: numeric::u_short::converter(),
+            aliases: vec!["u_short".to_string()]
+        }),
+        u_int: Expr::QueryResult(QueryResultNode {
+            converter: numeric::u_int::converter(),
+            aliases: vec!["u_int".to_string()]
+        }),
+        optional: Expr::QueryResult(QueryResultNode {
+            converter: numeric::optional::converter(),
+            aliases: vec!["optional".to_string()]
+        }),
+        short: Expr::QueryResult(QueryResultNode {
+            converter: numeric::short::converter(),
+            aliases: vec!["short".to_string()]
+        }),
+        id: Expr::QueryResult(QueryResultNode {
+            converter: numeric::id::converter(),
+            aliases: vec!["id".to_string()]
+        }),
+        int: Expr::QueryResult(QueryResultNode {
+            converter: numeric::int::converter(),
+            aliases: vec!["int".to_string()]
+        }),
+        u_long: Expr::QueryResult(QueryResultNode {
+            converter: numeric::u_long::converter(),
+            aliases: vec!["u_long".to_string()]
+        })
+    };
 }
 impl View for NumericView {
     type Output = Numeric;
-    fn computation<'f>(&self) -> Computation<'f, Self::Output> {
-        let optional_computation = self.optional.computation();
-        let int_computation = self.int.computation();
-        let long_computation = self.long.computation();
-        let string_computation = self.string.computation();
-        let character_computation = self.character.computation();
-        let short_computation = self.short.computation();
-        let u_short_computation = self.u_short.computation();
-        let u_int_computation = self.u_int.computation();
-        let u_long_computation = self.u_long.computation();
-        let float_computation = self.float.computation();
-        let double_computation = self.double.computation();
-        let id_computation = self.id.computation();
-        Computation::create(Box::new(move |v| {
-            Ok(Numeric {
-                optional: optional_computation.eval(v)?,
-                int: int_computation.eval(v)?,
-                long: long_computation.eval(v)?,
-                string: string_computation.eval(v)?,
-                character: character_computation.eval(v)?,
-                short: short_computation.eval(v)?,
-                u_short: u_short_computation.eval(v)?,
-                u_int: u_int_computation.eval(v)?,
-                u_long: u_long_computation.eval(v)?,
-                float: float_computation.eval(v)?,
-                double: double_computation.eval(v)?,
-                id: id_computation.eval(v)?,
-            })
-        }))
-    }
-    fn optimizer(&self) -> OptimizerBox {
-        let mut optimizer = SelectAppendOptimizer::create();
-        optimizer
-            .append::<numeric::optional>()
-            .append::<numeric::int>()
-            .append::<numeric::long>()
-            .append::<numeric::string>()
-            .append::<numeric::character>()
-            .append::<numeric::short>()
-            .append::<numeric::u_short>()
-            .append::<numeric::u_int>()
-            .append::<numeric::u_long>()
-            .append::<numeric::float>()
-            .append::<numeric::double>()
-            .append::<numeric::id>();
-        optimizer
+    fn expr(&self) -> Expr<Self::Output> {
+        Expr::Computation(Box::new(NumericView::pure()))
     }
 }
+
+impl ComputationNode for NumericView {
+    fn box_clone(&self) -> Box<dyn ComputationNode<Output=Self::Output>> {
+        Box::new(self.clone())
+    }
+}
+
 impl EntityView for NumericView {
     type Entity = Numeric;
-    fn pure() -> Self
-    where
-        Self: Sized,
+    fn static_ref() -> &'static Self
+        where
+            Self: Sized,
     {
-        NumericView {
-            optional: OptionalFieldWrapper::<UnsignedIntFieldView>::create(
-                numeric::optional::data_converter(),
-            ),
-            int: IntFieldView::create(numeric::int::data_converter()),
-            long: LongFieldView::create(numeric::long::data_converter()),
-            string: StringFieldView::create(numeric::string::data_converter()),
-            character: CharFieldView::create(numeric::character::data_converter()),
-            short: ShortFieldView::create(numeric::short::data_converter()),
-            u_short: UnsignedShortFieldView::create(numeric::u_short::data_converter()),
-            u_int: UnsignedIntFieldView::create(numeric::u_int::data_converter()),
-            u_long: UnsignedLongFieldView::create(numeric::u_long::data_converter()),
-            float: FloatFieldView::create(numeric::float::data_converter()),
-            double: DoubleFieldView::create(numeric::double::data_converter()),
-            id: UnsignedIntFieldView::create(numeric::id::data_converter()),
-        }
+        &*NUMERIC_VIEW
     }
 }
 impl Entity for Numeric {
@@ -112,407 +160,19 @@ impl Entity for Numeric {
 }
 
 pub mod numeric {
+    use super::NumericView;
     use lazy_static::lazy_static;
-    use yukino::interface::converter::DataConverter;
+    use yukino::converter::Converter;
+    use yukino::expr::Expr;
     use yukino::interface::def::FieldDefinition;
+    use yukino::interface::EntityView;
     use yukino::interface::FieldMarker;
 
     #[allow(non_camel_case_types)]
-    pub struct optional();
-    lazy_static! {
-        static ref OPTIONAL_CONVERTER: yukino::converter::basic::UnsignedIntDataConverter =
-            yukino::converter::basic::UnsignedIntDataConverter::new("optional".to_string());
-        static ref OPTIONAL_DEFINITION: FieldDefinition =
-            yukino::interface::def::FieldDefinition::new(
-                "optional".to_string(),
-                "Option < u32 >".to_string(),
-                false,
-                yukino::interface::def::DefinitionType::Normal,
-                vec![(
-                    "optional".to_string(),
-                    yukino::interface::def::ColumnDefinition::new(
-                        "optional".to_string(),
-                        yukino::db::ty::DatabaseType::UnsignedInteger,
-                        true,
-                        false
-                    )
-                )]
-                .into_iter()
-                .collect(),
-                vec!["optional".to_string()],
-                None,
-                vec![]
-            );
-    }
-    impl FieldMarker for optional {
-        type ValueType = u32;
-        fn field_name() -> &'static str {
-            "optional"
-        }
-        fn data_converter() -> &'static dyn DataConverter<Output=Self::ValueType> {
-            &*OPTIONAL_CONVERTER
-        }
-        fn definition() -> &'static FieldDefinition {
-            &*OPTIONAL_DEFINITION
-        }
-    }
-
-    #[allow(non_camel_case_types)]
-    pub struct int();
-    lazy_static! {
-        static ref INT_CONVERTER: yukino::converter::basic::IntDataConverter =
-            yukino::converter::basic::IntDataConverter::new("int".to_string());
-        static ref INT_DEFINITION: FieldDefinition = yukino::interface::def::FieldDefinition::new(
-            "int".to_string(),
-            "i32".to_string(),
-            false,
-            yukino::interface::def::DefinitionType::Normal,
-            vec![(
-                "int".to_string(),
-                yukino::interface::def::ColumnDefinition::new(
-                    "int".to_string(),
-                    yukino::db::ty::DatabaseType::Integer,
-                    false,
-                    false
-                )
-            )]
-            .into_iter()
-            .collect(),
-            vec!["int".to_string()],
-            None,
-            vec![]
-        );
-    }
-    impl FieldMarker for int {
-        type ValueType = i32;
-        fn field_name() -> &'static str {
-            "int"
-        }
-        fn data_converter() -> &'static dyn DataConverter<Output=Self::ValueType> {
-            &*INT_CONVERTER
-        }
-        fn definition() -> &'static FieldDefinition {
-            &*INT_DEFINITION
-        }
-    }
-
-    #[allow(non_camel_case_types)]
-    pub struct long();
-    lazy_static! {
-        static ref LONG_CONVERTER: yukino::converter::basic::LongDataConverter =
-            yukino::converter::basic::LongDataConverter::new("long".to_string());
-        static ref LONG_DEFINITION: FieldDefinition = yukino::interface::def::FieldDefinition::new(
-            "long".to_string(),
-            "i64".to_string(),
-            false,
-            yukino::interface::def::DefinitionType::Normal,
-            vec![(
-                "long".to_string(),
-                yukino::interface::def::ColumnDefinition::new(
-                    "long".to_string(),
-                    yukino::db::ty::DatabaseType::BigInteger,
-                    false,
-                    false
-                )
-            )]
-            .into_iter()
-            .collect(),
-            vec!["long".to_string()],
-            None,
-            vec![]
-        );
-    }
-    impl FieldMarker for long {
-        type ValueType = i64;
-        fn field_name() -> &'static str {
-            "long"
-        }
-        fn data_converter() -> &'static dyn DataConverter<Output=Self::ValueType> {
-            &*LONG_CONVERTER
-        }
-        fn definition() -> &'static FieldDefinition {
-            &*LONG_DEFINITION
-        }
-    }
-
-    #[allow(non_camel_case_types)]
-    pub struct string();
-    lazy_static! {
-        static ref STRING_CONVERTER: yukino::converter::basic::StringDataConverter =
-            yukino::converter::basic::StringDataConverter::new("string".to_string());
-        static ref STRING_DEFINITION: FieldDefinition =
-            yukino::interface::def::FieldDefinition::new(
-                "string".to_string(),
-                "String".to_string(),
-                false,
-                yukino::interface::def::DefinitionType::Normal,
-                vec![(
-                    "string".to_string(),
-                    yukino::interface::def::ColumnDefinition::new(
-                        "string".to_string(),
-                        yukino::db::ty::DatabaseType::String,
-                        false,
-                        false
-                    )
-                )]
-                .into_iter()
-                .collect(),
-                vec!["string".to_string()],
-                None,
-                vec![]
-            );
-    }
-    impl FieldMarker for string {
-        type ValueType = String;
-        fn field_name() -> &'static str {
-            "string"
-        }
-        fn data_converter() -> &'static dyn DataConverter<Output=Self::ValueType> {
-            &*STRING_CONVERTER
-        }
-        fn definition() -> &'static FieldDefinition {
-            &*STRING_DEFINITION
-        }
-    }
-
-    #[allow(non_camel_case_types)]
-    pub struct character();
-    lazy_static! {
-        static ref CHARACTER_CONVERTER: yukino::converter::basic::CharDataConverter =
-            yukino::converter::basic::CharDataConverter::new("character".to_string());
-        static ref CHARACTER_DEFINITION: FieldDefinition =
-            yukino::interface::def::FieldDefinition::new(
-                "character".to_string(),
-                "char".to_string(),
-                false,
-                yukino::interface::def::DefinitionType::Normal,
-                vec![(
-                    "character".to_string(),
-                    yukino::interface::def::ColumnDefinition::new(
-                        "character".to_string(),
-                        yukino::db::ty::DatabaseType::Character,
-                        false,
-                        false
-                    )
-                )]
-                .into_iter()
-                .collect(),
-                vec!["character".to_string()],
-                None,
-                vec![]
-            );
-    }
-    impl FieldMarker for character {
-        type ValueType = char;
-        fn field_name() -> &'static str {
-            "character"
-        }
-        fn data_converter() -> &'static dyn DataConverter<Output=Self::ValueType> {
-            &*CHARACTER_CONVERTER
-        }
-        fn definition() -> &'static FieldDefinition {
-            &*CHARACTER_DEFINITION
-        }
-    }
-
-    #[allow(non_camel_case_types)]
-    pub struct short();
-    lazy_static! {
-        static ref SHORT_CONVERTER: yukino::converter::basic::ShortDataConverter =
-            yukino::converter::basic::ShortDataConverter::new("short".to_string());
-        static ref SHORT_DEFINITION: FieldDefinition = yukino::interface::def::FieldDefinition::new(
-            "short".to_string(),
-            "i16".to_string(),
-            false,
-            yukino::interface::def::DefinitionType::Normal,
-            vec![(
-                "short".to_string(),
-                yukino::interface::def::ColumnDefinition::new(
-                    "short".to_string(),
-                    yukino::db::ty::DatabaseType::SmallInteger,
-                    false,
-                    false
-                )
-            )]
-            .into_iter()
-            .collect(),
-            vec!["short".to_string()],
-            None,
-            vec![]
-        );
-    }
-    impl FieldMarker for short {
-        type ValueType = i16;
-        fn field_name() -> &'static str {
-            "short"
-        }
-        fn data_converter() -> &'static dyn DataConverter<Output=Self::ValueType> {
-            &*SHORT_CONVERTER
-        }
-        fn definition() -> &'static FieldDefinition {
-            &*SHORT_DEFINITION
-        }
-    }
-
-    #[allow(non_camel_case_types)]
-    pub struct u_short();
-    lazy_static! {
-        static ref U_SHORT_CONVERTER: yukino::converter::basic::UnsignedShortDataConverter =
-            yukino::converter::basic::UnsignedShortDataConverter::new("u_short".to_string());
-        static ref U_SHORT_DEFINITION: FieldDefinition =
-            yukino::interface::def::FieldDefinition::new(
-                "u_short".to_string(),
-                "u16".to_string(),
-                false,
-                yukino::interface::def::DefinitionType::Normal,
-                vec![(
-                    "u_short".to_string(),
-                    yukino::interface::def::ColumnDefinition::new(
-                        "u_short".to_string(),
-                        yukino::db::ty::DatabaseType::UnsignedSmallInteger,
-                        false,
-                        false
-                    )
-                )]
-                .into_iter()
-                .collect(),
-                vec!["u_short".to_string()],
-                None,
-                vec![]
-            );
-    }
-    impl FieldMarker for u_short {
-        type ValueType = u16;
-        fn field_name() -> &'static str {
-            "u_short"
-        }
-        fn data_converter() -> &'static dyn DataConverter<Output=Self::ValueType> {
-            &*U_SHORT_CONVERTER
-        }
-        fn definition() -> &'static FieldDefinition {
-            &*U_SHORT_DEFINITION
-        }
-    }
-    #[allow(non_camel_case_types)]
-    pub struct u_int();
-    lazy_static! {
-        static ref U_INT_CONVERTER: yukino::converter::basic::UnsignedIntDataConverter =
-            yukino::converter::basic::UnsignedIntDataConverter::new("u_int".to_string());
-        static ref U_INT_DEFINITION: FieldDefinition = yukino::interface::def::FieldDefinition::new(
-            "u_int".to_string(),
-            "u32".to_string(),
-            false,
-            yukino::interface::def::DefinitionType::Normal,
-            vec![(
-                "u_int".to_string(),
-                yukino::interface::def::ColumnDefinition::new(
-                    "u_int".to_string(),
-                    yukino::db::ty::DatabaseType::UnsignedInteger,
-                    false,
-                    false
-                )
-            )]
-            .into_iter()
-            .collect(),
-            vec!["u_int".to_string()],
-            None,
-            vec![]
-        );
-    }
-    impl FieldMarker for u_int {
-        type ValueType = u32;
-        fn field_name() -> &'static str {
-            "u_int"
-        }
-        fn data_converter() -> &'static dyn DataConverter<Output=Self::ValueType> {
-            &*U_INT_CONVERTER
-        }
-        fn definition() -> &'static FieldDefinition {
-            &*U_INT_DEFINITION
-        }
-    }
-    #[allow(non_camel_case_types)]
-    pub struct u_long();
-    lazy_static! {
-        static ref U_LONG_CONVERTER: yukino::converter::basic::UnsignedLongDataConverter =
-            yukino::converter::basic::UnsignedLongDataConverter::new("u_long".to_string());
-        static ref U_LONG_DEFINITION: FieldDefinition =
-            yukino::interface::def::FieldDefinition::new(
-                "u_long".to_string(),
-                "u64".to_string(),
-                false,
-                yukino::interface::def::DefinitionType::Normal,
-                vec![(
-                    "u_long".to_string(),
-                    yukino::interface::def::ColumnDefinition::new(
-                        "u_long".to_string(),
-                        yukino::db::ty::DatabaseType::UnsignedBigInteger,
-                        false,
-                        false
-                    )
-                )]
-                .into_iter()
-                .collect(),
-                vec!["u_long".to_string()],
-                None,
-                vec![]
-            );
-    }
-    impl FieldMarker for u_long {
-        type ValueType = u64;
-        fn field_name() -> &'static str {
-            "u_long"
-        }
-        fn data_converter() -> &'static dyn DataConverter<Output=Self::ValueType> {
-            &*U_LONG_CONVERTER
-        }
-        fn definition() -> &'static FieldDefinition {
-            &*U_LONG_DEFINITION
-        }
-    }
-    #[allow(non_camel_case_types)]
-    pub struct float();
-    lazy_static! {
-        static ref FLOAT_CONVERTER: yukino::converter::basic::FloatDataConverter =
-            yukino::converter::basic::FloatDataConverter::new("float".to_string());
-        static ref FLOAT_DEFINITION: FieldDefinition = yukino::interface::def::FieldDefinition::new(
-            "float".to_string(),
-            "f32".to_string(),
-            false,
-            yukino::interface::def::DefinitionType::Normal,
-            vec![(
-                "float".to_string(),
-                yukino::interface::def::ColumnDefinition::new(
-                    "float".to_string(),
-                    yukino::db::ty::DatabaseType::Float,
-                    false,
-                    false
-                )
-            )]
-            .into_iter()
-            .collect(),
-            vec!["float".to_string()],
-            None,
-            vec![]
-        );
-    }
-    impl FieldMarker for float {
-        type ValueType = f32;
-        fn field_name() -> &'static str {
-            "float"
-        }
-        fn data_converter() -> &'static dyn DataConverter<Output=Self::ValueType> {
-            &*FLOAT_CONVERTER
-        }
-        fn definition() -> &'static FieldDefinition {
-            &*FLOAT_DEFINITION
-        }
-    }
-    #[allow(non_camel_case_types)]
     pub struct double();
     lazy_static! {
-        static ref DOUBLE_CONVERTER: yukino::converter::basic::DoubleDataConverter =
-            yukino::converter::basic::DoubleDataConverter::new("double".to_string());
+        static ref DOUBLE_CONVERTER: yukino::converter::basic::DoubleConverter =
+            yukino::converter::basic::DoubleConverter();
         static ref DOUBLE_DEFINITION: FieldDefinition =
             yukino::interface::def::FieldDefinition::new(
                 "double".to_string(),
@@ -540,19 +200,357 @@ pub mod numeric {
         fn field_name() -> &'static str {
             "double"
         }
-        fn data_converter() -> &'static dyn DataConverter<Output=Self::ValueType> {
+        fn converter() -> &'static dyn Converter<Output=Self::ValueType> {
             &*DOUBLE_CONVERTER
         }
         fn definition() -> &'static FieldDefinition {
             &*DOUBLE_DEFINITION
+        }
+        fn view() -> &'static Expr<Self::ValueType> {
+            &NumericView::static_ref().double
+        }
+    }
+
+    #[allow(non_camel_case_types)]
+    pub struct float();
+    lazy_static! {
+        static ref FLOAT_CONVERTER: yukino::converter::basic::FloatConverter =
+            yukino::converter::basic::FloatConverter();
+        static ref FLOAT_DEFINITION: FieldDefinition = yukino::interface::def::FieldDefinition::new(
+            "float".to_string(),
+            "f32".to_string(),
+            false,
+            yukino::interface::def::DefinitionType::Normal,
+            vec![(
+                "float".to_string(),
+                yukino::interface::def::ColumnDefinition::new(
+                    "float".to_string(),
+                    yukino::db::ty::DatabaseType::Float,
+                    false,
+                    false
+                )
+            )]
+            .into_iter()
+            .collect(),
+            vec!["float".to_string()],
+            None,
+            vec![]
+        );
+    }
+    impl FieldMarker for float {
+        type ValueType = f32;
+        fn field_name() -> &'static str {
+            "float"
+        }
+        fn converter() -> &'static dyn Converter<Output=Self::ValueType> {
+            &*FLOAT_CONVERTER
+        }
+        fn definition() -> &'static FieldDefinition {
+            &*FLOAT_DEFINITION
+        }
+        fn view() -> &'static Expr<Self::ValueType> {
+            &NumericView::static_ref().float
+        }
+    }
+    #[allow(non_camel_case_types)]
+    pub struct long();
+    lazy_static! {
+        static ref LONG_CONVERTER: yukino::converter::basic::LongConverter =
+            yukino::converter::basic::LongConverter();
+        static ref LONG_DEFINITION: FieldDefinition = yukino::interface::def::FieldDefinition::new(
+            "long".to_string(),
+            "i64".to_string(),
+            false,
+            yukino::interface::def::DefinitionType::Normal,
+            vec![(
+                "long".to_string(),
+                yukino::interface::def::ColumnDefinition::new(
+                    "long".to_string(),
+                    yukino::db::ty::DatabaseType::BigInteger,
+                    false,
+                    false
+                )
+            )]
+            .into_iter()
+            .collect(),
+            vec!["long".to_string()],
+            None,
+            vec![]
+        );
+    }
+    impl FieldMarker for long {
+        type ValueType = i64;
+        fn field_name() -> &'static str {
+            "long"
+        }
+        fn converter() -> &'static dyn Converter<Output=Self::ValueType> {
+            &*LONG_CONVERTER
+        }
+        fn definition() -> &'static FieldDefinition {
+            &*LONG_DEFINITION
+        }
+        fn view() -> &'static Expr<Self::ValueType> {
+            &NumericView::static_ref().long
+        }
+    }
+    #[allow(non_camel_case_types)]
+    pub struct string();
+    lazy_static! {
+        static ref STRING_CONVERTER: yukino::converter::basic::StringConverter =
+            yukino::converter::basic::StringConverter();
+        static ref STRING_DEFINITION: FieldDefinition =
+            yukino::interface::def::FieldDefinition::new(
+                "string".to_string(),
+                "String".to_string(),
+                false,
+                yukino::interface::def::DefinitionType::Normal,
+                vec![(
+                    "string".to_string(),
+                    yukino::interface::def::ColumnDefinition::new(
+                        "string".to_string(),
+                        yukino::db::ty::DatabaseType::String,
+                        false,
+                        false
+                    )
+                )]
+                .into_iter()
+                .collect(),
+                vec!["string".to_string()],
+                None,
+                vec![]
+            );
+    }
+    impl FieldMarker for string {
+        type ValueType = String;
+        fn field_name() -> &'static str {
+            "string"
+        }
+        fn converter() -> &'static dyn Converter<Output=Self::ValueType> {
+            &*STRING_CONVERTER
+        }
+        fn definition() -> &'static FieldDefinition {
+            &*STRING_DEFINITION
+        }
+        fn view() -> &'static Expr<Self::ValueType> {
+            &NumericView::static_ref().string
+        }
+    }
+    #[allow(non_camel_case_types)]
+    pub struct character();
+    lazy_static! {
+        static ref CHARACTER_CONVERTER: yukino::converter::basic::CharConverter =
+            yukino::converter::basic::CharConverter();
+        static ref CHARACTER_DEFINITION: FieldDefinition =
+            yukino::interface::def::FieldDefinition::new(
+                "character".to_string(),
+                "char".to_string(),
+                false,
+                yukino::interface::def::DefinitionType::Normal,
+                vec![(
+                    "character".to_string(),
+                    yukino::interface::def::ColumnDefinition::new(
+                        "character".to_string(),
+                        yukino::db::ty::DatabaseType::Character,
+                        false,
+                        false
+                    )
+                )]
+                .into_iter()
+                .collect(),
+                vec!["character".to_string()],
+                None,
+                vec![]
+            );
+    }
+    impl FieldMarker for character {
+        type ValueType = char;
+        fn field_name() -> &'static str {
+            "character"
+        }
+        fn converter() -> &'static dyn Converter<Output=Self::ValueType> {
+            &*CHARACTER_CONVERTER
+        }
+        fn definition() -> &'static FieldDefinition {
+            &*CHARACTER_DEFINITION
+        }
+        fn view() -> &'static Expr<Self::ValueType> {
+            &NumericView::static_ref().character
+        }
+    }
+    #[allow(non_camel_case_types)]
+    pub struct u_short();
+    lazy_static! {
+        static ref U_SHORT_CONVERTER: yukino::converter::basic::UnsignedShortConverter =
+            yukino::converter::basic::UnsignedShortConverter();
+        static ref U_SHORT_DEFINITION: FieldDefinition =
+            yukino::interface::def::FieldDefinition::new(
+                "u_short".to_string(),
+                "u16".to_string(),
+                false,
+                yukino::interface::def::DefinitionType::Normal,
+                vec![(
+                    "u_short".to_string(),
+                    yukino::interface::def::ColumnDefinition::new(
+                        "u_short".to_string(),
+                        yukino::db::ty::DatabaseType::UnsignedSmallInteger,
+                        false,
+                        false
+                    )
+                )]
+                .into_iter()
+                .collect(),
+                vec!["u_short".to_string()],
+                None,
+                vec![]
+            );
+    }
+    impl FieldMarker for u_short {
+        type ValueType = u16;
+        fn field_name() -> &'static str {
+            "u_short"
+        }
+        fn converter() -> &'static dyn Converter<Output=Self::ValueType> {
+            &*U_SHORT_CONVERTER
+        }
+        fn definition() -> &'static FieldDefinition {
+            &*U_SHORT_DEFINITION
+        }
+        fn view() -> &'static Expr<Self::ValueType> {
+            &NumericView::static_ref().u_short
+        }
+    }
+    #[allow(non_camel_case_types)]
+    pub struct u_int();
+    lazy_static! {
+        static ref U_INT_CONVERTER: yukino::converter::basic::UnsignedIntConverter =
+            yukino::converter::basic::UnsignedIntConverter();
+        static ref U_INT_DEFINITION: FieldDefinition = yukino::interface::def::FieldDefinition::new(
+            "u_int".to_string(),
+            "u32".to_string(),
+            false,
+            yukino::interface::def::DefinitionType::Normal,
+            vec![(
+                "u_int".to_string(),
+                yukino::interface::def::ColumnDefinition::new(
+                    "u_int".to_string(),
+                    yukino::db::ty::DatabaseType::UnsignedInteger,
+                    false,
+                    false
+                )
+            )]
+            .into_iter()
+            .collect(),
+            vec!["u_int".to_string()],
+            None,
+            vec![]
+        );
+    }
+    impl FieldMarker for u_int {
+        type ValueType = u32;
+        fn field_name() -> &'static str {
+            "u_int"
+        }
+        fn converter() -> &'static dyn Converter<Output=Self::ValueType> {
+            &*U_INT_CONVERTER
+        }
+        fn definition() -> &'static FieldDefinition {
+            &*U_INT_DEFINITION
+        }
+        fn view() -> &'static Expr<Self::ValueType> {
+            &NumericView::static_ref().u_int
+        }
+    }
+
+    #[allow(non_camel_case_types)]
+    pub struct optional();
+    lazy_static! {
+        static ref OPTIONAL_CONVERTER: yukino::converter::basic::OptionalUnsignedIntConverter =
+            yukino::converter::basic::OptionalUnsignedIntConverter();
+        static ref OPTIONAL_DEFINITION: FieldDefinition =
+            yukino::interface::def::FieldDefinition::new(
+                "optional".to_string(),
+                "Option < u32 >".to_string(),
+                false,
+                yukino::interface::def::DefinitionType::Normal,
+                vec![(
+                    "optional".to_string(),
+                    yukino::interface::def::ColumnDefinition::new(
+                        "optional".to_string(),
+                        yukino::db::ty::DatabaseType::UnsignedInteger,
+                        true,
+                        false
+                    )
+                )]
+                .into_iter()
+                .collect(),
+                vec!["optional".to_string()],
+                None,
+                vec![]
+            );
+    }
+    impl FieldMarker for optional {
+        type ValueType = Option<u32>;
+        fn field_name() -> &'static str {
+            "optional"
+        }
+        fn converter() -> &'static dyn Converter<Output=Self::ValueType> {
+            &*OPTIONAL_CONVERTER
+        }
+        fn definition() -> &'static FieldDefinition {
+            &*OPTIONAL_DEFINITION
+        }
+        fn view() -> &'static Expr<Self::ValueType> {
+            &NumericView::static_ref().optional
+        }
+    }
+
+    #[allow(non_camel_case_types)]
+    pub struct short();
+    lazy_static! {
+        static ref SHORT_CONVERTER: yukino::converter::basic::ShortConverter =
+            yukino::converter::basic::ShortConverter();
+        static ref SHORT_DEFINITION: FieldDefinition = yukino::interface::def::FieldDefinition::new(
+            "short".to_string(),
+            "i16".to_string(),
+            false,
+            yukino::interface::def::DefinitionType::Normal,
+            vec![(
+                "short".to_string(),
+                yukino::interface::def::ColumnDefinition::new(
+                    "short".to_string(),
+                    yukino::db::ty::DatabaseType::SmallInteger,
+                    false,
+                    false
+                )
+            )]
+            .into_iter()
+            .collect(),
+            vec!["short".to_string()],
+            None,
+            vec![]
+        );
+    }
+    impl FieldMarker for short {
+        type ValueType = i16;
+        fn field_name() -> &'static str {
+            "short"
+        }
+        fn converter() -> &'static dyn Converter<Output=Self::ValueType> {
+            &*SHORT_CONVERTER
+        }
+        fn definition() -> &'static FieldDefinition {
+            &*SHORT_DEFINITION
+        }
+        fn view() -> &'static Expr<Self::ValueType> {
+            &NumericView::static_ref().short
         }
     }
 
     #[allow(non_camel_case_types)]
     pub struct id();
     lazy_static! {
-        static ref ID_CONVERTER: yukino::converter::basic::UnsignedIntDataConverter =
-            yukino::converter::basic::UnsignedIntDataConverter::new("id".to_string());
+        static ref ID_CONVERTER: yukino::converter::basic::UnsignedIntConverter =
+            yukino::converter::basic::UnsignedIntConverter();
         static ref ID_DEFINITION: FieldDefinition = yukino::interface::def::FieldDefinition::new(
             "id".to_string(),
             "u32".to_string(),
@@ -579,11 +577,99 @@ pub mod numeric {
         fn field_name() -> &'static str {
             "id"
         }
-        fn data_converter() -> &'static dyn DataConverter<Output=Self::ValueType> {
+        fn converter() -> &'static dyn Converter<Output=Self::ValueType> {
             &*ID_CONVERTER
         }
         fn definition() -> &'static FieldDefinition {
             &*ID_DEFINITION
+        }
+        fn view() -> &'static Expr<Self::ValueType> {
+            &NumericView::static_ref().id
+        }
+    }
+
+    #[allow(non_camel_case_types)]
+    pub struct int();
+    lazy_static! {
+        static ref INT_CONVERTER: yukino::converter::basic::IntConverter =
+            yukino::converter::basic::IntConverter();
+        static ref INT_DEFINITION: FieldDefinition = yukino::interface::def::FieldDefinition::new(
+            "int".to_string(),
+            "i32".to_string(),
+            false,
+            yukino::interface::def::DefinitionType::Normal,
+            vec![(
+                "int".to_string(),
+                yukino::interface::def::ColumnDefinition::new(
+                    "int".to_string(),
+                    yukino::db::ty::DatabaseType::Integer,
+                    false,
+                    false
+                )
+            )]
+            .into_iter()
+            .collect(),
+            vec!["int".to_string()],
+            None,
+            vec![]
+        );
+    }
+    impl FieldMarker for int {
+        type ValueType = i32;
+        fn field_name() -> &'static str {
+            "int"
+        }
+        fn converter() -> &'static dyn Converter<Output=Self::ValueType> {
+            &*INT_CONVERTER
+        }
+        fn definition() -> &'static FieldDefinition {
+            &*INT_DEFINITION
+        }
+        fn view() -> &'static Expr<Self::ValueType> {
+            &NumericView::static_ref().int
+        }
+    }
+
+    #[allow(non_camel_case_types)]
+    pub struct u_long();
+    lazy_static! {
+        static ref U_LONG_CONVERTER: yukino::converter::basic::UnsignedLongConverter =
+            yukino::converter::basic::UnsignedLongConverter();
+        static ref U_LONG_DEFINITION: FieldDefinition =
+            yukino::interface::def::FieldDefinition::new(
+                "u_long".to_string(),
+                "u64".to_string(),
+                false,
+                yukino::interface::def::DefinitionType::Normal,
+                vec![(
+                    "u_long".to_string(),
+                    yukino::interface::def::ColumnDefinition::new(
+                        "u_long".to_string(),
+                        yukino::db::ty::DatabaseType::UnsignedBigInteger,
+                        false,
+                        false
+                    )
+                )]
+                .into_iter()
+                .collect(),
+                vec!["u_long".to_string()],
+                None,
+                vec![]
+            );
+    }
+    impl FieldMarker for u_long {
+        type ValueType = u64;
+        fn field_name() -> &'static str {
+            "u_long"
+        }
+        fn converter() -> &'static dyn Converter<Output=Self::ValueType> {
+            &*U_LONG_CONVERTER
+        }
+        fn definition() -> &'static FieldDefinition {
+            &*U_LONG_DEFINITION
+        }
+        fn view() -> &'static Expr<Self::ValueType> {
+            &NumericView::static_ref().u_long
         }
     }
 }

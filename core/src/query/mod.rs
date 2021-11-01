@@ -1,5 +1,7 @@
-pub mod computation;
-pub mod optimizer;
-pub mod queries;
-pub mod result;
-pub mod select;
+use crate::db::ty::DatabaseType;
+
+pub struct SelectedItem {
+    pub alias: String,
+    pub expr: String,
+    pub ty: DatabaseType,
+}

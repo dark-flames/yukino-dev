@@ -1,34 +1,34 @@
-use crate::interface::converter::DataConverter;
+use crate::converter::Converter;
+use crate::expr::{ComputationNode, Expr};
 use crate::interface::def::FieldDefinition;
 use crate::view::View;
 
 pub trait FieldMarker {
-    type ValueType;
+    type ValueType: 'static + Clone;
 
     fn field_name() -> &'static str;
 
-    fn data_converter() -> &'static dyn DataConverter<Output=Self::ValueType>;
+    fn converter() -> &'static dyn Converter<Output=Self::ValueType>;
 
     fn definition() -> &'static FieldDefinition;
+
+    fn view() -> &'static Expr<Self::ValueType>;
 }
 
 pub trait Entity: Clone {
     type View: EntityView<Entity = Self>;
 }
 
-pub trait EntityView: View<Output = Self::Entity> {
+pub trait EntityView: View<Output=Self::Entity> + ComputationNode + Clone {
     type Entity: Entity;
     fn pure() -> Self
-    where
-        Self: Sized;
-}
-
-pub trait FieldView: View {
-    type ConverterType: 'static + Clone;
-
-    fn create(converter: &'static dyn DataConverter<Output=Self::ConverterType>) -> Box<Self>
         where
-            Self: Sized;
+            Self: 'static + Sized,
+    {
+        Self::static_ref().clone()
+    }
 
-    fn get_converter(&self) -> &'static dyn DataConverter<Output=Self::ConverterType>;
+    fn static_ref() -> &'static Self
+        where
+            Self: 'static + Sized;
 }
