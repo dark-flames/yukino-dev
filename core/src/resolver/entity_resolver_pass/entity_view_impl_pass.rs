@@ -24,7 +24,6 @@ impl EntityResolvePass for EntityViewPass {
             use yukino::expr::Expr;
             use yukino::interface::FieldMarker;
             use lazy_static::lazy_static;
-
         }]
     }
 

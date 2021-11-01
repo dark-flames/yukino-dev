@@ -1,23 +1,24 @@
-use crate::expr::QueryResultNode;
+use crate::expr::value::Value;
+use crate::expr::Expr;
 use std::ops::Add;
 
-pub trait ResultAdd<Rhs: 'static + Clone = Self>: 'static + Clone {
-    type Output: 'static + Clone;
+pub trait ExprAdd<Rhs: Value = Self>: Value {
+    type Output: Value;
 
-    fn add(l: &QueryResultNode<Self>, r: &QueryResultNode<Rhs>) -> QueryResultNode<Self::Output>
+    fn add(l: &Expr<Self>, r: &Expr<Rhs>) -> Expr<Self::Output>
         where
             Self: Sized;
 }
 
-impl<L, R, O> Add<&QueryResultNode<R>> for &QueryResultNode<L>
+impl<L, R, O> Add<&Expr<R>> for &Expr<L>
     where
-        L: ResultAdd<R, Output=O>,
-        R: 'static + Clone,
-        O: 'static + Clone,
+        L: ExprAdd<R, Output=O>,
+        R: Value,
+        O: Value,
 {
-    type Output = QueryResultNode<O>;
+    type Output = Expr<O>;
 
-    fn add(self, r: &QueryResultNode<R>) -> Self::Output {
+    fn add(self, r: &Expr<R>) -> Self::Output {
         L::add(self, r)
     }
 }

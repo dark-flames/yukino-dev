@@ -1,10 +1,10 @@
 use crate::converter::Converter;
-use crate::expr::{ComputationNode, Expr};
+use crate::expr::{ComputationNode, Expr, Value};
 use crate::interface::def::FieldDefinition;
 use crate::view::View;
 
 pub trait FieldMarker {
-    type ValueType: 'static + Clone;
+    type ValueType: Value;
 
     fn field_name() -> &'static str;
 
@@ -15,8 +15,8 @@ pub trait FieldMarker {
     fn view() -> &'static Expr<Self::ValueType>;
 }
 
-pub trait Entity: Clone {
-    type View: EntityView<Entity = Self>;
+pub trait Entity: Value {
+    type View: EntityView<Entity=Self>;
 }
 
 pub trait EntityView: View<Output=Self::Entity> + ComputationNode + Clone {

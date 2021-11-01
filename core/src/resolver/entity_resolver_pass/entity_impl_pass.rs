@@ -15,6 +15,7 @@ impl EntityResolvePass for EntityImplementPass {
     fn get_dependencies(&self) -> Vec<TokenStream> {
         vec![quote! {
             use yukino::interface::Entity;
+            use yukino::expr::Value;
         }]
     }
 
@@ -25,6 +26,8 @@ impl EntityResolvePass for EntityImplementPass {
             impl Entity for #name {
                 type View = #view_name;
             }
+
+            impl Value for #name {}
         }]
     }
 

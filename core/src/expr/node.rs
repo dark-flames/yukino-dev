@@ -2,20 +2,21 @@ use crate::converter::Converter;
 use crate::db::ty::{DatabaseValue, ValuePack};
 use crate::err::{DataConvertError, RuntimeResult, YukinoError};
 use crate::expr::computation::Computation;
+use crate::expr::Value;
 use crate::query::SelectedItem;
 
 pub trait Node: Computation {
     fn collect_selected_items(&self) -> Vec<SelectedItem>;
 }
 
-pub enum Expr<T: 'static + Clone> {
+pub enum Expr<T: Value> {
     QueryResult(QueryResultNode<T>),
     Computation(Box<dyn ComputationNode<Output=T>>),
     Const(ConstNode<T>),
 }
 
 #[derive(Clone)]
-pub struct QueryResultNode<T: 'static + Clone> {
+pub struct QueryResultNode<T: Value> {
     pub converter: &'static dyn Converter<Output=T>,
     pub aliases: Vec<String>,
 }
@@ -25,12 +26,12 @@ pub trait ComputationNode: Node {
 }
 
 #[derive(Clone)]
-pub struct ConstNode<T: 'static + Clone> {
+pub struct ConstNode<T: Value> {
     value: T,
     converter: &'static dyn Converter<Output=T>,
 }
 
-impl<T: 'static + Clone> Clone for Expr<T> {
+impl<T: Value> Clone for Expr<T> {
     fn clone(&self) -> Self {
         match self {
             Expr::QueryResult(n) => Expr::QueryResult(n.clone()),
@@ -40,13 +41,13 @@ impl<T: 'static + Clone> Clone for Expr<T> {
     }
 }
 
-impl<T: 'static + Clone> ConstNode<T> {
+impl<T: Value> ConstNode<T> {
     pub fn to_database_value(&self) -> RuntimeResult<Vec<DatabaseValue>> {
         self.converter.serialize(&self.value)
     }
 }
 
-impl<T: 'static + Clone> Computation for QueryResultNode<T> {
+impl<T: Value> Computation for QueryResultNode<T> {
     type Output = T;
 
     fn eval(&self, v: &ValuePack) -> RuntimeResult<Self::Output> {
@@ -64,7 +65,7 @@ impl<T: 'static + Clone> Computation for QueryResultNode<T> {
     }
 }
 
-impl<T: 'static + Clone> Computation for ConstNode<T> {
+impl<T: Value> Computation for ConstNode<T> {
     type Output = T;
 
     fn eval(&self, _v: &ValuePack) -> RuntimeResult<Self::Output> {
@@ -72,7 +73,7 @@ impl<T: 'static + Clone> Computation for ConstNode<T> {
     }
 }
 
-impl<T: 'static + Clone> Computation for Expr<T> {
+impl<T: Value> Computation for Expr<T> {
     type Output = T;
 
     fn eval(&self, v: &ValuePack) -> RuntimeResult<Self::Output> {
@@ -84,19 +85,19 @@ impl<T: 'static + Clone> Computation for Expr<T> {
     }
 }
 
-impl<T: 'static + Clone> Node for QueryResultNode<T> {
+impl<T: Value> Node for QueryResultNode<T> {
     fn collect_selected_items(&self) -> Vec<SelectedItem> {
         todo!()
     }
 }
 
-impl<T: 'static + Clone> Node for ConstNode<T> {
+impl<T: Value> Node for ConstNode<T> {
     fn collect_selected_items(&self) -> Vec<SelectedItem> {
         vec![]
     }
 }
 
-impl<T: 'static + Clone> Node for Expr<T> {
+impl<T: Value> Node for Expr<T> {
     fn collect_selected_items(&self) -> Vec<SelectedItem> {
         match self {
             Expr::QueryResult(n) => n.collect_selected_items(),

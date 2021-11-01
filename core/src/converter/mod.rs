@@ -2,9 +2,10 @@ pub mod basic;
 
 use crate::db::ty::DatabaseValue;
 use crate::err::RuntimeResult;
+use crate::expr::Value;
 
 pub trait Converter: Sync {
-    type Output: 'static + Clone;
+    type Output: Value;
 
     fn deserializer(&self) -> Box<dyn Fn(&[&DatabaseValue]) -> RuntimeResult<Self::Output>>;
 
