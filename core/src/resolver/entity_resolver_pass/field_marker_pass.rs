@@ -23,7 +23,7 @@ impl EntityResolvePass for FieldMakerPass {
         let view_name = &entity.view_name;
         let markers: Vec<_> = entity
             .fields
-            .values()
+            .iter()
             .filter(|f| f.definition.definition_ty != DefinitionType::Generated)
             .map(|field| {
                 let marker_name = &field.marker_name;

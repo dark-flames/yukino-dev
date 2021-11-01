@@ -8,7 +8,7 @@ pub trait FieldMarker {
 
     fn field_name() -> &'static str;
 
-    fn converter() -> &'static dyn Converter<Output=Self::ValueType>;
+    fn converter() -> &'static dyn Converter<Output = Self::ValueType>;
 
     fn definition() -> &'static FieldDefinition;
 
@@ -16,19 +16,19 @@ pub trait FieldMarker {
 }
 
 pub trait Entity: Value {
-    type View: EntityView<Entity=Self>;
+    type View: EntityView<Entity = Self>;
 }
 
-pub trait EntityView: View<Output=Self::Entity> + ComputationNode + Clone {
+pub trait EntityView: View<Output = Self::Entity> + ComputationNode + Clone {
     type Entity: Entity;
     fn pure() -> Self
-        where
-            Self: 'static + Sized,
+    where
+        Self: 'static + Sized,
     {
         Self::static_ref().clone()
     }
 
     fn static_ref() -> &'static Self
-        where
-            Self: 'static + Sized;
+    where
+        Self: 'static + Sized;
 }

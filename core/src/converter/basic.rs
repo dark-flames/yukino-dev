@@ -94,4 +94,4 @@ optional_basic_ty_converter!(u64, OptionalUnsignedLongConverter, UnsignedBigInte
 optional_basic_ty_converter!(f32, OptionalFloatConverter, Float);
 optional_basic_ty_converter!(f64, OptionalDoubleConverter, Double);
 optional_basic_ty_converter!(String, OptionalStringConverter, String);
-optional_basic_ty_converter!(char, OptionalChar, Character);
+optional_basic_ty_converter!(char, OptionalCharConverter, Character);

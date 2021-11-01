@@ -28,8 +28,9 @@ pub struct ResolvedEntity {
     pub id: usize,
     pub name: String,
     pub definitions: Vec<EntityDefinition>,
-    pub fields: HashMap<String, ResolvedField>,
+    pub fields: Vec<ResolvedField>,
     pub marker_mod: Ident,
+    pub converter_name: Ident,
     pub view_name: Ident,
 }
 
@@ -151,12 +152,17 @@ impl UnassembledEntity {
             primary_fields: field_with_primary,
         });
 
+        let mut fields: Vec<_> = fields.into_iter().collect();
+
+        fields.sort_by(|(a, _), (b, _)| a.cmp(b));
+
         Ok(ResolvedEntity {
             id: self.id,
             name: self.struct_name.clone(),
             definitions,
-            fields,
+            fields: fields.into_iter().map(|(_, v)| v).collect(),
             marker_mod: format_ident!("{}", self.struct_name.to_snake_case()),
+            converter_name: format_ident!("{}Converter", self.struct_name.to_camel_case()),
             view_name: format_ident!("{}View", self.struct_name.to_camel_case()),
         })
     }

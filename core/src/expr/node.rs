@@ -7,28 +7,30 @@ use crate::query::SelectedItem;
 
 pub trait Node: Computation {
     fn collect_selected_items(&self) -> Vec<SelectedItem>;
+
+    fn converter(&self) -> &'static dyn Converter<Output = Self::Output>;
 }
 
 pub enum Expr<T: Value> {
     QueryResult(QueryResultNode<T>),
-    Computation(Box<dyn ComputationNode<Output=T>>),
+    Computation(Box<dyn ComputationNode<Output = T>>),
     Const(ConstNode<T>),
 }
 
 #[derive(Clone)]
 pub struct QueryResultNode<T: Value> {
-    pub converter: &'static dyn Converter<Output=T>,
+    pub converter: &'static dyn Converter<Output = T>,
     pub aliases: Vec<String>,
 }
 
 pub trait ComputationNode: Node {
-    fn box_clone(&self) -> Box<dyn ComputationNode<Output=Self::Output>>;
+    fn box_clone(&self) -> Box<dyn ComputationNode<Output = Self::Output>>;
 }
 
 #[derive(Clone)]
 pub struct ConstNode<T: Value> {
-    value: T,
-    converter: &'static dyn Converter<Output=T>,
+    pub value: T,
+    pub converter: &'static dyn Converter<Output = T>,
 }
 
 impl<T: Value> Clone for Expr<T> {
@@ -89,11 +91,19 @@ impl<T: Value> Node for QueryResultNode<T> {
     fn collect_selected_items(&self) -> Vec<SelectedItem> {
         todo!()
     }
+
+    fn converter(&self) -> &'static dyn Converter<Output = T> {
+        self.converter
+    }
 }
 
 impl<T: Value> Node for ConstNode<T> {
     fn collect_selected_items(&self) -> Vec<SelectedItem> {
         vec![]
+    }
+
+    fn converter(&self) -> &'static dyn Converter<Output = T> {
+        self.converter
     }
 }
 
@@ -103,6 +113,14 @@ impl<T: Value> Node for Expr<T> {
             Expr::QueryResult(n) => n.collect_selected_items(),
             Expr::Computation(n) => n.collect_selected_items(),
             Expr::Const(n) => n.collect_selected_items(),
+        }
+    }
+
+    fn converter(&self) -> &'static dyn Converter<Output = T> {
+        match self {
+            Expr::QueryResult(n) => n.converter(),
+            Expr::Computation(n) => n.converter(),
+            Expr::Const(n) => n.converter(),
         }
     }
 }

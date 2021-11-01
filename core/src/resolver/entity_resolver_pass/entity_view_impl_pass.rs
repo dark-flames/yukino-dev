@@ -1,3 +1,4 @@
+use crate::interface::def::DefinitionType;
 use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
 use heck::SnakeCase;
 use proc_macro2::TokenStream;
@@ -7,8 +8,8 @@ pub struct EntityViewPass();
 
 impl EntityResolvePass for EntityViewPass {
     fn instance() -> Box<dyn EntityResolvePass>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         Box::new(EntityViewPass())
     }
@@ -24,6 +25,7 @@ impl EntityResolvePass for EntityViewPass {
             use yukino::expr::Expr;
             use yukino::interface::FieldMarker;
             use lazy_static::lazy_static;
+            use yukino::converter::Converter;
         }]
     }
 
@@ -31,10 +33,19 @@ impl EntityResolvePass for EntityViewPass {
         let name = format_ident!("{}View", &entity.name);
         let entity_name = format_ident!("{}", &entity.name);
         let const_name = format_ident!("{}_VIEW", entity.name.to_snake_case().to_uppercase());
-
+        let converter_name = &entity.converter_name;
+        let converter_const = format_ident!(
+            "{}",
+            entity
+                .converter_name
+                .to_string()
+                .to_snake_case()
+                .to_uppercase()
+        );
         let (fields, constructs): (Vec<_>, Vec<_>) = entity
             .fields
-            .values()
+            .iter()
+            .filter(|f| f.definition.definition_ty != DefinitionType::Generated)
             .map(|f| {
                 let field_name = format_ident!("{}", f.path.field_name);
                 let node_ty = &f.node_type;
@@ -51,7 +62,7 @@ impl EntityResolvePass for EntityViewPass {
             .unzip();
         let (selected_items, eval_items): (Vec<_>, Vec<_>) = entity
             .fields
-            .values()
+            .iter()
             .map(|f| {
                 let field_name = format_ident!("{}", f.path.field_name);
                 (
@@ -73,12 +84,18 @@ impl EntityResolvePass for EntityViewPass {
 
             unsafe impl Sync for #name {}
 
+            static #converter_const: #converter_name = #converter_name();
+
             impl Node for #name {
                 fn collect_selected_items(&self) -> Vec<SelectedItem> {
                     let mut result = vec![];
                     #(#selected_items;)*
 
                     result
+                }
+
+                fn converter(&self) -> &'static dyn Converter<Output=Self::Output> {
+                    &#converter_const
                 }
             }
 

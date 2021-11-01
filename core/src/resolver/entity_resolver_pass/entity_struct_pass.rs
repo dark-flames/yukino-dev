@@ -22,7 +22,7 @@ impl EntityResolvePass for EntityStructPass {
         let name = format_ident!("{}", entity.name);
         let fields = entity
             .fields
-            .values()
+            .iter()
             .filter(|f| f.definition.definition_ty != DefinitionType::Generated)
             .map(|f| {
                 let name = format_ident!("{}", f.definition.name);

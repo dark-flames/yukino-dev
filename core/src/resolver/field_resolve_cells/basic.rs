@@ -44,8 +44,8 @@ pub enum FieldType {
 
 impl FieldResolverSeed for BasicFieldResolverSeed {
     fn instance() -> FieldResolverSeedBox
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         Box::new(BasicFieldResolverSeed())
     }
@@ -95,7 +95,7 @@ impl FieldResolverSeed for BasicFieldResolverSeed {
                     unique: field.unique,
                     column: field.name.unwrap_or(field_name).to_snake_case(),
                 }
-                    .wrap())
+                .wrap())
             })
             .map_or(Ok(None), |r| r.map(Some))
     }
@@ -142,6 +142,7 @@ impl FieldResolverCell for BasicFieldResolverCell {
             },
             converter: self.ty.converter(self.optional),
             converter_type: self.ty.converter_ty(self.optional),
+            converter_param_count: 1,
             value_type: self.ty.field_ty(self.optional),
             node_type: self.ty.node_ty(self.optional),
             node: self.ty.node(entity_name, &marker_name, &self.column),
@@ -252,7 +253,7 @@ impl FieldType {
             FieldType::String => "String",
             FieldType::Char => "char",
         })
-            .unwrap();
+        .unwrap();
 
         if optional {
             quote! {

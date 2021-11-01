@@ -28,6 +28,7 @@ pub struct ResolvedField {
     pub definition: FieldDefinition,
     pub converter: TokenStream,
     pub converter_type: TokenStream,
+    pub converter_param_count: usize,
     pub value_type: TokenStream,
     pub node_type: TokenStream,
     pub node: TokenStream,
