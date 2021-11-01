@@ -20,7 +20,7 @@ impl EntityResolvePass for EntityImplementPass {
 
     fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream> {
         let name = format_ident!("{}", &entity.name);
-        let view_name = format_ident!("{}View", &entity.name);
+        let view_name = &entity.view_name;
         vec![quote! {
             impl Entity for #name {
                 type View = #view_name;

@@ -7,8 +7,10 @@ use crate::interface::def::{
 };
 use crate::resolver::field::ResolvedField;
 use annotation_rs::AnnotationStructure;
+use heck::CamelCase;
 use heck::SnakeCase;
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::{Ident, Span, TokenStream};
+use quote::format_ident;
 use std::collections::HashMap;
 use std::iter::Extend;
 use syn::spanned::Spanned;
@@ -27,6 +29,8 @@ pub struct ResolvedEntity {
     pub name: String,
     pub definitions: Vec<EntityDefinition>,
     pub fields: HashMap<String, ResolvedField>,
+    pub marker_mod: Ident,
+    pub view_name: Ident,
 }
 
 #[derive(Default)]
@@ -149,9 +153,11 @@ impl UnassembledEntity {
 
         Ok(ResolvedEntity {
             id: self.id,
-            name: self.struct_name,
+            name: self.struct_name.clone(),
             definitions,
             fields,
+            marker_mod: format_ident!("{}", self.struct_name.to_snake_case()),
+            view_name: format_ident!("{}View", self.struct_name.to_camel_case()),
         })
     }
 }

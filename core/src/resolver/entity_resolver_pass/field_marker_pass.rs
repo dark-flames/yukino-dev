@@ -19,8 +19,8 @@ impl EntityResolvePass for FieldMakerPass {
     }
 
     fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream> {
-        let mod_name = format_ident!("{}", entity.name.to_snake_case());
-        let view_name = format_ident!("{}View", &entity.name);
+        let mod_name = &entity.marker_mod;
+        let view_name = &entity.view_name;
         let markers: Vec<_> = entity
             .fields
             .values()
