@@ -1,10 +1,9 @@
-mod basic;
-use crate::expr::{Expr, Value};
-pub use basic::*;
+mod computation;
+mod node;
+mod ops;
+mod value;
 
-pub trait View {
-    type Output: Value;
-    fn expr(&self) -> Expr<Self::Output>;
-}
-
-pub type ViewBox<V> = Box<dyn View<Output = V>>;
+pub use computation::*;
+pub use node::*;
+pub use ops::*;
+pub use value::*;

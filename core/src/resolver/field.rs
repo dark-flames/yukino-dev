@@ -29,9 +29,8 @@ pub struct ResolvedField {
     pub converter: TokenStream,
     pub converter_type: TokenStream,
     pub converter_param_count: usize,
-    pub value_type: TokenStream,
-    pub node_type: TokenStream,
-    pub node: TokenStream,
+    pub ty: TokenStream,
+    pub view: TokenStream,
     pub marker_name: Ident,
     pub primary: bool,
     pub entities: Vec<EntityDefinition>,
@@ -74,7 +73,6 @@ pub trait FieldResolverCell {
     fn resolve(
         &self,
         type_resolver: &FileTypePathResolver,
-        entity_name: &str,
         field_path: FieldPath,
     ) -> CliResult<FieldResolveResult>;
 }
@@ -102,7 +100,6 @@ impl FieldResolver {
     pub fn resolve(
         &mut self,
         type_resolver: &FileTypePathResolver,
-        entity_name: &str,
         field_path: FieldPath,
         field: &Field,
     ) -> CliResult<ReadyEntities> {
@@ -121,7 +118,7 @@ impl FieldResolver {
                     .as_cli_err(Some(field.span()))
             })?;
 
-        let result = resolver.resolve(type_resolver, entity_name, field_path)?;
+        let result = resolver.resolve(type_resolver, field_path)?;
 
         Ok(self.handle_resolve_result(result))
     }

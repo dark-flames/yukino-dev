@@ -71,7 +71,6 @@ impl DefinitionResolver {
                     Item::Struct(item_struct) => {
                         let (entity_id, count) = self.entity_resolver.resolve(item_struct)?;
                         self.field_resolver.set_entity_field_count(entity_id, count);
-                        let entity_name = item_struct.ident.to_string();
                         if let Fields::Named(fields) = &item_struct.fields {
                             fields.named.iter().try_for_each(|field| {
                                 let field_path = FieldPath::create(
@@ -80,7 +79,7 @@ impl DefinitionResolver {
                                 );
 
                                 self.field_resolver
-                                    .resolve(&type_resolver, &entity_name, field_path, field)
+                                    .resolve(&type_resolver, field_path, field)
                                     .map(|ready_entity| self.handle_ready_entities(ready_entity))?
                             })
                         } else {

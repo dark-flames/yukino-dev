@@ -1,5 +1,5 @@
 use heck::SnakeCase;
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::spanned::Spanned;
 use syn::{parse_str, Field as SynField, Type};
@@ -105,10 +105,8 @@ impl FieldResolverCell for BasicFieldResolverCell {
     fn resolve(
         &self,
         _type_resolver: &FileTypePathResolver,
-        entity_name: &str,
         field_path: FieldPath,
     ) -> CliResult<FieldResolveResult> {
-        let marker_name = format_ident!("{}", field_path.field_name.to_snake_case());
         Ok(FieldResolveResult::Finished(Box::new(ResolvedField {
             path: field_path.clone(),
             definition: FieldDefinition {
@@ -143,10 +141,9 @@ impl FieldResolverCell for BasicFieldResolverCell {
             converter: self.ty.converter(self.optional),
             converter_type: self.ty.converter_ty(self.optional),
             converter_param_count: 1,
-            value_type: self.ty.field_ty(self.optional),
-            node_type: self.ty.node_ty(self.optional),
-            node: self.ty.node(entity_name, &marker_name, &self.column),
-            marker_name,
+            ty: self.ty.field_ty(self.optional),
+            view: self.ty.view(&self.column),
+            marker_name: format_ident!("{}", field_path.field_name.to_snake_case()),
             primary: self.primary,
             entities: vec![],
         })))
@@ -221,22 +218,13 @@ impl FieldType {
         }
     }
 
-    pub fn node_ty(&self, optional: bool) -> TokenStream {
-        let field_ty = self.field_ty(optional);
+    pub fn view(&self, column: &str) -> TokenStream {
+        let database_ty = DatabaseType::from(self);
 
         quote! {
-            Expr<#field_ty>
-        }
-    }
-
-    pub fn node(&self, entity_name: &str, marker: &Ident, column: &str) -> TokenStream {
-        let marker_mod = format_ident!("{}", entity_name.to_snake_case());
-
-        quote! {
-            Expr::QueryResult(QueryResultNode {
-                converter: #marker_mod::#marker::converter(),
-                aliases: vec![#column.to_string()]
-            })
+            Box::new(ViewNode::Expr(ExprView::create(vec![alias.create_ident_expr(
+                #column, #database_ty
+            )])))
         }
     }
 
