@@ -3,8 +3,8 @@ use crate::converter::{Converter, ConverterRef};
 
 pub trait Value: 'static + Clone {
     fn converter() -> ConverterRef<Self>
-        where
-            Self: Sized;
+    where
+        Self: Sized;
 }
 
 pub trait CopyValue: Value + Copy {}

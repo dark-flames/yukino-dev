@@ -18,6 +18,6 @@ pub trait EntityView: View<Self::Entity> {
     type Entity: Entity;
 
     fn pure(alias: Alias) -> Self
-        where
-            Self: Sized;
+    where
+        Self: Sized;
 }

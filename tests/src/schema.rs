@@ -7,7 +7,6 @@ use yukino::interface::EntityView;
 use yukino::query::{Alias, Expr};
 use yukino::view::Value;
 use yukino::view::{Computation, ExprView, View, ViewBox, ViewNode};
-
 #[derive(Clone)]
 pub struct Numeric {
     pub character: char,
@@ -37,9 +36,7 @@ pub struct NumericView {
     pub u_long: ViewBox<u64>,
     pub u_short: ViewBox<u16>,
 }
-
 unsafe impl Sync for NumericView {}
-
 impl Clone for NumericView {
     fn clone(&self) -> Self {
         NumericView {
@@ -58,14 +55,12 @@ impl Clone for NumericView {
         }
     }
 }
-
 impl Computation for NumericView {
     type Output = Numeric;
     fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<Self::Output> {
         (*Numeric::converter().deserializer())(v)
     }
 }
-
 impl View<Numeric> for NumericView {
     fn view_node(&self) -> ViewNode<Numeric> {
         ViewNode::Expr(ExprView::create(self.collect_expr()))
@@ -90,12 +85,11 @@ impl View<Numeric> for NumericView {
         Box::new(self.clone())
     }
 }
-
 impl EntityView for NumericView {
     type Entity = Numeric;
     fn pure(alias: Alias) -> Self
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         NumericView {
             character: Box::new(ViewNode::Expr(ExprView::create(vec![
@@ -149,30 +143,26 @@ impl EntityView for NumericView {
         }
     }
 }
-
 impl Entity for Numeric {
     type View = NumericView;
 }
-
 impl Value for Numeric {
     fn converter() -> ConverterRef<Self>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         NumericConverter::instance()
     }
 }
-
 #[derive(Clone)]
 pub struct NumericConverter;
 unsafe impl Sync for NumericConverter {}
-
 static NUMERIC_CONVERTER: NumericConverter = NumericConverter;
 impl Converter for NumericConverter {
     type Output = Numeric;
     fn instance() -> &'static Self
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         &NUMERIC_CONVERTER
     }
