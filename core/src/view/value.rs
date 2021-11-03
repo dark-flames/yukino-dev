@@ -1,10 +1,11 @@
 use crate::converter::basic::*;
 use crate::converter::{Converter, ConverterRef};
+use std::fmt::Debug;
 
-pub trait Value: 'static + Clone {
+pub trait Value: 'static + Clone + Debug {
     fn converter() -> ConverterRef<Self>
-    where
-        Self: Sized;
+        where
+            Self: Sized;
 }
 
 pub trait CopyValue: Value + Copy {}

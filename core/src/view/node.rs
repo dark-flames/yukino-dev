@@ -2,37 +2,39 @@ use crate::db::ty::DatabaseValue;
 use crate::err::{RuntimeError, RuntimeResult};
 use crate::query::Expr;
 use crate::view::{Computation, Value};
+use std::fmt::Debug;
 use std::marker::PhantomData;
 
 pub type ViewBox<T> = Box<dyn View<T>>;
 
+#[derive(Debug)]
 pub enum ViewNode<T: Value> {
     Expr(ExprView<T>),
     Const(ConstView<T>),
     Computation(Box<dyn ComputationView<T>>),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ExprView<T: Value> {
     pub exprs: Vec<Expr>,
     _marker: PhantomData<T>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ConstView<T: Value> {
     pub value: T,
 }
 
-pub trait ComputationView<T: Value>: Computation<Output = T> + View<T> {
+pub trait ComputationView<T: Value>: Computation<Output=T> + View<T> + Debug {
     fn computation_view_box_clone(&self) -> Box<dyn ComputationView<T>>;
 }
 
-pub trait View<T: Value>: Computation<Output = T> {
+pub trait View<T: Value>: Computation<Output=T> + Debug {
     fn view_node(&self) -> ViewNode<T>;
 
     fn collect_expr(&self) -> Vec<Expr>;
 
-    fn box_clone(&self) -> ViewBox<T>;
+    fn clone(&self) -> ViewBox<T>;
 }
 
 impl<T: Value> TryFrom<ConstView<T>> for ExprView<T> {
@@ -68,8 +70,8 @@ impl<T: Value> ExprView<T> {
 impl<T: Value> Clone for ViewNode<T> {
     fn clone(&self) -> Self {
         match self {
-            ViewNode::Expr(n) => ViewNode::Expr(n.clone()),
-            ViewNode::Const(n) => ViewNode::Const(n.clone()),
+            ViewNode::Expr(n) => ViewNode::Expr(Clone::clone(n)),
+            ViewNode::Const(n) => ViewNode::Const(Clone::clone(n)),
             ViewNode::Computation(n) => ViewNode::Computation(n.computation_view_box_clone()),
         }
     }
@@ -105,35 +107,35 @@ impl<T: Value> Computation for ViewNode<T> {
 
 impl<T: Value> View<T> for ExprView<T> {
     fn view_node(&self) -> ViewNode<T> {
-        ViewNode::Expr(self.clone())
+        ViewNode::Expr(Clone::clone(self))
     }
 
     fn collect_expr(&self) -> Vec<Expr> {
         self.exprs.clone()
     }
 
-    fn box_clone(&self) -> ViewBox<T> {
-        Box::new(self.clone())
+    fn clone(&self) -> ViewBox<T> {
+        Box::new(Clone::clone(self))
     }
 }
 
 impl<T: Value> View<T> for ConstView<T> {
     fn view_node(&self) -> ViewNode<T> {
-        ViewNode::Const(self.clone())
+        ViewNode::Const(Clone::clone(self))
     }
 
     fn collect_expr(&self) -> Vec<Expr> {
         vec![]
     }
 
-    fn box_clone(&self) -> ViewBox<T> {
-        Box::new(self.clone())
+    fn clone(&self) -> ViewBox<T> {
+        Box::new(Clone::clone(self))
     }
 }
 
 impl<T: Value> View<T> for ViewNode<T> {
     fn view_node(&self) -> ViewNode<T> {
-        self.clone()
+        Clone::clone(self)
     }
 
     fn collect_expr(&self) -> Vec<Expr> {
@@ -144,10 +146,10 @@ impl<T: Value> View<T> for ViewNode<T> {
         }
     }
 
-    fn box_clone(&self) -> ViewBox<T> {
+    fn clone(&self) -> ViewBox<T> {
         match self {
-            ViewNode::Expr(e) => Box::new(ViewNode::Expr(e.clone())),
-            ViewNode::Const(c) => Box::new(ViewNode::Const(c.clone())),
+            ViewNode::Expr(e) => Box::new(ViewNode::Expr(Clone::clone(e))),
+            ViewNode::Const(c) => Box::new(ViewNode::Const(Clone::clone(c))),
             ViewNode::Computation(c) => {
                 Box::new(ViewNode::Computation(c.computation_view_box_clone()))
             }

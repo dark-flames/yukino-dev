@@ -1,12 +1,14 @@
 use crate::db::ty::DatabaseType;
 use crate::query::Expr;
+use std::fmt::{Debug, Display, Formatter};
 
 pub type FunctionBox = Box<dyn Function>;
 
-pub trait Function {
+pub trait Function: Debug + Display {
     fn box_clone(&self) -> FunctionBox;
 }
 
+#[derive(Debug)]
 pub struct FunctionCall {
     func: FunctionBox,
     params: Vec<Expr>,
@@ -20,5 +22,20 @@ impl Clone for FunctionCall {
             params: self.params.clone(),
             return_ty: self.return_ty,
         }
+    }
+}
+
+impl Display for FunctionCall {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}({})",
+            self.func,
+            self.params
+                .iter()
+                .map(|e| format!("{}", e))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
     }
 }

@@ -1,6 +1,7 @@
 use iroha::ToTokens;
 use serde_json::Value;
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 #[cfg(any(feature = "data-time"))]
 use time::{Date, PrimitiveDateTime, Time};
 
@@ -94,6 +95,32 @@ impl From<&DatabaseValue> for DatabaseType {
             #[cfg(any(feature = "json"))]
             DatabaseValue::Json(_) => DatabaseType::Json,
             DatabaseValue::Null(ty) => *ty,
+        }
+    }
+}
+
+impl Display for DatabaseValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DatabaseValue::Bool(v) => v.fmt(f),
+            DatabaseValue::SmallInteger(v) => v.fmt(f),
+            DatabaseValue::UnsignedSmallInteger(v) => v.fmt(f),
+            DatabaseValue::Integer(v) => v.fmt(f),
+            DatabaseValue::UnsignedInteger(v) => v.fmt(f),
+            DatabaseValue::BigInteger(v) => v.fmt(f),
+            DatabaseValue::UnsignedBigInteger(v) => v.fmt(f),
+            DatabaseValue::Float(v) => v.fmt(f),
+            DatabaseValue::Double(v) => v.fmt(f),
+            DatabaseValue::Binary(_) => write!(f, "BinaryData"),
+            DatabaseValue::Time(v) => v.fmt(f),
+            DatabaseValue::Date(v) => v.fmt(f),
+            DatabaseValue::DateTime(v) => v.fmt(f),
+            DatabaseValue::Timestamp(v) => v.fmt(f),
+            DatabaseValue::Character(v) => write!(f, "'{}'", v),
+            DatabaseValue::String(v) => write!(f, "\"{}\"", v),
+            DatabaseValue::Text(v) => write!(f, "\"{}\"", v),
+            DatabaseValue::Json(v) => v.fmt(f),
+            DatabaseValue::Null(_) => write!(f, "NULL"),
         }
     }
 }

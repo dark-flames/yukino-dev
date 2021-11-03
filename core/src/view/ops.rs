@@ -5,9 +5,9 @@ use crate::view::value::Value;
 use crate::view::{Computation, ComputationView, ConstView, ExprView, View, ViewBox, ViewNode};
 
 macro_rules! expr_binary_ops {
-    ($op: ident, $node: ident, $trait: ident, $method: ident, $operator: tt) => {
+    ($op: ident, $node: ident, $trait: ident, $method: ident, $operator: tt, $macro_name: ident) => {
         use std::ops::$op;
-        #[derive(Clone)]
+        #[derive(Clone, Debug)]
         pub struct $node<L, R, O>
         where
             L: Value + $op<R, Output = O>,
@@ -39,7 +39,7 @@ macro_rules! expr_binary_ops {
             O: Value,
         {
             fn view_node(&self) -> ViewNode<O> {
-                ViewNode::Computation(Box::new(self.clone()))
+                ViewNode::Computation(Box::new(Clone::clone(self)))
             }
 
             fn collect_expr(&self) -> Vec<Expr> {
@@ -50,8 +50,8 @@ macro_rules! expr_binary_ops {
                 exprs
             }
 
-            fn box_clone(&self) -> ViewBox<O> {
-                Box::new(self.clone())
+            fn clone(&self) -> ViewBox<O> {
+                Box::new(Clone::clone(self))
             }
         }
 
@@ -62,7 +62,7 @@ macro_rules! expr_binary_ops {
             O: Value,
         {
             fn computation_view_box_clone(&self) -> Box<dyn ComputationView<O>> {
-                Box::new(self.clone())
+                Box::new(Clone::clone(self))
             }
         }
 
@@ -112,10 +112,36 @@ macro_rules! expr_binary_ops {
                 self $operator r
             }
         }
+
+        macro_rules! $macro_name {
+            ($ty: ty) => {
+                impl $trait<$ty> for $ty {
+                    type Result = $ty;
+
+                    fn $method(l: ExprView<Self>, r: ExprView<$ty>) -> ExprView<<Self as $trait<$ty>>::Result>
+                    where
+                        Self: Sized {
+
+                        ExprView::create(l.exprs.into_iter().zip(r.exprs.into_iter()).map(
+                            |(l_i, r_i)| Expr::$op(Box::new(l_i), Box::new(r_i))
+                        ).collect())
+                    }
+                }
+            }
+        }
+
+        $macro_name!(u16);
+        $macro_name!(i16);
+        $macro_name!(u32);
+        $macro_name!(i32);
+        $macro_name!(u64);
+        $macro_name!(i64);
+        $macro_name!(f32);
+        $macro_name!(f64);
     }
 }
 
-expr_binary_ops!(Add, AddComputationNode, ExprAdd, add, +);
-expr_binary_ops!(Sub, SubComputationNode, ExprSub, sub, -);
-expr_binary_ops!(Mul, MulComputationNode, ExprMul, mul, *);
-expr_binary_ops!(Div, DivComputationNode, ExprDiv, div, /);
+expr_binary_ops!(Add, AddComputationNode, ExprAdd, add, +, impl_add_basic);
+expr_binary_ops!(Sub, SubComputationNode, ExprSub, sub, -, impl_sub_basic);
+expr_binary_ops!(Mul, MulComputationNode, ExprMul, mul, *, impl_mul_basic);
+expr_binary_ops!(Div, DivComputationNode, ExprDiv, div, /, impl_div_basic);

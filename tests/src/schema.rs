@@ -7,8 +7,8 @@ use yukino::interface::EntityView;
 use yukino::query::{Alias, Expr};
 use yukino::view::Value;
 use yukino::view::{Computation, ExprView, View, ViewBox, ViewNode};
-#[derive(Clone)]
-pub struct Numeric {
+#[derive(Clone, Debug)]
+pub struct Basic {
     pub character: char,
     pub double: f64,
     pub float: f32,
@@ -22,7 +22,9 @@ pub struct Numeric {
     pub u_long: u64,
     pub u_short: u16,
 }
-pub struct NumericView {
+
+#[derive(Debug)]
+pub struct BasicView {
     pub character: ViewBox<char>,
     pub double: ViewBox<f64>,
     pub float: ViewBox<f32>,
@@ -36,33 +38,37 @@ pub struct NumericView {
     pub u_long: ViewBox<u64>,
     pub u_short: ViewBox<u16>,
 }
-unsafe impl Sync for NumericView {}
-impl Clone for NumericView {
+
+unsafe impl Sync for BasicView {}
+
+impl Clone for BasicView {
     fn clone(&self) -> Self {
-        NumericView {
-            character: self.character.box_clone(),
-            double: self.double.box_clone(),
-            float: self.float.box_clone(),
-            id: self.id.box_clone(),
-            int: self.int.box_clone(),
-            long: self.long.box_clone(),
-            optional: self.optional.box_clone(),
-            short: self.short.box_clone(),
-            string: self.string.box_clone(),
-            u_int: self.u_int.box_clone(),
-            u_long: self.u_long.box_clone(),
-            u_short: self.u_short.box_clone(),
+        BasicView {
+            character: self.character.clone(),
+            double: self.double.clone(),
+            float: self.float.clone(),
+            id: self.id.clone(),
+            int: self.int.clone(),
+            long: self.long.clone(),
+            optional: self.optional.clone(),
+            short: self.short.clone(),
+            string: self.string.clone(),
+            u_int: self.u_int.clone(),
+            u_long: self.u_long.clone(),
+            u_short: self.u_short.clone(),
         }
     }
 }
-impl Computation for NumericView {
-    type Output = Numeric;
+
+impl Computation for BasicView {
+    type Output = Basic;
     fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<Self::Output> {
-        (*Numeric::converter().deserializer())(v)
+        (*Basic::converter().deserializer())(v)
     }
 }
-impl View<Numeric> for NumericView {
-    fn view_node(&self) -> ViewNode<Numeric> {
+
+impl View<Basic> for BasicView {
+    fn view_node(&self) -> ViewNode<Basic> {
         ViewNode::Expr(ExprView::create(self.collect_expr()))
     }
     fn collect_expr(&self) -> Vec<Expr> {
@@ -81,17 +87,18 @@ impl View<Numeric> for NumericView {
         exprs.extend(self.u_short.collect_expr());
         exprs
     }
-    fn box_clone(&self) -> ViewBox<Numeric> {
-        Box::new(self.clone())
+    fn clone(&self) -> ViewBox<Basic> {
+        Box::new(Clone::clone(self))
     }
 }
-impl EntityView for NumericView {
-    type Entity = Numeric;
+
+impl EntityView for BasicView {
+    type Entity = Basic;
     fn pure(alias: Alias) -> Self
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
-        NumericView {
+        BasicView {
             character: Box::new(ViewNode::Expr(ExprView::create(vec![
                 alias.create_ident_expr("character", yukino::db::ty::DatabaseType::Character)
             ]))),
@@ -143,35 +150,41 @@ impl EntityView for NumericView {
         }
     }
 }
-impl Entity for Numeric {
-    type View = NumericView;
+
+impl Entity for Basic {
+    type View = BasicView;
 }
-impl Value for Numeric {
+
+impl Value for Basic {
     fn converter() -> ConverterRef<Self>
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
-        NumericConverter::instance()
+        BasicConverter::instance()
     }
 }
+
 #[derive(Clone)]
-pub struct NumericConverter;
-unsafe impl Sync for NumericConverter {}
-static NUMERIC_CONVERTER: NumericConverter = NumericConverter;
-impl Converter for NumericConverter {
-    type Output = Numeric;
+pub struct BasicConverter;
+
+unsafe impl Sync for BasicConverter {}
+
+static BASIC_CONVERTER: BasicConverter = BasicConverter;
+
+impl Converter for BasicConverter {
+    type Output = Basic;
     fn instance() -> &'static Self
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
-        &NUMERIC_CONVERTER
+        &BASIC_CONVERTER
     }
     fn param_count(&self) -> usize {
         12usize
     }
     fn deserializer(&self) -> Box<dyn Fn(&[&DatabaseValue]) -> RuntimeResult<Self::Output>> {
         Box::new(|v| {
-            Ok(Numeric {
+            Ok(Basic {
                 character: (*<char>::converter().deserializer())(&v[0usize..1usize])?,
                 double: (*<f64>::converter().deserializer())(&v[1usize..2usize])?,
                 float: (*<f32>::converter().deserializer())(&v[2usize..3usize])?,
@@ -207,10 +220,12 @@ impl Converter for NumericConverter {
         .collect())
     }
 }
-pub mod numeric {
+
+pub mod basic {
     use lazy_static::lazy_static;
     use yukino::interface::def::FieldDefinition;
     use yukino::interface::FieldMarker;
+
     #[allow(non_camel_case_types)]
     pub struct character();
     lazy_static! {

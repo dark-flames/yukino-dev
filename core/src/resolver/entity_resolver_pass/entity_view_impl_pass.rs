@@ -51,7 +51,7 @@ impl EntityResolvePass for EntityViewPass {
                 let field_name = format_ident!("{}", f.path.field_name);
                 (
                     quote! {
-                        #field_name: self.#field_name.box_clone()
+                        #field_name: self.#field_name.clone()
                     },
                     quote! {
                         exprs.extend(self.#field_name.collect_expr())
@@ -61,6 +61,7 @@ impl EntityResolvePass for EntityViewPass {
             .unzip();
 
         vec![quote! {
+            #[derive(Debug)]
             pub struct #name {
                 #(#fields),*
             }
@@ -96,8 +97,8 @@ impl EntityResolvePass for EntityViewPass {
                     exprs
                 }
 
-                fn box_clone(&self) -> ViewBox<#entity_name> {
-                    Box::new(self.clone())
+                fn clone(&self) -> ViewBox<#entity_name> {
+                    Box::new(Clone::clone(self))
                 }
             }
 

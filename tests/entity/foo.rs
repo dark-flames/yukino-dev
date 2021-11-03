@@ -1,5 +1,5 @@
 #[Entity()]
-pub struct Numeric {
+pub struct Basic {
     #[ID]
     id: u32,
     u_short: u16,

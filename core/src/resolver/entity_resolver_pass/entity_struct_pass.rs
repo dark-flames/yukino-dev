@@ -34,7 +34,7 @@ impl EntityResolvePass for EntityStructPass {
             .collect::<Vec<_>>();
 
         vec![quote! {
-            #[derive(Clone)]
+            #[derive(Clone, Debug)]
             pub struct #name {
                 #(#fields),*
             }
