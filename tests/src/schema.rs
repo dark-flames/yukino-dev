@@ -1,7 +1,7 @@
-use yukino::converter::Converter;
 use yukino::converter::ConverterRef;
+use yukino::converter::{ConvertResult, Converter};
 use yukino::db::ty::DatabaseValue;
-use yukino::err::RuntimeResult;
+use yukino::err::{RuntimeResult, YukinoError};
 use yukino::interface::Entity;
 use yukino::interface::EntityView;
 use yukino::query::{Alias, Expr};
@@ -22,7 +22,6 @@ pub struct Basic {
     pub u_long: u64,
     pub u_short: u16,
 }
-
 #[derive(Debug)]
 pub struct BasicView {
     pub character: ViewBox<char>,
@@ -38,9 +37,7 @@ pub struct BasicView {
     pub u_long: ViewBox<u64>,
     pub u_short: ViewBox<u16>,
 }
-
 unsafe impl Sync for BasicView {}
-
 impl Clone for BasicView {
     fn clone(&self) -> Self {
         BasicView {
@@ -59,14 +56,12 @@ impl Clone for BasicView {
         }
     }
 }
-
 impl Computation for BasicView {
     type Output = Basic;
     fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<Self::Output> {
-        (*Basic::converter().deserializer())(v)
+        (*Basic::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
     }
 }
-
 impl View<Basic> for BasicView {
     fn view_node(&self) -> ViewNode<Basic> {
         ViewNode::Expr(ExprView::create(self.collect_expr()))
@@ -91,7 +86,6 @@ impl View<Basic> for BasicView {
         Box::new(Clone::clone(self))
     }
 }
-
 impl EntityView for BasicView {
     type Entity = Basic;
     fn pure(alias: Alias) -> Self
@@ -150,11 +144,9 @@ impl EntityView for BasicView {
         }
     }
 }
-
 impl Entity for Basic {
     type View = BasicView;
 }
-
 impl Value for Basic {
     fn converter() -> ConverterRef<Self>
         where
@@ -163,14 +155,10 @@ impl Value for Basic {
         BasicConverter::instance()
     }
 }
-
 #[derive(Clone)]
 pub struct BasicConverter;
-
 unsafe impl Sync for BasicConverter {}
-
 static BASIC_CONVERTER: BasicConverter = BasicConverter;
-
 impl Converter for BasicConverter {
     type Output = Basic;
     fn instance() -> &'static Self
@@ -182,7 +170,7 @@ impl Converter for BasicConverter {
     fn param_count(&self) -> usize {
         12usize
     }
-    fn deserializer(&self) -> Box<dyn Fn(&[&DatabaseValue]) -> RuntimeResult<Self::Output>> {
+    fn deserializer(&self) -> Box<dyn Fn(&[&DatabaseValue]) -> ConvertResult<Self::Output>> {
         Box::new(|v| {
             Ok(Basic {
                 character: (*<char>::converter().deserializer())(&v[0usize..1usize])?,
@@ -200,7 +188,7 @@ impl Converter for BasicConverter {
             })
         })
     }
-    fn serialize(&self, value: &Self::Output) -> RuntimeResult<Vec<DatabaseValue>> {
+    fn serialize(&self, value: &Self::Output) -> ConvertResult<Vec<DatabaseValue>> {
         Ok(vec![
             <char>::converter().serialize(&value.character)?,
             <f64>::converter().serialize(&value.double)?,
@@ -220,12 +208,10 @@ impl Converter for BasicConverter {
         .collect())
     }
 }
-
 pub mod basic {
     use lazy_static::lazy_static;
     use yukino::interface::def::FieldDefinition;
     use yukino::interface::FieldMarker;
-
     #[allow(non_camel_case_types)]
     pub struct character();
     lazy_static! {

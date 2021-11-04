@@ -1,6 +1,6 @@
-use crate::converter::Converter;
+use crate::converter::{ConvertResult, Converter};
 use crate::db::ty::{DatabaseType, DatabaseValue};
-use crate::err::RuntimeResult;
+use crate::err::ConvertError;
 use iroha::ToTokens;
 
 macro_rules! basic_ty_converter {
@@ -29,21 +29,21 @@ macro_rules! basic_ty_converter {
 
             fn deserializer(
                 &self,
-            ) -> Box<dyn Fn(&[&DatabaseValue]) -> RuntimeResult<Self::Output>> {
+            ) -> Box<dyn Fn(&[&DatabaseValue]) -> ConvertResult<Self::Output>> {
                 Box::new(|v| {
                     v.first()
                         .map(|value| {
                             if let DatabaseValue::$enum_variant(nested) = value {
                                 Ok(nested.clone())
                             } else {
-                                panic!("error handle");
+                                Err(ConvertError::UnexpectedValueType)
                             }
                         })
-                        .ok_or_else(|| panic!("error handle"))?
+                        .ok_or_else(|| ConvertError::UnexpectedValueCount)?
                 })
             }
 
-            fn serialize(&self, value: &Self::Output) -> RuntimeResult<Vec<DatabaseValue>> {
+            fn serialize(&self, value: &Self::Output) -> ConvertResult<Vec<DatabaseValue>> {
                 Ok(vec![DatabaseValue::$enum_variant(value.clone())])
             }
         }
@@ -76,21 +76,19 @@ macro_rules! optional_basic_ty_converter {
 
             fn deserializer(
                 &self,
-            ) -> Box<dyn Fn(&[&DatabaseValue]) -> RuntimeResult<Self::Output>> {
+            ) -> Box<dyn Fn(&[&DatabaseValue]) -> ConvertResult<Self::Output>> {
                 Box::new(|v| {
                     v.first()
                         .map(|value| match value {
                             DatabaseValue::$enum_variant(nested) => Ok(Some(nested.clone())),
                             DatabaseValue::Null(DatabaseType::$enum_variant) => Ok(None),
-                            _ => {
-                                panic!("error handle")
-                            }
+                            _ => Err(ConvertError::UnexpectedValueType),
                         })
-                        .ok_or_else(|| panic!("error handle"))?
+                        .ok_or_else(|| ConvertError::UnexpectedValueCount)?
                 })
             }
 
-            fn serialize(&self, value: &Self::Output) -> RuntimeResult<Vec<DatabaseValue>> {
+            fn serialize(&self, value: &Self::Output) -> ConvertResult<Vec<DatabaseValue>> {
                 if let Some(nested) = value {
                     Ok(vec![DatabaseValue::$enum_variant(nested.clone())])
                 } else {

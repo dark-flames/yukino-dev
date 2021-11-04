@@ -19,7 +19,7 @@ impl EntityResolvePass for EntityViewPass {
             use yukino::query::{Expr, Alias};
             use yukino::interface::EntityView;
             use yukino::db::ty::DatabaseValue;
-            use yukino::err::RuntimeResult;
+            use yukino::err::{RuntimeResult, YukinoError};
         }]
     }
 
@@ -80,7 +80,7 @@ impl EntityResolvePass for EntityViewPass {
                 type Output = #entity_name;
 
                 fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<Self::Output> {
-                    (*#entity_name::converter().deserializer())(v)
+                    (*#entity_name::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
                 }
             }
 

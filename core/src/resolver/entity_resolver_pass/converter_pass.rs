@@ -16,7 +16,7 @@ impl EntityResolvePass for ConverterPass {
 
     fn get_dependencies(&self) -> Vec<TokenStream> {
         vec![quote! {
-            use yukino::converter::Converter;
+            use yukino::converter::{Converter, ConvertResult};
         }]
     }
 
@@ -68,7 +68,7 @@ impl EntityResolvePass for ConverterPass {
                     #param_count
                 }
 
-                fn deserializer(&self) -> Box<dyn Fn(&[&DatabaseValue]) -> RuntimeResult<Self::Output>> {
+                fn deserializer(&self) -> Box<dyn Fn(&[&DatabaseValue]) -> ConvertResult<Self::Output>> {
                     Box::new(|v| {
                         Ok(#entity_name {
                             #(#deserialize_branches),*
@@ -76,7 +76,7 @@ impl EntityResolvePass for ConverterPass {
                     })
                 }
 
-                fn serialize(&self, value: &Self::Output) -> RuntimeResult<Vec<DatabaseValue>> {
+                fn serialize(&self, value: &Self::Output) -> ConvertResult<Vec<DatabaseValue>> {
                     Ok(vec![
                         #(#serialize_branches),*
                     ].into_iter().flatten().collect())

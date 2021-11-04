@@ -1,5 +1,5 @@
 use crate::db::ty::DatabaseValue;
-use crate::err::{RuntimeError, RuntimeResult};
+use crate::err::{RuntimeError, RuntimeResult, YukinoError};
 use crate::query::Expr;
 use crate::view::{Computation, Value};
 use std::fmt::Debug;
@@ -43,7 +43,8 @@ impl<T: Value> TryFrom<ConstView<T>> for ExprView<T> {
     fn try_from(c: ConstView<T>) -> Result<Self, Self::Error> {
         Ok(ExprView::create(
             T::converter()
-                .serialize(&c.value)?
+                .serialize(&c.value)
+                .map_err(|e| e.as_runtime_err())?
                 .into_iter()
                 .map(Expr::Lit)
                 .collect(),
@@ -81,7 +82,7 @@ impl<T: Value> Computation for ExprView<T> {
     type Output = T;
 
     fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<Self::Output> {
-        (*T::converter().deserializer())(v)
+        (*T::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
     }
 }
 

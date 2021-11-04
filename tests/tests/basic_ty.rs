@@ -16,13 +16,21 @@ pub fn test_expr() {
         name: "b".to_string(),
     });
 
-    let a = view.int.clone() + 114514;
-    let b = view.int.clone() - 114514;
-    let c = view.int.clone() * 114514;
-    let d = view.int / 114514;
+    let add_const = view.int.clone() + 114514;
+    let sub_const = view.int.clone() - 114514;
+    let mul_const = view.int.clone() * 114514;
+    let div_const = view.int.clone() / 114514;
+    let add = view.long.clone() + view.long.clone();
+    let sub = view.long.clone() - view.long.clone();
+    let mul = view.long.clone() * view.long.clone();
+    let div = view.long.clone() / view.long;
 
-    cmp_view(a, "b.int + 114514");
-    cmp_view(b, "b.int - 114514");
-    cmp_view(c, "b.int * 114514");
-    cmp_view(d, "b.int / 114514");
+    cmp_view(add_const, "b.int + 114514");
+    cmp_view(sub_const, "b.int - 114514");
+    cmp_view(mul_const, "b.int * 114514");
+    cmp_view(div_const, "b.int / 114514");
+    cmp_view(add, "b.long + b.long");
+    cmp_view(sub, "b.long - b.long");
+    cmp_view(mul, "b.long * b.long");
+    cmp_view(div, "b.long / b.long");
 }
