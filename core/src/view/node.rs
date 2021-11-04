@@ -1,5 +1,5 @@
 use crate::db::ty::DatabaseValue;
-use crate::err::{RuntimeError, RuntimeResult, YukinoError};
+use crate::err::{ErrorOnView, RuntimeResult, ViewError, YukinoError};
 use crate::query::Expr;
 use crate::view::{Computation, Value};
 use std::fmt::Debug;
@@ -38,13 +38,13 @@ pub trait View<T: Value>: Computation<Output=T> + Debug {
 }
 
 impl<T: Value> TryFrom<ConstView<T>> for ExprView<T> {
-    type Error = RuntimeError;
+    type Error = ViewError;
 
     fn try_from(c: ConstView<T>) -> Result<Self, Self::Error> {
         Ok(ExprView::create(
             T::converter()
                 .serialize(&c.value)
-                .map_err(|e| e.as_runtime_err())?
+                .map_err(|e| e.as_view_err(&c))?
                 .into_iter()
                 .map(Expr::Lit)
                 .collect(),

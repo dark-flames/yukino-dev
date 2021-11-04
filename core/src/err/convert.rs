@@ -1,3 +1,5 @@
+use crate::err::query::ErrorOnExpr;
+use crate::err::view::ErrorOnView;
 use thiserror::Error;
 
 use crate::err::YukinoError;
@@ -11,3 +13,7 @@ pub enum ConvertError {
 }
 
 impl YukinoError for ConvertError {}
+
+impl ErrorOnExpr for ConvertError {}
+
+impl ErrorOnView for ConvertError {}
