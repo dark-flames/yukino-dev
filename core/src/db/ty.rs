@@ -24,10 +24,8 @@ pub enum DatabaseType {
     Date,
     #[cfg(any(feature = "data-time"))]
     DateTime,
-    Timestamp,
     Character,
     String,
-    Text,
     #[cfg(any(feature = "json"))]
     Json,
 }
@@ -58,11 +56,8 @@ pub enum DatabaseValue {
     #[cfg(any(feature = "data-time"))]
     DateTime(PrimitiveDateTime),
 
-    Timestamp(u64),
-
     Character(char),
     String(String),
-    Text(String),
 
     #[cfg(any(feature = "json"))]
     Json(Value),
@@ -88,10 +83,8 @@ impl From<&DatabaseValue> for DatabaseType {
             DatabaseValue::Date(_) => DatabaseType::Date,
             #[cfg(any(feature = "data-time"))]
             DatabaseValue::DateTime(_) => DatabaseType::DateTime,
-            DatabaseValue::Timestamp(_) => DatabaseType::Timestamp,
             DatabaseValue::Character(_) => DatabaseType::Character,
             DatabaseValue::String(_) => DatabaseType::String,
-            DatabaseValue::Text(_) => DatabaseType::Text,
             #[cfg(any(feature = "json"))]
             DatabaseValue::Json(_) => DatabaseType::Json,
             DatabaseValue::Null(ty) => *ty,
@@ -115,12 +108,102 @@ impl Display for DatabaseValue {
             DatabaseValue::Time(v) => v.fmt(f),
             DatabaseValue::Date(v) => v.fmt(f),
             DatabaseValue::DateTime(v) => v.fmt(f),
-            DatabaseValue::Timestamp(v) => v.fmt(f),
             DatabaseValue::Character(v) => write!(f, "'{}'", v),
             DatabaseValue::String(v) => write!(f, "\"{}\"", v),
-            DatabaseValue::Text(v) => write!(f, "\"{}\"", v),
             DatabaseValue::Json(v) => v.fmt(f),
             DatabaseValue::Null(_) => write!(f, "NULL"),
         }
+    }
+}
+
+impl Display for DatabaseType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl DatabaseType {
+    pub fn bit_operate(&self) -> bool {
+        matches!(
+            self,
+            DatabaseType::Bool
+                | DatabaseType::SmallInteger
+                | DatabaseType::UnsignedSmallInteger
+                | DatabaseType::Integer
+                | DatabaseType::UnsignedInteger
+                | DatabaseType::BigInteger
+                | DatabaseType::UnsignedBigInteger
+        )
+    }
+
+    pub fn add_operate(&self) -> bool {
+        matches!(
+            self,
+            DatabaseType::SmallInteger
+                | DatabaseType::UnsignedSmallInteger
+                | DatabaseType::Integer
+                | DatabaseType::UnsignedInteger
+                | DatabaseType::BigInteger
+                | DatabaseType::UnsignedBigInteger
+                | DatabaseType::Float
+                | DatabaseType::Double
+                | DatabaseType::Date
+                | DatabaseType::Time
+                | DatabaseType::DateTime
+        )
+    }
+
+    pub fn mul_operate(&self) -> bool {
+        matches!(
+            self,
+            DatabaseType::SmallInteger
+                | DatabaseType::UnsignedSmallInteger
+                | DatabaseType::Integer
+                | DatabaseType::UnsignedInteger
+                | DatabaseType::BigInteger
+                | DatabaseType::UnsignedBigInteger
+                | DatabaseType::Float
+                | DatabaseType::Double
+        )
+    }
+
+    pub fn logic_operate(self) -> bool {
+        matches!(self, DatabaseType::Bool)
+    }
+
+    pub fn eq(&self) -> bool {
+        matches!(
+            self,
+            DatabaseType::SmallInteger
+                | DatabaseType::UnsignedSmallInteger
+                | DatabaseType::Integer
+                | DatabaseType::UnsignedInteger
+                | DatabaseType::BigInteger
+                | DatabaseType::UnsignedBigInteger
+                | DatabaseType::Float
+                | DatabaseType::Double
+                | DatabaseType::Date
+                | DatabaseType::Time
+                | DatabaseType::DateTime
+                | DatabaseType::Character
+                | DatabaseType::String
+        )
+    }
+
+    pub fn ord(&self) -> bool {
+        matches!(
+            self,
+            DatabaseType::SmallInteger
+                | DatabaseType::UnsignedSmallInteger
+                | DatabaseType::Integer
+                | DatabaseType::UnsignedInteger
+                | DatabaseType::BigInteger
+                | DatabaseType::UnsignedBigInteger
+                | DatabaseType::Float
+                | DatabaseType::Double
+                | DatabaseType::Date
+                | DatabaseType::Time
+                | DatabaseType::DateTime
+        )
     }
 }

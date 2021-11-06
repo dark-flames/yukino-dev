@@ -89,8 +89,8 @@ impl View<Basic> for BasicView {
 impl EntityView for BasicView {
     type Entity = Basic;
     fn pure(alias: Alias) -> Self
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         BasicView {
             character: Box::new(ViewNode::Expr(ExprView::create(vec![
@@ -149,8 +149,8 @@ impl Entity for Basic {
 }
 impl Value for Basic {
     fn converter() -> ConverterRef<Self>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         BasicConverter::instance()
     }
@@ -162,8 +162,8 @@ static BASIC_CONVERTER: BasicConverter = BasicConverter;
 impl Converter for BasicConverter {
     type Output = Basic;
     fn instance() -> &'static Self
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         &BASIC_CONVERTER
     }

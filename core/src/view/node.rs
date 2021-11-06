@@ -25,11 +25,11 @@ pub struct ConstView<T: Value> {
     pub value: T,
 }
 
-pub trait ComputationView<T: Value>: Computation<Output=T> + View<T> + Debug {
+pub trait ComputationView<T: Value>: Computation<Output = T> + View<T> + Debug {
     fn computation_view_box_clone(&self) -> Box<dyn ComputationView<T>>;
 }
 
-pub trait View<T: Value>: Computation<Output=T> + Debug {
+pub trait View<T: Value>: Computation<Output = T> + Debug {
     fn view_node(&self) -> ViewNode<T>;
 
     fn collect_expr(&self) -> Vec<Expr>;

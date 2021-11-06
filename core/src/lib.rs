@@ -1,5 +1,4 @@
 #![feature(associated_type_bounds)]
-
 pub mod converter;
 pub mod db;
 pub mod err;

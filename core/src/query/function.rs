@@ -10,9 +10,9 @@ pub trait Function: Debug + Display {
 
 #[derive(Debug)]
 pub struct FunctionCall {
-    func: FunctionBox,
-    params: Vec<Expr>,
-    return_ty: DatabaseType,
+    pub func: FunctionBox,
+    pub params: Vec<Expr>,
+    pub return_ty: DatabaseType,
 }
 
 impl Clone for FunctionCall {
