@@ -4,7 +4,7 @@ use yukino::db::ty::DatabaseValue;
 use yukino::err::{RuntimeResult, YukinoError};
 use yukino::interface::Entity;
 use yukino::interface::EntityView;
-use yukino::query::{Alias, Expr};
+use yukino::query::{Alias, TypedExpr};
 use yukino::view::Value;
 use yukino::view::{Computation, ExprView, View, ViewBox, ViewNode};
 #[derive(Clone, Debug)]
@@ -66,7 +66,7 @@ impl View<Basic> for BasicView {
     fn view_node(&self) -> ViewNode<Basic> {
         ViewNode::Expr(ExprView::create(self.collect_expr()))
     }
-    fn collect_expr(&self) -> Vec<Expr> {
+    fn collect_expr(&self) -> Vec<TypedExpr> {
         let mut exprs = vec![];
         exprs.extend(self.character.collect_expr());
         exprs.extend(self.double.collect_expr());

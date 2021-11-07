@@ -222,9 +222,9 @@ impl FieldType {
         let database_ty = DatabaseType::from(self);
 
         quote! {
-            Box::new(ViewNode::Expr(ExprView::create(vec![alias.create_ident_expr(
-                #column, #database_ty
-            )])))
+            Box::new(ViewNode::Expr(ExprView::create(vec![
+                alias.create_ident_expr(#column, #database_ty)
+            ])))
         }
     }
 

@@ -1,11 +1,11 @@
 use crate::db::ty::DatabaseValue;
 use crate::err::RuntimeResult;
-use crate::query::Expr;
+use crate::query::TypedExpr;
 use crate::view::value::Value;
 use crate::view::{Computation, ComputationView, ConstView, ExprView, View, ViewBox, ViewNode};
 
 macro_rules! expr_binary_ops {
-    ($op: ident, $node: ident, $trait: ident, $method: ident, $operator: tt, $macro_name: ident) => {
+    ($op: ident, $node: ident, $trait: ident, $method: ident, $operator: tt, $macro_name: ident, $expr_op: ident) => {
         use std::ops::$op;
         #[derive(Clone, Debug)]
         pub struct $node<L, R, O>
@@ -42,7 +42,7 @@ macro_rules! expr_binary_ops {
                 ViewNode::Computation(Box::new(Clone::clone(self)))
             }
 
-            fn collect_expr(&self) -> Vec<Expr> {
+            fn collect_expr(&self) -> Vec<TypedExpr> {
                 let mut exprs = self.l.collect_expr();
 
                 exprs.extend(self.r.collect_expr());
@@ -123,7 +123,7 @@ macro_rules! expr_binary_ops {
                         Self: Sized {
 
                         ExprView::create(l.exprs.into_iter().zip(r.exprs.into_iter()).map(
-                            |(l_i, r_i)| Expr::$op(Box::new(l_i), Box::new(r_i))
+                            |(l_i, r_i)| l_i.$expr_op(r_i).unwrap()
                         ).collect())
                     }
                 }
@@ -141,7 +141,7 @@ macro_rules! expr_binary_ops {
     }
 }
 
-expr_binary_ops!(Add, AddComputationNode, ExprAdd, add, +, impl_add_basic);
-expr_binary_ops!(Sub, SubComputationNode, ExprSub, sub, -, impl_sub_basic);
-expr_binary_ops!(Mul, MulComputationNode, ExprMul, mul, *, impl_mul_basic);
-expr_binary_ops!(Div, DivComputationNode, ExprDiv, div, /, impl_div_basic);
+expr_binary_ops!(Add, AddComputationNode, ExprAdd, add, +, impl_add_basic, plus);
+expr_binary_ops!(Sub, SubComputationNode, ExprSub, sub, -, impl_sub_basic, minus);
+expr_binary_ops!(Mul, MulComputationNode, ExprMul, mul, *, impl_mul_basicm, multi);
+expr_binary_ops!(Div, DivComputationNode, ExprDiv, div, /, impl_div_basic, divide);

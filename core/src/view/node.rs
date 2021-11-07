@@ -1,6 +1,6 @@
 use crate::db::ty::DatabaseValue;
 use crate::err::{ErrorOnView, RuntimeResult, ViewError, YukinoError};
-use crate::query::Expr;
+use crate::query::TypedExpr;
 use crate::view::{Computation, Value};
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -16,7 +16,7 @@ pub enum ViewNode<T: Value> {
 
 #[derive(Clone, Debug)]
 pub struct ExprView<T: Value> {
-    pub exprs: Vec<Expr>,
+    pub exprs: Vec<TypedExpr>,
     _marker: PhantomData<T>,
 }
 
@@ -32,7 +32,7 @@ pub trait ComputationView<T: Value>: Computation<Output = T> + View<T> + Debug {
 pub trait View<T: Value>: Computation<Output = T> + Debug {
     fn view_node(&self) -> ViewNode<T>;
 
-    fn collect_expr(&self) -> Vec<Expr>;
+    fn collect_expr(&self) -> Vec<TypedExpr>;
 
     fn clone(&self) -> ViewBox<T>;
 }
@@ -46,7 +46,7 @@ impl<T: Value> TryFrom<ConstView<T>> for ExprView<T> {
                 .serialize(&c.value)
                 .map_err(|e| e.as_view_err(&c))?
                 .into_iter()
-                .map(Expr::Lit)
+                .map(|v| TypedExpr::lit(v).unwrap())
                 .collect(),
         ))
     }
@@ -59,7 +59,7 @@ impl<T: Value> ConstView<T> {
 }
 
 impl<T: Value> ExprView<T> {
-    pub fn create(exprs: Vec<Expr>) -> Self {
+    pub fn create(exprs: Vec<TypedExpr>) -> Self {
         assert_eq!(T::converter().param_count(), exprs.len());
         ExprView {
             exprs,
@@ -111,7 +111,7 @@ impl<T: Value> View<T> for ExprView<T> {
         ViewNode::Expr(Clone::clone(self))
     }
 
-    fn collect_expr(&self) -> Vec<Expr> {
+    fn collect_expr(&self) -> Vec<TypedExpr> {
         self.exprs.clone()
     }
 
@@ -125,7 +125,7 @@ impl<T: Value> View<T> for ConstView<T> {
         ViewNode::Const(Clone::clone(self))
     }
 
-    fn collect_expr(&self) -> Vec<Expr> {
+    fn collect_expr(&self) -> Vec<TypedExpr> {
         vec![]
     }
 
@@ -139,7 +139,7 @@ impl<T: Value> View<T> for ViewNode<T> {
         Clone::clone(self)
     }
 
-    fn collect_expr(&self) -> Vec<Expr> {
+    fn collect_expr(&self) -> Vec<TypedExpr> {
         match self {
             ViewNode::Expr(e) => e.collect_expr(),
             ViewNode::Const(c) => c.collect_expr(),

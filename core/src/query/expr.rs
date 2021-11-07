@@ -14,7 +14,7 @@ pub enum Expr {
     BitXor(ExprBox, ExprBox),
     Mul(ExprBox, ExprBox),
     Div(ExprBox, ExprBox),
-    Rem(ExprBox, ExprBox),
+    Mod(ExprBox, ExprBox),
     Add(ExprBox, ExprBox),
     Sub(ExprBox, ExprBox),
     LeftShift(ExprBox, ExprBox),
@@ -33,6 +33,7 @@ pub enum Expr {
     Or(ExprBox, ExprBox),
 }
 
+#[derive(Clone, Debug)]
 pub struct TypedExpr {
     expr: ExprBox,
     ty: DatabaseType,
@@ -48,7 +49,7 @@ impl Display for Expr {
             Expr::BitXor(l, r) => write!(f, "{} ^ {}", l, r),
             Expr::Mul(l, r) => write!(f, "{} * {}", l, r),
             Expr::Div(l, r) => write!(f, "{} / {}", l, r),
-            Expr::Rem(l, r) => write!(f, "{} % {}", l, r),
+            Expr::Mod(l, r) => write!(f, "{} % {}", l, r),
             Expr::Add(l, r) => write!(f, "{} + {}", l, r),
             Expr::Sub(l, r) => write!(f, "{} - {}", l, r),
             Expr::LeftShift(l, r) => write!(f, "{} << {}", l, r),
@@ -70,6 +71,10 @@ impl Display for Expr {
 }
 
 impl TypedExpr {
+    pub fn unwrap(&self) -> Expr {
+        self.expr.as_ref().clone()
+    }
+
     pub fn ident(ident: Ident) -> ExprResult<Self> {
         let ty = ident.ty;
         Ok(TypedExpr {
@@ -113,9 +118,9 @@ impl TypedExpr {
         if !ty.bit_operate() {
             Err(TypeError::UnimplementedOperator("^".to_string(), ty)
                 .as_expr_err(self.expr.as_ref()))
-        } else if ty != r.ty {
-            Err(TypeError::CannotApplyOperator("^".to_string(), ty, r.ty)
-                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.bit_operate() {
+            Err(TypeError::UnimplementedOperator("^".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
         } else {
             Ok(TypedExpr {
                 expr: Box::new(Expr::BitXor(self.expr, r.expr)),
@@ -130,9 +135,9 @@ impl TypedExpr {
         if !ty.mul_operate() {
             Err(TypeError::UnimplementedOperator("*".to_string(), ty)
                 .as_expr_err(self.expr.as_ref()))
-        } else if ty != r.ty {
-            Err(TypeError::CannotApplyOperator("*".to_string(), ty, r.ty)
-                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.mul_operate() {
+            Err(TypeError::UnimplementedOperator("*".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
         } else {
             Ok(TypedExpr {
                 expr: Box::new(Expr::Mul(self.expr, r.expr)),
@@ -147,12 +152,29 @@ impl TypedExpr {
         if !ty.mul_operate() {
             Err(TypeError::UnimplementedOperator("/".to_string(), ty)
                 .as_expr_err(self.expr.as_ref()))
-        } else if ty != r.ty {
-            Err(TypeError::CannotApplyOperator("/".to_string(), ty, r.ty)
-                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.mul_operate() {
+            Err(TypeError::UnimplementedOperator("/".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
         } else {
             Ok(TypedExpr {
                 expr: Box::new(Expr::Div(self.expr, r.expr)),
+                ty,
+            })
+        }
+    }
+
+    pub fn modulo(self, r: TypedExpr) -> ExprResult<Self> {
+        let ty = self.ty;
+
+        if !ty.rem_operate() {
+            Err(TypeError::UnimplementedOperator("%".to_string(), ty)
+                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.rem_operate() {
+            Err(TypeError::UnimplementedOperator("%".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
+        } else {
+            Ok(TypedExpr {
+                expr: Box::new(Expr::Mod(self.expr, r.expr)),
                 ty,
             })
         }
@@ -164,9 +186,9 @@ impl TypedExpr {
         if !ty.add_operate() {
             Err(TypeError::UnimplementedOperator("+".to_string(), ty)
                 .as_expr_err(self.expr.as_ref()))
-        } else if ty != r.ty {
-            Err(TypeError::CannotApplyOperator("+".to_string(), ty, r.ty)
-                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.add_operate() {
+            Err(TypeError::UnimplementedOperator("+".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
         } else {
             Ok(TypedExpr {
                 expr: Box::new(Expr::Add(self.expr, r.expr)),
@@ -181,9 +203,9 @@ impl TypedExpr {
         if !ty.add_operate() {
             Err(TypeError::UnimplementedOperator("-".to_string(), ty)
                 .as_expr_err(self.expr.as_ref()))
-        } else if ty != r.ty {
-            Err(TypeError::CannotApplyOperator("-".to_string(), ty, r.ty)
-                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.add_operate() {
+            Err(TypeError::UnimplementedOperator("-".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
         } else {
             Ok(TypedExpr {
                 expr: Box::new(Expr::Sub(self.expr, r.expr)),
@@ -198,9 +220,9 @@ impl TypedExpr {
         if !ty.bit_operate() {
             Err(TypeError::UnimplementedOperator("<<".to_string(), ty)
                 .as_expr_err(self.expr.as_ref()))
-        } else if ty != r.ty {
-            Err(TypeError::CannotApplyOperator(">>".to_string(), ty, r.ty)
-                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.bit_operate() {
+            Err(TypeError::UnimplementedOperator(">>".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
         } else {
             Ok(TypedExpr {
                 expr: Box::new(Expr::LeftShift(self.expr, r.expr)),
@@ -215,9 +237,9 @@ impl TypedExpr {
         if !ty.bit_operate() {
             Err(TypeError::UnimplementedOperator(">>".to_string(), ty)
                 .as_expr_err(self.expr.as_ref()))
-        } else if ty != r.ty {
-            Err(TypeError::CannotApplyOperator(">>".to_string(), ty, r.ty)
-                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.bit_operate() {
+            Err(TypeError::UnimplementedOperator(">>".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
         } else {
             Ok(TypedExpr {
                 expr: Box::new(Expr::RightShift(self.expr, r.expr)),
@@ -232,9 +254,9 @@ impl TypedExpr {
         if !ty.bit_operate() {
             Err(TypeError::UnimplementedOperator("&".to_string(), ty)
                 .as_expr_err(self.expr.as_ref()))
-        } else if ty != r.ty {
-            Err(TypeError::CannotApplyOperator("&".to_string(), ty, r.ty)
-                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.bit_operate() {
+            Err(TypeError::UnimplementedOperator("|".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
         } else {
             Ok(TypedExpr {
                 expr: Box::new(Expr::BitAnd(self.expr, r.expr)),
@@ -249,9 +271,9 @@ impl TypedExpr {
         if !ty.bit_operate() {
             Err(TypeError::UnimplementedOperator("|".to_string(), ty)
                 .as_expr_err(self.expr.as_ref()))
-        } else if ty != r.ty {
-            Err(TypeError::CannotApplyOperator("|".to_string(), ty, r.ty)
-                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.bit_operate() {
+            Err(TypeError::UnimplementedOperator("|".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
         } else {
             Ok(TypedExpr {
                 expr: Box::new(Expr::BitOr(self.expr, r.expr)),
@@ -266,9 +288,9 @@ impl TypedExpr {
         if !ty.ord() {
             Err(TypeError::UnimplementedOperator(">=".to_string(), ty)
                 .as_expr_err(self.expr.as_ref()))
-        } else if ty != r.ty {
-            Err(TypeError::CannotApplyOperator(">=".to_string(), ty, r.ty)
-                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.ord() {
+            Err(TypeError::UnimplementedOperator(">=".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
         } else {
             Ok(TypedExpr {
                 expr: Box::new(Expr::Bte(self.expr, r.expr)),
@@ -283,9 +305,9 @@ impl TypedExpr {
         if !ty.ord() {
             Err(TypeError::UnimplementedOperator("<=".to_string(), ty)
                 .as_expr_err(self.expr.as_ref()))
-        } else if ty != r.ty {
-            Err(TypeError::CannotApplyOperator("<=".to_string(), ty, r.ty)
-                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.ord() {
+            Err(TypeError::UnimplementedOperator("<=".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
         } else {
             Ok(TypedExpr {
                 expr: Box::new(Expr::Bte(self.expr, r.expr)),
@@ -300,9 +322,9 @@ impl TypedExpr {
         if !ty.eq() {
             Err(TypeError::UnimplementedOperator("!=".to_string(), ty)
                 .as_expr_err(self.expr.as_ref()))
-        } else if ty != r.ty {
-            Err(TypeError::CannotApplyOperator("!=".to_string(), ty, r.ty)
-                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.eq() {
+            Err(TypeError::UnimplementedOperator("!=".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
         } else {
             Ok(TypedExpr {
                 expr: Box::new(Expr::Neq(self.expr, r.expr)),
@@ -317,9 +339,9 @@ impl TypedExpr {
         if !ty.ord() {
             Err(TypeError::UnimplementedOperator(">".to_string(), ty)
                 .as_expr_err(self.expr.as_ref()))
-        } else if ty != r.ty {
-            Err(TypeError::CannotApplyOperator(">".to_string(), ty, r.ty)
-                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.ord() {
+            Err(TypeError::UnimplementedOperator(">".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
         } else {
             Ok(TypedExpr {
                 expr: Box::new(Expr::Bt(self.expr, r.expr)),
@@ -334,9 +356,9 @@ impl TypedExpr {
         if !ty.ord() {
             Err(TypeError::UnimplementedOperator("<".to_string(), ty)
                 .as_expr_err(self.expr.as_ref()))
-        } else if ty != r.ty {
-            Err(TypeError::CannotApplyOperator("<".to_string(), ty, r.ty)
-                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.ord() {
+            Err(TypeError::UnimplementedOperator("<".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
         } else {
             Ok(TypedExpr {
                 expr: Box::new(Expr::Bt(self.expr, r.expr)),
@@ -351,9 +373,9 @@ impl TypedExpr {
         if !ty.eq() {
             Err(TypeError::UnimplementedOperator("=".to_string(), ty)
                 .as_expr_err(self.expr.as_ref()))
-        } else if ty != r.ty {
-            Err(TypeError::CannotApplyOperator("=".to_string(), ty, r.ty)
-                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.eq() {
+            Err(TypeError::UnimplementedOperator("=".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
         } else {
             Ok(TypedExpr {
                 expr: Box::new(Expr::Eq(self.expr, r.expr)),
@@ -382,9 +404,9 @@ impl TypedExpr {
         if !ty.logic_operate() {
             Err(TypeError::UnimplementedOperator("AND".to_string(), ty)
                 .as_expr_err(self.expr.as_ref()))
-        } else if ty != r.ty {
-            Err(TypeError::CannotApplyOperator("AND".to_string(), ty, r.ty)
-                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.logic_operate() {
+            Err(TypeError::UnimplementedOperator("AND".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
         } else {
             Ok(TypedExpr {
                 expr: Box::new(Expr::And(self.expr, r.expr)),
@@ -399,9 +421,9 @@ impl TypedExpr {
         if !ty.logic_operate() {
             Err(TypeError::UnimplementedOperator("XOR".to_string(), ty)
                 .as_expr_err(self.expr.as_ref()))
-        } else if ty != r.ty {
-            Err(TypeError::CannotApplyOperator("XOR".to_string(), ty, r.ty)
-                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.logic_operate() {
+            Err(TypeError::UnimplementedOperator("XOR".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
         } else {
             Ok(TypedExpr {
                 expr: Box::new(Expr::Xor(self.expr, r.expr)),
@@ -416,14 +438,20 @@ impl TypedExpr {
         if !ty.logic_operate() {
             Err(TypeError::UnimplementedOperator("OR".to_string(), ty)
                 .as_expr_err(self.expr.as_ref()))
-        } else if ty != r.ty {
-            Err(TypeError::CannotApplyOperator("OR".to_string(), ty, r.ty)
-                .as_expr_err(self.expr.as_ref()))
+        } else if !r.ty.logic_operate() {
+            Err(TypeError::UnimplementedOperator("OR".to_string(), r.ty)
+                .as_expr_err(r.expr.as_ref()))
         } else {
             Ok(TypedExpr {
                 expr: Box::new(Expr::Or(self.expr, r.expr)),
                 ty,
             })
         }
+    }
+}
+
+impl Display for TypedExpr {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        self.expr.fmt(f)
     }
 }

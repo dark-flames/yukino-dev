@@ -1,5 +1,5 @@
 use crate::db::ty::DatabaseType;
-use crate::query::Expr;
+use crate::query::TypedExpr;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -21,8 +21,8 @@ impl Alias {
         }
     }
 
-    pub fn create_ident_expr(&self, column: &str, ty: DatabaseType) -> Expr {
-        Expr::Ident(self.create_ident(column, ty))
+    pub fn create_ident_expr(&self, column: &str, ty: DatabaseType) -> TypedExpr {
+        TypedExpr::ident(self.create_ident(column, ty)).unwrap()
     }
 }
 

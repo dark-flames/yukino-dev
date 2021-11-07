@@ -167,6 +167,18 @@ impl DatabaseType {
         )
     }
 
+    pub fn rem_operate(&self) -> bool {
+        matches!(
+            self,
+            DatabaseType::SmallInteger
+                | DatabaseType::UnsignedSmallInteger
+                | DatabaseType::Integer
+                | DatabaseType::UnsignedInteger
+                | DatabaseType::BigInteger
+                | DatabaseType::UnsignedBigInteger
+        )
+    }
+
     pub fn logic_operate(self) -> bool {
         matches!(self, DatabaseType::Bool)
     }
