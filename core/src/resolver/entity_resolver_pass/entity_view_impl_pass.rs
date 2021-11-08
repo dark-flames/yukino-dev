@@ -105,7 +105,7 @@ impl EntityResolvePass for EntityViewPass {
             impl EntityView for #name {
                 type Entity = #entity_name;
 
-                fn pure(alias: Alias) -> Self where Self: Sized {
+                fn pure(alias: &Alias) -> Self where Self: Sized {
                     #name {
                         #(#constructs),*
                     }

@@ -30,6 +30,7 @@ pub struct BasicFieldResolverCell {
 
 #[derive(Copy, Clone)]
 pub enum FieldType {
+    Bool,
     Short,
     UnsignedShort,
     Int,
@@ -152,7 +153,8 @@ impl FieldResolverCell for BasicFieldResolverCell {
 
 impl FieldType {
     pub fn from_ty(ty: &Type, resolver: &FileTypePathResolver) -> Option<(Self, bool)> {
-        let branch: [(FieldType, Box<dyn Fn() -> TypeMatchResult>); 10] = [
+        let branch: [(FieldType, Box<dyn Fn() -> TypeMatchResult>); 11] = [
+            (FieldType::Bool, Box::new(|| resolver.match_ty::<bool>(ty))),
             (FieldType::Short, Box::new(|| resolver.match_ty::<i16>(ty))),
             (
                 FieldType::UnsignedShort,
@@ -201,6 +203,7 @@ impl FieldType {
     pub fn converter_ty(&self, optional: bool) -> TokenStream {
         let prefix = if optional { "Optional" } else { "" };
         let name = match self {
+            FieldType::Bool => format_ident!("{}BoolConverter", prefix),
             FieldType::Short => format_ident!("{}ShortConverter", prefix),
             FieldType::UnsignedShort => format_ident!("{}UnsignedShortConverter", prefix),
             FieldType::Int => format_ident!("{}IntConverter", prefix),
@@ -230,6 +233,7 @@ impl FieldType {
 
     pub fn field_ty(&self, optional: bool) -> TokenStream {
         let inside: TokenStream = parse_str(match self {
+            FieldType::Bool => "bool",
             FieldType::Short => "i16",
             FieldType::UnsignedShort => "u16",
             FieldType::Int => "i32",
@@ -256,6 +260,7 @@ impl FieldType {
 impl From<&FieldType> for DatabaseType {
     fn from(ty: &FieldType) -> Self {
         match ty {
+            FieldType::Bool => DatabaseType::Bool,
             FieldType::Short => DatabaseType::SmallInteger,
             FieldType::UnsignedShort => DatabaseType::UnsignedSmallInteger,
             FieldType::Int => DatabaseType::Integer,

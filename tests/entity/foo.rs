@@ -2,6 +2,7 @@
 pub struct Basic {
     #[ID]
     id: u32,
+    boolean: bool,
     u_short: u16,
     short: i16,
     u_int: u32,

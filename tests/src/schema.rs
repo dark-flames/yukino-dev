@@ -9,6 +9,7 @@ use yukino::view::Value;
 use yukino::view::{Computation, ExprView, View, ViewBox, ViewNode};
 #[derive(Clone, Debug)]
 pub struct Basic {
+    pub boolean: bool,
     pub character: char,
     pub double: f64,
     pub float: f32,
@@ -24,6 +25,7 @@ pub struct Basic {
 }
 #[derive(Debug)]
 pub struct BasicView {
+    pub boolean: ViewBox<bool>,
     pub character: ViewBox<char>,
     pub double: ViewBox<f64>,
     pub float: ViewBox<f32>,
@@ -41,6 +43,7 @@ unsafe impl Sync for BasicView {}
 impl Clone for BasicView {
     fn clone(&self) -> Self {
         BasicView {
+            boolean: self.boolean.clone(),
             character: self.character.clone(),
             double: self.double.clone(),
             float: self.float.clone(),
@@ -68,6 +71,7 @@ impl View<Basic> for BasicView {
     }
     fn collect_expr(&self) -> Vec<TypedExpr> {
         let mut exprs = vec![];
+        exprs.extend(self.boolean.collect_expr());
         exprs.extend(self.character.collect_expr());
         exprs.extend(self.double.collect_expr());
         exprs.extend(self.float.collect_expr());
@@ -88,11 +92,14 @@ impl View<Basic> for BasicView {
 }
 impl EntityView for BasicView {
     type Entity = Basic;
-    fn pure(alias: Alias) -> Self
+    fn pure(alias: &Alias) -> Self
     where
         Self: Sized,
     {
         BasicView {
+            boolean: Box::new(ViewNode::Expr(ExprView::create(vec![
+                alias.create_ident_expr("boolean", yukino::db::ty::DatabaseType::Bool)
+            ]))),
             character: Box::new(ViewNode::Expr(ExprView::create(vec![
                 alias.create_ident_expr("character", yukino::db::ty::DatabaseType::Character)
             ]))),
@@ -168,28 +175,30 @@ impl Converter for BasicConverter {
         &BASIC_CONVERTER
     }
     fn param_count(&self) -> usize {
-        12usize
+        13usize
     }
     fn deserializer(&self) -> Box<dyn Fn(&[&DatabaseValue]) -> ConvertResult<Self::Output>> {
         Box::new(|v| {
             Ok(Basic {
-                character: (*<char>::converter().deserializer())(&v[0usize..1usize])?,
-                double: (*<f64>::converter().deserializer())(&v[1usize..2usize])?,
-                float: (*<f32>::converter().deserializer())(&v[2usize..3usize])?,
-                id: (*<u32>::converter().deserializer())(&v[3usize..4usize])?,
-                int: (*<i32>::converter().deserializer())(&v[4usize..5usize])?,
-                long: (*<i64>::converter().deserializer())(&v[5usize..6usize])?,
-                optional: (*<Option<u32>>::converter().deserializer())(&v[6usize..7usize])?,
-                short: (*<i16>::converter().deserializer())(&v[7usize..8usize])?,
-                string: (*<String>::converter().deserializer())(&v[8usize..9usize])?,
-                u_int: (*<u32>::converter().deserializer())(&v[9usize..10usize])?,
-                u_long: (*<u64>::converter().deserializer())(&v[10usize..11usize])?,
-                u_short: (*<u16>::converter().deserializer())(&v[11usize..12usize])?,
+                boolean: (*<bool>::converter().deserializer())(&v[0usize..1usize])?,
+                character: (*<char>::converter().deserializer())(&v[1usize..2usize])?,
+                double: (*<f64>::converter().deserializer())(&v[2usize..3usize])?,
+                float: (*<f32>::converter().deserializer())(&v[3usize..4usize])?,
+                id: (*<u32>::converter().deserializer())(&v[4usize..5usize])?,
+                int: (*<i32>::converter().deserializer())(&v[5usize..6usize])?,
+                long: (*<i64>::converter().deserializer())(&v[6usize..7usize])?,
+                optional: (*<Option<u32>>::converter().deserializer())(&v[7usize..8usize])?,
+                short: (*<i16>::converter().deserializer())(&v[8usize..9usize])?,
+                string: (*<String>::converter().deserializer())(&v[9usize..10usize])?,
+                u_int: (*<u32>::converter().deserializer())(&v[10usize..11usize])?,
+                u_long: (*<u64>::converter().deserializer())(&v[11usize..12usize])?,
+                u_short: (*<u16>::converter().deserializer())(&v[12usize..13usize])?,
             })
         })
     }
     fn serialize(&self, value: &Self::Output) -> ConvertResult<Vec<DatabaseValue>> {
         Ok(vec![
+            <bool>::converter().serialize(&value.boolean)?,
             <char>::converter().serialize(&value.character)?,
             <f64>::converter().serialize(&value.double)?,
             <f32>::converter().serialize(&value.float)?,
@@ -212,6 +221,40 @@ pub mod basic {
     use lazy_static::lazy_static;
     use yukino::interface::def::FieldDefinition;
     use yukino::interface::FieldMarker;
+    #[allow(non_camel_case_types)]
+    pub struct boolean();
+    lazy_static! {
+        static ref BOOLEAN_DEFINITION: FieldDefinition =
+            yukino::interface::def::FieldDefinition::new(
+                "boolean".to_string(),
+                "bool".to_string(),
+                false,
+                yukino::interface::def::DefinitionType::Normal,
+                vec![(
+                    "boolean".to_string(),
+                    yukino::interface::def::ColumnDefinition::new(
+                        "boolean".to_string(),
+                        yukino::db::ty::DatabaseType::Bool,
+                        false,
+                        false
+                    )
+                )]
+                .into_iter()
+                .collect(),
+                vec!["boolean".to_string()],
+                None,
+                vec![]
+            );
+    }
+    impl FieldMarker for boolean {
+        type ValueType = bool;
+        fn field_name() -> &'static str {
+            "boolean"
+        }
+        fn definition() -> &'static FieldDefinition {
+            &*BOOLEAN_DEFINITION
+        }
+    }
     #[allow(non_camel_case_types)]
     pub struct character();
     lazy_static! {

@@ -28,6 +28,7 @@ macro_rules! impl_value {
     };
 }
 
+impl_value!(bool, BoolConverter, OptionalBoolConverter);
 impl_value!(u16, UnsignedShortConverter, OptionalUnsignedShortConverter);
 impl_value!(u32, UnsignedIntConverter, OptionalUnsignedIntConverter);
 impl_value!(u64, UnsignedLongConverter, OptionalUnsignedLongConverter);

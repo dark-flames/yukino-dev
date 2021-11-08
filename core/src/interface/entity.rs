@@ -17,7 +17,7 @@ pub trait Entity: Value {
 pub trait EntityView: View<Self::Entity> {
     type Entity: Entity;
 
-    fn pure(alias: Alias) -> Self
+    fn pure(alias: &Alias) -> Self
     where
         Self: Sized;
 }

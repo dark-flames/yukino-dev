@@ -12,9 +12,11 @@ pub fn cmp_view<T: Value>(view: ViewBox<T>, query: &str) {
 
 #[test]
 pub fn test_expr() {
-    let view = BasicView::pure(Alias {
+    let alias = Alias {
         name: "b".to_string(),
-    });
+    };
+
+    let view = BasicView::pure(&alias);
 
     let add_const = view.int.clone() + 114514;
     let sub_const = view.int.clone() - 114514;
