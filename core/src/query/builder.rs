@@ -1,7 +1,6 @@
-use crate::db::ty::DatabaseValue;
 use crate::interface::{Entity, EntityView};
 use crate::query::{Alias, TypedExpr};
-use crate::view::{Value, ViewBox, ViewNode};
+use crate::view::{ExprView, Value, ViewBox};
 use std::marker::PhantomData;
 
 pub struct QueryBuilder<E: Entity, T: Value> {
@@ -12,24 +11,11 @@ pub struct QueryBuilder<E: Entity, T: Value> {
 }
 
 impl<E: Entity, T: Value> QueryBuilder<E, T> {
-    pub fn filter(mut self, f: impl Fn(E::View) -> ViewBox<bool>) -> QueryBuilder<E, T> {
+    pub fn filter(mut self, f: impl Fn(E::View) -> Box<ExprView<bool>>) -> QueryBuilder<E, T> {
         let view = E::View::pure(&self.from_alias);
-        let result_view = f(view);
-        match result_view.view_node() {
-            ViewNode::Expr(expr) => {
-                let left = self.filter.clone();
-                self.filter = left.and(expr.exprs[0].clone()).unwrap()
-                // TODO: Join
-            }
-            ViewNode::Const(expr) => {
-                if expr.value {
-                    self.filter = TypedExpr::lit(DatabaseValue::Bool(true)).unwrap()
-                }
-            }
-            ViewNode::Computation(_) => {
-                panic!("filter cannot handle computation view");
-            }
-        }
+        let result_view = *f(view);
+        let left = self.filter.clone();
+        self.filter = left.and(result_view.exprs[0].clone()).unwrap();
 
         self
     }

@@ -80,7 +80,7 @@ macro_rules! expr_binary_ops {
             R: Value,
             O: Value,
         {
-            type Output = ViewBox<O>;
+            type Output = Box<ViewNode<O>>;
 
             fn $method(self, rhs: Box<dyn View<R>>) -> Self::Output {
                 Box::new(match (self.view_node(), rhs.view_node()) {
@@ -105,7 +105,7 @@ macro_rules! expr_binary_ops {
             R: Value,
             O: Value,
         {
-            type Output = ViewBox<O>;
+            type Output = Box<ViewNode<O>>;
 
             fn $method(self, rhs: R) -> Self::Output {
                 let r: ViewBox<R> = Box::new(ViewNode::Const(ConstView::create(rhs)));
