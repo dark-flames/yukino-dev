@@ -4,6 +4,10 @@ use crate::query::Expr;
 use crate::view::{ComputationView, ExprView, Value, View, ViewNode};
 use std::marker::PhantomData;
 
+pub trait ViewCombinator<Unwrapped> {
+    fn unwrap(self) -> Unwrapped;
+}
+
 #[derive(Debug)]
 pub struct TupleView<LView, RView, L, R>
     where
@@ -89,5 +93,17 @@ impl<LView, RView, L, R> Clone for TupleView<LView, RView, L, R>
             _l_marker: Default::default(),
             _r_marker: Default::default(),
         }
+    }
+}
+
+impl<LView, RView, L, R> ViewCombinator<(LView, RView)> for TupleView<LView, RView, L, R>
+    where
+        L: Value,
+        R: Value,
+        LView: View<L>,
+        RView: View<R>,
+{
+    fn unwrap(self) -> (LView, RView) {
+        (*self.l, *self.r)
     }
 }
