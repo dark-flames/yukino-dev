@@ -1,10 +1,10 @@
 use crate::interface::{Entity, EntityView};
-use crate::query::{Alias, TypedExpr};
+use crate::query::{Alias, Expr};
 use crate::view::{ExprView, Value, ViewBox};
 use std::marker::PhantomData;
 
 pub struct QueryBuilder<E: Entity, T: Value> {
-    filter: TypedExpr,
+    filter: Box<Expr>,
     view: ViewBox<T>,
     from_alias: Alias,
     _marker: PhantomData<E>,
@@ -15,7 +15,7 @@ impl<E: Entity, T: Value> QueryBuilder<E, T> {
         let view = E::View::pure(&self.from_alias);
         let result_view = *f(view);
         let left = self.filter.clone();
-        self.filter = left.and(result_view.exprs[0].clone()).unwrap();
+        self.filter = Box::new(Expr::And(left, Box::new(result_view.exprs[0].clone())));
 
         self
     }

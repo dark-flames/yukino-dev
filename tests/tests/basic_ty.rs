@@ -1,3 +1,4 @@
+/*
 use yukino::interface::EntityView;
 use yukino::query::Alias;
 use yukino::view::{Value, ViewBox};
@@ -10,7 +11,7 @@ pub fn cmp_view<T: Value>(view: ViewBox<T>, query: &str) {
     );
 }
 
-#[test]
+
 pub fn test_expr() {
     let alias = Alias {
         name: "b".to_string(),
@@ -35,4 +36,4 @@ pub fn test_expr() {
     cmp_view(sub, "b.long - b.long");
     cmp_view(mul, "b.long * b.long");
     cmp_view(div, "b.long / b.long");
-}
+}*/
