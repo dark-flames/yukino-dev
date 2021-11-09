@@ -93,7 +93,7 @@ impl FieldAttribute {
                 attr,
                 format!(
                     "Unexpected attribute: {}",
-                    attr.path.to_token_stream().to_string()
+                    attr.path.to_token_stream()
                 ),
             ))
         }
