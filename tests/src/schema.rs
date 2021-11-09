@@ -6,7 +6,7 @@ use yukino::interface::Entity;
 use yukino::interface::EntityView;
 use yukino::query::{Alias, Expr};
 use yukino::view::Value;
-use yukino::view::{ExprView, View, ViewBox, ViewNode};
+use yukino::view::{ExprView, View, ViewNode};
 #[derive(Clone, Debug)]
 pub struct Basic {
     pub boolean: bool,
@@ -25,19 +25,19 @@ pub struct Basic {
 }
 #[derive(Debug)]
 pub struct BasicView {
-    pub boolean: ViewBox<bool>,
-    pub character: ViewBox<char>,
-    pub double: ViewBox<f64>,
-    pub float: ViewBox<f32>,
-    pub id: ViewBox<u32>,
-    pub int: ViewBox<i32>,
-    pub long: ViewBox<i64>,
-    pub optional: ViewBox<Option<u32>>,
-    pub short: ViewBox<i16>,
-    pub string: ViewBox<String>,
-    pub u_int: ViewBox<u32>,
-    pub u_long: ViewBox<u64>,
-    pub u_short: ViewBox<u16>,
+    pub boolean: Box<ExprView<bool>>,
+    pub character: Box<ExprView<char>>,
+    pub double: Box<ExprView<f64>>,
+    pub float: Box<ExprView<f32>>,
+    pub id: Box<ExprView<u32>>,
+    pub int: Box<ExprView<i32>>,
+    pub long: Box<ExprView<i64>>,
+    pub optional: Box<ExprView<Option<u32>>>,
+    pub short: Box<ExprView<i16>>,
+    pub string: Box<ExprView<String>>,
+    pub u_int: Box<ExprView<u32>>,
+    pub u_long: Box<ExprView<u64>>,
+    pub u_short: Box<ExprView<u16>>,
 }
 unsafe impl Sync for BasicView {}
 impl Clone for BasicView {
@@ -83,8 +83,8 @@ impl View<Basic> for BasicView {
     fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<Basic> {
         (*Basic::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
     }
-    fn clone(&self) -> ViewBox<Basic> {
-        Box::new(Clone::clone(self))
+    fn clone(&self) -> Self {
+        Clone::clone(self)
     }
 }
 impl EntityView for BasicView {
@@ -94,57 +94,51 @@ impl EntityView for BasicView {
         Self: Sized,
     {
         BasicView {
-            boolean: Box::new(ViewNode::Expr(ExprView::create(vec![
+            boolean: Box::new(ExprView::create(vec![
                 alias.create_ident_expr("boolean", yukino::db::ty::DatabaseType::Bool)
-            ]))),
-            character: Box::new(ViewNode::Expr(ExprView::create(vec![
+            ])),
+            character: Box::new(ExprView::create(vec![
                 alias.create_ident_expr("character", yukino::db::ty::DatabaseType::Character)
-            ]))),
-            double: Box::new(ViewNode::Expr(ExprView::create(vec![
+            ])),
+            double: Box::new(ExprView::create(vec![
                 alias.create_ident_expr("double", yukino::db::ty::DatabaseType::Double)
-            ]))),
-            float: Box::new(ViewNode::Expr(ExprView::create(vec![
+            ])),
+            float: Box::new(ExprView::create(vec![
                 alias.create_ident_expr("float", yukino::db::ty::DatabaseType::Float)
-            ]))),
-            id: Box::new(ViewNode::Expr(ExprView::create(vec![alias
-                .create_ident_expr(
-                    "id",
-                    yukino::db::ty::DatabaseType::UnsignedInteger,
-                )]))),
-            int: Box::new(ViewNode::Expr(ExprView::create(vec![
+            ])),
+            id: Box::new(ExprView::create(vec![alias.create_ident_expr(
+                "id",
+                yukino::db::ty::DatabaseType::UnsignedInteger,
+            )])),
+            int: Box::new(ExprView::create(vec![
                 alias.create_ident_expr("int", yukino::db::ty::DatabaseType::Integer)
-            ]))),
-            long: Box::new(ViewNode::Expr(ExprView::create(vec![
+            ])),
+            long: Box::new(ExprView::create(vec![
                 alias.create_ident_expr("long", yukino::db::ty::DatabaseType::BigInteger)
-            ]))),
-            optional: Box::new(ViewNode::Expr(ExprView::create(vec![alias
-                .create_ident_expr(
-                    "optional",
-                    yukino::db::ty::DatabaseType::UnsignedInteger,
-                )]))),
-            short: Box::new(ViewNode::Expr(ExprView::create(vec![alias
-                .create_ident_expr(
-                    "short",
-                    yukino::db::ty::DatabaseType::SmallInteger,
-                )]))),
-            string: Box::new(ViewNode::Expr(ExprView::create(vec![
+            ])),
+            optional: Box::new(ExprView::create(vec![alias.create_ident_expr(
+                "optional",
+                yukino::db::ty::DatabaseType::UnsignedInteger,
+            )])),
+            short: Box::new(ExprView::create(vec![alias.create_ident_expr(
+                "short",
+                yukino::db::ty::DatabaseType::SmallInteger,
+            )])),
+            string: Box::new(ExprView::create(vec![
                 alias.create_ident_expr("string", yukino::db::ty::DatabaseType::String)
-            ]))),
-            u_int: Box::new(ViewNode::Expr(ExprView::create(vec![alias
-                .create_ident_expr(
-                    "u_int",
-                    yukino::db::ty::DatabaseType::UnsignedInteger,
-                )]))),
-            u_long: Box::new(ViewNode::Expr(ExprView::create(vec![alias
-                .create_ident_expr(
-                    "u_long",
-                    yukino::db::ty::DatabaseType::UnsignedBigInteger,
-                )]))),
-            u_short: Box::new(ViewNode::Expr(ExprView::create(vec![alias
-                .create_ident_expr(
-                    "u_short",
-                    yukino::db::ty::DatabaseType::UnsignedSmallInteger,
-                )]))),
+            ])),
+            u_int: Box::new(ExprView::create(vec![alias.create_ident_expr(
+                "u_int",
+                yukino::db::ty::DatabaseType::UnsignedInteger,
+            )])),
+            u_long: Box::new(ExprView::create(vec![alias.create_ident_expr(
+                "u_long",
+                yukino::db::ty::DatabaseType::UnsignedBigInteger,
+            )])),
+            u_short: Box::new(ExprView::create(vec![alias.create_ident_expr(
+                "u_short",
+                yukino::db::ty::DatabaseType::UnsignedSmallInteger,
+            )])),
         }
     }
 }

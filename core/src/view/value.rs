@@ -1,4 +1,5 @@
 use crate::converter::basic::*;
+use crate::converter::constructor::TupleConverter;
 use crate::converter::{Converter, ConverterRef};
 use std::fmt::Debug;
 
@@ -39,3 +40,12 @@ impl_value!(f32, FloatConverter, OptionalFloatConverter);
 impl_value!(f64, DoubleConverter, OptionalDoubleConverter);
 impl_value!(char, CharConverter, OptionalCharConverter);
 impl_value!(String, StringConverter, OptionalStringConverter);
+
+impl<L: Value, R: Value> Value for (L, R) {
+    fn converter() -> ConverterRef<Self>
+        where
+            Self: Sized,
+    {
+        TupleConverter::<L, R>::instance()
+    }
+}

@@ -37,3 +37,10 @@ pub fn test_expr() {
     cmp_view(mul, "b.long * b.long");
     cmp_view(div, "b.long / b.long");
 }*/
+
+use crate::Test::{Bool, Int};
+
+enum Test {
+    Int(usize),
+    Bool(bool),
+}

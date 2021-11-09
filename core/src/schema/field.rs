@@ -31,6 +31,7 @@ pub struct ResolvedField {
     pub converter_param_count: usize,
     pub ty: TokenStream,
     pub view: TokenStream,
+    pub view_ty: TokenStream,
     pub marker_name: Ident,
     pub primary: bool,
     pub entities: Vec<EntityDefinition>,

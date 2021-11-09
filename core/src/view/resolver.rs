@@ -1,6 +1,6 @@
 use crate::err::{MacroError, ViewResolveError, YukinoError};
 use crate::interface::EntityView;
-use proc_macro2::TokenStream;
+use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use std::marker::PhantomData;
 use syn::spanned::Spanned;
@@ -12,7 +12,10 @@ pub struct ViewResolver<View: EntityView> {
     _marker: PhantomData<View>,
 }
 
-pub struct PreviousView {}
+pub struct PreviousView {
+    pub idents: Vec<Ident>,
+    pub unwrap: TokenStream,
+}
 
 impl<View: EntityView> ViewResolver<View> {
     pub fn resolve(token_stream: TokenStream) -> MacroResult<TokenStream> {
@@ -52,7 +55,22 @@ impl<View: EntityView> ViewResolver<View> {
         Ok(quote! {})
     }
 
-    pub fn resolve_second_parameter(_pat: &Pat) -> MacroResult<PreviousView> {
-        Ok(PreviousView {})
+    pub fn resolve_second_parameter(pat: &Pat) -> MacroResult<PreviousView> {
+        /*
+        match pat {
+            Pat::Box(_) => {
+
+            }
+            Pat::Ident(_) => {}
+            Pat::Slice(_) => {}
+            Pat::Struct(_) => {}
+            Pat::Tuple(_) => {}
+            Pat::TupleStruct(_) => {}
+            Pat::Type(_) => {}
+            Pat::Wild(_) => {}
+            _ => Err(ViewResolveError::CannotUnwrap)
+        }.map_err(|e| e.as_macro_error(pat.span()));*/
+
+        Err(ViewResolveError::CannotUnwrap.as_macro_error(pat.span()))
     }
 }

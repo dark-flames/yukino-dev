@@ -23,14 +23,27 @@ pub trait ComputationView<T: Value>: View<T> + Debug {
     fn computation_view_box_clone(&self) -> Box<dyn ComputationView<T>>;
 }
 
-pub trait View<T: Value>: Debug {
+pub trait View<T: Value>: Debug + 'static {
     fn view_node(&self) -> ViewNode<T>;
 
     fn collect_expr(&self) -> Vec<Expr>;
 
+    fn param_count(&self) -> usize {
+        T::converter().param_count()
+    }
+
     fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<T>;
 
-    fn clone(&self) -> ViewBox<T>;
+    fn box_clone(&self) -> ViewBox<T>
+        where
+            Self: Sized,
+    {
+        Box::new(self.clone())
+    }
+
+    fn clone(&self) -> Self
+        where
+            Self: Sized;
 }
 
 impl<T: Value> ExprView<T> {
@@ -65,8 +78,11 @@ impl<T: Value> View<T> for ExprView<T> {
         (*T::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
     }
 
-    fn clone(&self) -> ViewBox<T> {
-        Box::new(Clone::clone(self))
+    fn clone(&self) -> Self
+        where
+            Self: Sized,
+    {
+        Clone::clone(self)
     }
 }
 
@@ -89,12 +105,13 @@ impl<T: Value> View<T> for ViewNode<T> {
         }
     }
 
-    fn clone(&self) -> ViewBox<T> {
+    fn clone(&self) -> Self
+        where
+            Self: Sized,
+    {
         match self {
-            ViewNode::Expr(e) => Box::new(ViewNode::Expr(Clone::clone(e))),
-            ViewNode::Computation(c) => {
-                Box::new(ViewNode::Computation(c.computation_view_box_clone()))
-            }
+            ViewNode::Expr(e) => ViewNode::Expr(Clone::clone(e)),
+            ViewNode::Computation(c) => ViewNode::Computation(c.computation_view_box_clone()),
         }
     }
 }

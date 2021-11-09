@@ -15,7 +15,7 @@ impl EntityResolvePass for EntityViewPass {
 
     fn get_dependencies(&self) -> Vec<TokenStream> {
         vec![quote! {
-            use yukino::view::{ViewBox, View, ViewNode, ExprView};
+            use yukino::view::{View, ViewNode, ExprView};
             use yukino::query::{Expr, Alias};
             use yukino::interface::EntityView;
             use yukino::db::ty::DatabaseValue;
@@ -32,11 +32,11 @@ impl EntityResolvePass for EntityViewPass {
             .filter(|f| f.definition.definition_ty != DefinitionType::Generated)
             .map(|f| {
                 let field_name = format_ident!("{}", f.path.field_name);
-                let field_ty = &f.ty;
+                let field_ty = &f.view_ty;
                 let view = &f.view;
                 (
                     quote! {
-                        pub #field_name: ViewBox<#field_ty>
+                        pub #field_name: #field_ty
                     },
                     quote! {
                         #field_name: #view
@@ -93,8 +93,8 @@ impl EntityResolvePass for EntityViewPass {
                     (*#entity_name::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
                 }
 
-                fn clone(&self) -> ViewBox<#entity_name> {
-                    Box::new(Clone::clone(self))
+                fn clone(&self) -> Self {
+                    Clone::clone(self)
                 }
             }
 

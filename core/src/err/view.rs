@@ -37,6 +37,8 @@ pub enum ViewResolveError {
     RefIsInvalid,
     #[error("SubPatternIsInvalid: sub pattern at here is not supported")]
     SubPatternIsInvalid,
+    #[error("CannotUnwrap: cannot unwrap view into this pattern")]
+    CannotUnwrap,
 }
 
 impl YukinoError for ViewResolveError {}

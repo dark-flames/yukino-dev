@@ -144,6 +144,7 @@ impl FieldResolverCell for BasicFieldResolverCell {
             converter_param_count: 1,
             ty: self.ty.field_ty(self.optional),
             view: self.ty.view(&self.column),
+            view_ty: self.ty.view_ty(self.optional),
             marker_name: format_ident!("{}", field_path.field_name.to_snake_case()),
             primary: self.primary,
             entities: vec![],
@@ -225,9 +226,16 @@ impl FieldType {
         let database_ty = DatabaseType::from(self);
 
         quote! {
-            Box::new(ViewNode::Expr(ExprView::create(vec![
+            Box::new(ExprView::create(vec![
                 alias.create_ident_expr(#column, #database_ty)
-            ])))
+            ]))
+        }
+    }
+
+    pub fn view_ty(&self, optional: bool) -> TokenStream {
+        let ty = self.field_ty(optional);
+        quote! {
+            Box<ExprView<#ty>>
         }
     }
 
