@@ -1,8 +1,8 @@
 use crate::err::CliResult;
 use crate::err::{ResolveError, YukinoError};
 use crate::interface::def::{EntityDefinition, FieldDefinition};
-use crate::resolver::entity::ResolvedEntity;
-use crate::resolver::path::FileTypePathResolver;
+use crate::schema::entity::ResolvedEntity;
+use crate::schema::path::FileTypePathResolver;
 use proc_macro2::{Ident, TokenStream};
 use std::cmp::Eq;
 use std::collections::{HashMap, HashSet};

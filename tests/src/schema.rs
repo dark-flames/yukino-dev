@@ -6,7 +6,7 @@ use yukino::interface::Entity;
 use yukino::interface::EntityView;
 use yukino::query::{Alias, Expr};
 use yukino::view::Value;
-use yukino::view::{Computation, ExprView, View, ViewBox, ViewNode};
+use yukino::view::{ExprView, View, ViewBox, ViewNode};
 #[derive(Clone, Debug)]
 pub struct Basic {
     pub boolean: bool,
@@ -59,12 +59,6 @@ impl Clone for BasicView {
         }
     }
 }
-impl Computation for BasicView {
-    type Output = Basic;
-    fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<Self::Output> {
-        (*Basic::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
-    }
-}
 impl View<Basic> for BasicView {
     fn view_node(&self) -> ViewNode<Basic> {
         ViewNode::Expr(ExprView::create(self.collect_expr()))
@@ -85,6 +79,9 @@ impl View<Basic> for BasicView {
         exprs.extend(self.u_long.collect_expr());
         exprs.extend(self.u_short.collect_expr());
         exprs
+    }
+    fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<Basic> {
+        (*Basic::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
     }
     fn clone(&self) -> ViewBox<Basic> {
         Box::new(Clone::clone(self))

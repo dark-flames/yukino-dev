@@ -1,5 +1,5 @@
 use crate::interface::def::DefinitionType;
-use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
+use crate::schema::entity::{EntityResolvePass, ResolvedEntity};
 use heck::SnakeCase;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};

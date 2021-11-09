@@ -1,4 +1,4 @@
-use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
+use crate::schema::entity::{EntityResolvePass, ResolvedEntity};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 

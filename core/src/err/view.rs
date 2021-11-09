@@ -1,6 +1,8 @@
+use crate::err::YukinoError;
 use crate::view::View;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
+use thiserror::Error;
 
 #[derive(Debug)]
 pub struct ViewError {
@@ -24,3 +26,17 @@ impl Display for ViewError {
 }
 
 impl Error for ViewError {}
+
+#[derive(Error, Debug)]
+pub enum ViewResolveError {
+    #[error("UnexpectedParamCount: parameters of calculation must be 2, got {0}")]
+    UnexpectedCalculationParamCount(usize),
+    #[error("UnexpectedParamPatternType: this parameter expected to be a `{0}`")]
+    UnexpectedParamPatternType(String),
+    #[error("RefIsInvalid: ref at here is not supported")]
+    RefIsInvalid,
+    #[error("SubPatternIsInvalid: sub pattern at here is not supported")]
+    SubPatternIsInvalid,
+}
+
+impl YukinoError for ViewResolveError {}

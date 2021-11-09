@@ -4,5 +4,5 @@ pub mod db;
 pub mod err;
 pub mod interface;
 pub mod query;
-pub mod resolver;
+pub mod schema;
 pub mod view;

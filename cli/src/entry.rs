@@ -5,13 +5,13 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use core::err::{CliError, CliResult, ResolveError, YukinoError};
-use core::resolver::entity::EntityResolvePass;
-use core::resolver::entity_resolver_pass::{
+use core::schema::entity::EntityResolvePass;
+use core::schema::entity_resolver_pass::{
     ConverterPass, EntityImplementPass, EntityStructPass, EntityViewPass, FieldMakerPass,
 };
-use core::resolver::field::{FieldResolverSeed, FieldResolverSeedBox};
-use core::resolver::field_resolve_cells::basic::BasicFieldResolverSeed;
-use core::resolver::DefinitionResolver;
+use core::schema::field::{FieldResolverSeed, FieldResolverSeedBox};
+use core::schema::field_resolve_cells::basic::BasicFieldResolverSeed;
+use core::schema::DefinitionResolver;
 
 pub struct CommandLineEntry {
     resolver: DefinitionResolver,

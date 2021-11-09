@@ -9,9 +9,9 @@ use syn::{parse_file, Fields, File as SynFile, Item};
 
 use crate::err::{CliResult, ResolveError, YukinoError};
 use crate::interface::def::EntityDefinition;
-use crate::resolver::entity::{EntityResolvePass, EntityResolver};
-use crate::resolver::field::{FieldPath, FieldResolver, FieldResolverSeedBox, ReadyEntities};
-use crate::resolver::path::FileTypePathResolver;
+use crate::schema::entity::{EntityResolvePass, EntityResolver};
+use crate::schema::field::{FieldPath, FieldResolver, FieldResolverSeedBox, ReadyEntities};
+use crate::schema::path::FileTypePathResolver;
 
 pub struct DefinitionResolver {
     source: Vec<PathBuf>,

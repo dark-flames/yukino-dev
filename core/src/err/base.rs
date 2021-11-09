@@ -19,6 +19,13 @@ pub trait YukinoError: StdError {
             pos,
         }
     }
+
+    fn as_macro_error(&self, pos: Span) -> MacroError {
+        MacroError {
+            msg: self.to_string(),
+            pos,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -31,6 +38,20 @@ pub struct CliError {
     pub msg: String,
     pub pos: Option<Span>,
 }
+
+#[derive(Debug)]
+pub struct MacroError {
+    pub msg: String,
+    pub pos: Span,
+}
+
+impl Display for MacroError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.msg)
+    }
+}
+
+impl StdError for MacroError {}
 
 impl Display for RuntimeError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

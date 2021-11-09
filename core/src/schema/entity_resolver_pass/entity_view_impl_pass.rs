@@ -1,5 +1,5 @@
 use crate::interface::def::DefinitionType;
-use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
+use crate::schema::entity::{EntityResolvePass, ResolvedEntity};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 
@@ -15,7 +15,7 @@ impl EntityResolvePass for EntityViewPass {
 
     fn get_dependencies(&self) -> Vec<TokenStream> {
         vec![quote! {
-            use yukino::view::{ViewBox, View, Computation, ViewNode, ExprView};
+            use yukino::view::{ViewBox, View, ViewNode, ExprView};
             use yukino::query::{Expr, Alias};
             use yukino::interface::EntityView;
             use yukino::db::ty::DatabaseValue;
@@ -76,14 +76,6 @@ impl EntityResolvePass for EntityViewPass {
                 }
             }
 
-            impl Computation for #name {
-                type Output = #entity_name;
-
-                fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<Self::Output> {
-                    (*#entity_name::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
-                }
-            }
-
             impl View<#entity_name> for #name {
                 fn view_node(&self) -> ViewNode<#entity_name> {
                     ViewNode::Expr(ExprView::create(self.collect_expr()))
@@ -95,6 +87,10 @@ impl EntityResolvePass for EntityViewPass {
                     #(#node_items;)*
 
                     exprs
+                }
+
+                fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<#entity_name> {
+                    (*#entity_name::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
                 }
 
                 fn clone(&self) -> ViewBox<#entity_name> {

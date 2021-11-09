@@ -5,7 +5,7 @@ use crate::interface::attr::{Entity, Index, IndexMethod};
 use crate::interface::def::{
     ColumnDefinition, DefinitionType, EntityDefinition, FieldDefinition, IndexDefinition, IndexType,
 };
-use crate::resolver::field::ResolvedField;
+use crate::schema::field::ResolvedField;
 use annotation_rs::AnnotationStructure;
 use heck::CamelCase;
 use heck::SnakeCase;

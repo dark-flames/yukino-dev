@@ -11,11 +11,11 @@ use crate::interface::attr::{Field, FieldAttribute, IndexMethod};
 use crate::interface::def::{
     ColumnDefinition, DefinitionType, FieldDefinition, IndexDefinition, IndexType,
 };
-use crate::resolver::field::{
+use crate::schema::field::{
     FieldPath, FieldResolveResult, FieldResolverCell, FieldResolverCellBox, FieldResolverSeed,
     FieldResolverSeedBox, ResolvedField,
 };
-use crate::resolver::path::{FileTypePathResolver, TypeMatchResult};
+use crate::schema::path::{FileTypePathResolver, TypeMatchResult};
 
 pub struct BasicFieldResolverSeed();
 

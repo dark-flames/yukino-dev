@@ -1,7 +1,7 @@
 use crate::db::ty::DatabaseValue;
 use crate::err::{RuntimeResult, YukinoError};
 use crate::query::Expr;
-use crate::view::{Computation, Value};
+use crate::view::Value;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
@@ -19,14 +19,16 @@ pub struct ExprView<T: Value> {
     _marker: PhantomData<T>,
 }
 
-pub trait ComputationView<T: Value>: Computation<Output = T> + View<T> + Debug {
+pub trait ComputationView<T: Value>: View<T> + Debug {
     fn computation_view_box_clone(&self) -> Box<dyn ComputationView<T>>;
 }
 
-pub trait View<T: Value>: Computation<Output = T> + Debug {
+pub trait View<T: Value>: Debug {
     fn view_node(&self) -> ViewNode<T>;
 
     fn collect_expr(&self) -> Vec<Expr>;
+
+    fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<T>;
 
     fn clone(&self) -> ViewBox<T>;
 }
@@ -50,25 +52,6 @@ impl<T: Value> Clone for ViewNode<T> {
     }
 }
 
-impl<T: Value> Computation for ExprView<T> {
-    type Output = T;
-
-    fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<Self::Output> {
-        (*T::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
-    }
-}
-
-impl<T: Value> Computation for ViewNode<T> {
-    type Output = T;
-
-    fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<Self::Output> {
-        match self {
-            ViewNode::Expr(expr) => expr.eval(v),
-            ViewNode::Computation(computation) => computation.eval(v),
-        }
-    }
-}
-
 impl<T: Value> View<T> for ExprView<T> {
     fn view_node(&self) -> ViewNode<T> {
         ViewNode::Expr(Clone::clone(self))
@@ -76,6 +59,10 @@ impl<T: Value> View<T> for ExprView<T> {
 
     fn collect_expr(&self) -> Vec<Expr> {
         self.exprs.clone()
+    }
+
+    fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<T> {
+        (*T::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
     }
 
     fn clone(&self) -> ViewBox<T> {
@@ -92,6 +79,13 @@ impl<T: Value> View<T> for ViewNode<T> {
         match self {
             ViewNode::Expr(e) => e.collect_expr(),
             ViewNode::Computation(c) => c.collect_expr(),
+        }
+    }
+
+    fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<T> {
+        match self {
+            ViewNode::Expr(expr) => expr.eval(v),
+            ViewNode::Computation(computation) => computation.eval(v),
         }
     }
 
