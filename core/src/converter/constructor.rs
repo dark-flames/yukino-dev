@@ -11,8 +11,8 @@ impl<L: Value, R: Value> Converter for TupleConverter<L, R> {
     type Output = (L, R);
 
     fn instance() -> &'static Self
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         &Self::INSTANCE
     }

@@ -35,15 +35,15 @@ pub trait View<T: Value>: Debug + 'static {
     fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<T>;
 
     fn box_clone(&self) -> ViewBox<T>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         Box::new(self.clone())
     }
 
     fn clone(&self) -> Self
-        where
-            Self: Sized;
+    where
+        Self: Sized;
 }
 
 impl<T: Value> ExprView<T> {
@@ -79,8 +79,8 @@ impl<T: Value> View<T> for ExprView<T> {
     }
 
     fn clone(&self) -> Self
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         Clone::clone(self)
     }
@@ -106,8 +106,8 @@ impl<T: Value> View<T> for ViewNode<T> {
     }
 
     fn clone(&self) -> Self
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         match self {
             ViewNode::Expr(e) => ViewNode::Expr(Clone::clone(e)),

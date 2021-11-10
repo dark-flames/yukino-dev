@@ -29,20 +29,24 @@ impl Error for ViewError {}
 
 #[derive(Error, Debug)]
 pub enum ViewResolveError {
-    #[error("UnexpectedParamCount: parameters of calculation must be 2, got {0}")]
+    #[error("UnexpectedParamCount: Parameters of calculation must be 2, got {0}.")]
     UnexpectedCalculationParamCount(usize),
-    #[error("UnexpectedParamPatternType: this parameter expected to be a `{0}`")]
+    #[error("UnexpectedParamPatternType: This parameter expected to be a `{0}`.")]
     UnexpectedParamPatternType(String),
-    #[error("RefIsInvalid: ref at here is not supported")]
+    #[error("RefIsInvalid: `ref` at here is not supported.")]
     RefIsInvalid,
-    #[error("SubPatternIsInvalid: sub pattern at here is not supported")]
+    #[error("SubPatternIsInvalid: Sub-pattern at here is not supported.")]
     SubPatternIsInvalid,
-    #[error("MutableIsInvalid: mut at here is not supported")]
+    #[error("MutableIsInvalid: `mut` at here is not supported.")]
     MutableIsInvalid,
-    #[error("NotTwoElementsTuple: only two elements tuple is supported")]
+    #[error("NotTwoElementsTuple: Only two elements tuple is supported.")]
     NotTwoElementsTuple,
-    #[error("CannotUnwrap: cannot unwrap view into this pattern")]
+    #[error("IdentConflict: More than one function parameter have the same name.")]
+    IdentConflict,
+    #[error("CannotUnwrap: Cannot unwrap view into this pattern.")]
     CannotUnwrap,
+    #[error("UnsupportedExpr: This expression is not supported here.")]
+    UnsupportedExpr,
 }
 
 impl YukinoError for ViewResolveError {}

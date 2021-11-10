@@ -43,8 +43,8 @@ impl_value!(String, StringConverter, OptionalStringConverter);
 
 impl<L: Value, R: Value> Value for (L, R) {
     fn converter() -> ConverterRef<Self>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         TupleConverter::<L, R>::instance()
     }

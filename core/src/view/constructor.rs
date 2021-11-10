@@ -60,19 +60,19 @@ where
     }
 
     fn clone(&self) -> Self
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         Clone::clone(self)
     }
 }
 
 impl<LView, RView, L, R> ComputationView<(L, R)> for TupleView<LView, RView, L, R>
-    where
-        L: Value,
-        R: Value,
-        LView: View<L>,
-        RView: View<R>,
+where
+    L: Value,
+    R: Value,
+    LView: View<L>,
+    RView: View<R>,
 {
     fn computation_view_box_clone(&self) -> Box<dyn ComputationView<(L, R)>> {
         Box::new(Clone::clone(self))
@@ -80,11 +80,11 @@ impl<LView, RView, L, R> ComputationView<(L, R)> for TupleView<LView, RView, L, 
 }
 
 impl<LView, RView, L, R> Clone for TupleView<LView, RView, L, R>
-    where
-        L: Value,
-        R: Value,
-        LView: View<L>,
-        RView: View<R>,
+where
+    L: Value,
+    R: Value,
+    LView: View<L>,
+    RView: View<R>,
 {
     fn clone(&self) -> Self {
         TupleView {
@@ -97,11 +97,11 @@ impl<LView, RView, L, R> Clone for TupleView<LView, RView, L, R>
 }
 
 impl<LView, RView, L, R> ViewCombinator<(LView, RView)> for TupleView<LView, RView, L, R>
-    where
-        L: Value,
-        R: Value,
-        LView: View<L>,
-        RView: View<R>,
+where
+    L: Value,
+    R: Value,
+    LView: View<L>,
+    RView: View<R>,
 {
     fn unwrap(self) -> (LView, RView) {
         (*self.l, *self.r)

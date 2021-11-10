@@ -13,8 +13,8 @@ pub trait Converter: Sync {
     type Output: Value;
 
     fn instance() -> &'static Self
-        where
-            Self: Sized;
+    where
+        Self: Sized;
 
     fn param_count(&self) -> usize;
 
