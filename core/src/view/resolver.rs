@@ -21,23 +21,16 @@ impl ViewResolver {
             pos: e.span(),
         })?;
 
-        let ((_entity_mut, first_param_ident), second_param) = if item_closure.inputs.len() == 2 {
+        let (first_param_ident, second_param) = if item_closure.inputs.len() == 2 {
             let mut param_iter = item_closure.inputs.iter();
             Ok((
                 if let Some(Pat::Ident(ident)) = param_iter.next() {
-                    if ident.by_ref.is_some() {
-                        Err(ViewResolveError::RefIsInvalid)
-                    } else if ident.subpat.is_some() {
-                        Err(ViewResolveError::SubPatternIsInvalid)
-                    } else {
-                        Ok((ident.mutability.is_some(), &ident.ident))
-                    }
+                    Self::unwrap_ident(ident)
                 } else {
                     Err(ViewResolveError::UnexpectedParamPatternType(
                         "ident".to_string(),
-                    ))
-                }
-                    .map_err(|e| e.as_macro_error(item_closure.inputs.first().unwrap().span()))?,
+                    ).as_macro_error(item_closure.inputs.first().unwrap().span()))
+                }?,
                 param_iter.next().unwrap(),
             ))
         } else {
@@ -47,7 +40,7 @@ impl ViewResolver {
             )
         }?;
 
-        let previous_view = Self::resolve_second_parameter(second_param)?;
+        let previous_view = Self::unwrap_pre_view(second_param)?;
 
         let second_param = previous_view
             .input
@@ -59,7 +52,7 @@ impl ViewResolver {
         })
     }
 
-    fn resolve_ident(ident: &PatIdent) -> MacroResult<Ident> {
+    fn unwrap_ident(ident: &PatIdent) -> MacroResult<Ident> {
         if ident.by_ref.is_some() {
             Err(ViewResolveError::RefIsInvalid.as_macro_error(ident.by_ref.unwrap().span()))
         } else if ident.subpat.is_some() {
@@ -72,7 +65,7 @@ impl ViewResolver {
         }
     }
 
-    fn resolve_tuple(
+    fn unwrap_tuple(
         tuple: &PatTuple,
         parent: TokenStream,
     ) -> MacroResult<(Vec<Ident>, Vec<TokenStream>)> {
@@ -87,14 +80,14 @@ impl ViewResolver {
                     };
                     match ele {
                         Pat::Ident(pat_ident) => {
-                            let ident = Self::resolve_ident(pat_ident)?;
+                            let ident = Self::unwrap_ident(pat_ident)?;
                             let unwrap = quote! {
                                 let #ident = #current
                             };
 
                             Ok((vec![ident], vec![unwrap]))
                         }
-                        Pat::Tuple(pat_tuple) => Self::resolve_tuple(pat_tuple, current),
+                        Pat::Tuple(pat_tuple) => Self::unwrap_tuple(pat_tuple, current),
                         Pat::Wild(_) => Ok((vec![], vec![])),
                         _ => Err(ViewResolveError::CannotUnwrap.as_macro_error(ele.span())),
                     }
@@ -111,9 +104,9 @@ impl ViewResolver {
         }
     }
 
-    fn resolve_second_parameter(pat: &Pat) -> MacroResult<PreviousView> {
+    fn unwrap_pre_view(pat: &Pat) -> MacroResult<PreviousView> {
         match pat {
-            Pat::Ident(ident) => Self::resolve_ident(ident).map(|i| PreviousView {
+            Pat::Ident(ident) => Self::unwrap_ident(ident).map(|i| PreviousView {
                 input: Some(PatIdent {
                     attrs: vec![],
                     by_ref: None,
@@ -132,7 +125,7 @@ impl ViewResolver {
                     ident: format_ident!("__v"),
                     subpat: None,
                 };
-                let (idents, unwraps) = Self::resolve_tuple(
+                let (idents, unwraps) = Self::unwrap_tuple(
                     tuple,
                     quote! {
                         #input
@@ -155,4 +148,40 @@ impl ViewResolver {
             _ => Err(ViewResolveError::CannotUnwrap.as_macro_error(pat.span())),
         }
     }
+}
+
+
+#[test]
+fn test_unwrap_preview() {
+    use syn::parse_quote;
+    let pat1 = parse_quote! {
+        _
+    };
+
+    assert!(
+        ViewResolver::unwrap_pre_view(&pat1).unwrap().idents.is_empty()
+    );
+
+    let pat2 = parse_quote! {
+        v
+    };
+
+    assert_eq!(
+        ViewResolver::unwrap_pre_view(&pat2).unwrap().idents,
+        vec![format_ident!("v")]
+    );
+
+    let pat2 = parse_quote! {
+        ((a, _), ((b, c), d))
+    };
+
+    assert_eq!(
+        ViewResolver::unwrap_pre_view(&pat2).unwrap().idents,
+        vec![
+            format_ident!("a"),
+            format_ident!("b"),
+            format_ident!("c"),
+            format_ident!("d"),
+        ]
+    );
 }
