@@ -23,11 +23,11 @@ where
 }
 
 impl<LView, RView, L, R> View<(L, R)> for TupleView<LView, RView, L, R>
-    where
-        L: Value,
-        R: Value,
-        LView: View<L>,
-        RView: View<R>,
+where
+    L: Value,
+    R: Value,
+    LView: View<L>,
+    RView: View<R>,
 {
     fn view_node(&self) -> ViewNode<(L, R)> {
         match (self.l.view_node(), self.r.view_node()) {

@@ -1,6 +1,6 @@
 use crate::err::{MacroError, ViewResolveError, YukinoError};
 use proc_macro2::{Ident, TokenStream};
-use quote::{format_ident, quote};
+use quote::{format_ident, quote, ToTokens};
 use syn::spanned::Spanned;
 use syn::{parse2, ExprClosure, Pat, PatIdent, PatTuple};
 
@@ -21,7 +21,7 @@ impl ViewResolver {
             pos: e.span(),
         })?;
 
-        let ((_entity_mut, _first_param_ident), second_param) = if item_closure.inputs.len() == 2 {
+        let ((_entity_mut, first_param_ident), second_param) = if item_closure.inputs.len() == 2 {
             let mut param_iter = item_closure.inputs.iter();
             Ok((
                 if let Some(Pat::Ident(ident)) = param_iter.next() {
@@ -47,9 +47,16 @@ impl ViewResolver {
             )
         }?;
 
-        let _previous_view = Self::resolve_second_parameter(second_param)?;
+        let previous_view = Self::resolve_second_parameter(second_param)?;
 
-        Ok(quote! {})
+        let second_param = previous_view
+            .input
+            .map_or(quote! {_}, |ident| Pat::Ident(ident).to_token_stream());
+
+        Ok(quote! {
+            |#first_param_ident, #second_param| {
+            }
+        })
     }
 
     fn resolve_ident(ident: &PatIdent) -> MacroResult<Ident> {
@@ -115,7 +122,7 @@ impl ViewResolver {
                     subpat: None,
                 }),
                 idents: vec![i],
-                unwrap: Default::default(),
+                unwrap: TokenStream::new(),
             }),
             Pat::Tuple(tuple) => {
                 let input = PatIdent {
