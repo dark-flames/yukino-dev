@@ -10,11 +10,11 @@ pub trait ViewCombinator<Unwrapped> {
 
 #[derive(Debug)]
 pub struct TupleView<LView, RView, L, R>
-    where
-        L: Value,
-        R: Value,
-        LView: View<L>,
-        RView: View<R>,
+where
+    L: Value,
+    R: Value,
+    LView: View<L>,
+    RView: View<R>,
 {
     l: Box<LView>,
     r: Box<RView>,

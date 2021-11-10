@@ -1,23 +1,20 @@
 use crate::err::{MacroError, ViewResolveError, YukinoError};
-use crate::interface::EntityView;
 use proc_macro2::{Ident, TokenStream};
-use quote::quote;
-use std::marker::PhantomData;
+use quote::{format_ident, quote};
 use syn::spanned::Spanned;
-use syn::{parse2, ExprClosure, Pat};
+use syn::{parse2, ExprClosure, Pat, PatIdent, PatTuple};
 
 pub type MacroResult<T> = Result<T, MacroError>;
 
-pub struct ViewResolver<View: EntityView> {
-    _marker: PhantomData<View>,
-}
+pub struct ViewResolver {}
 
 pub struct PreviousView {
+    pub input: Option<PatIdent>,
     pub idents: Vec<Ident>,
     pub unwrap: TokenStream,
 }
 
-impl<View: EntityView> ViewResolver<View> {
+impl ViewResolver {
     pub fn resolve(token_stream: TokenStream) -> MacroResult<TokenStream> {
         let item_closure: ExprClosure = parse2(token_stream).map_err(|e| MacroError {
             msg: e.to_string(),
@@ -55,22 +52,100 @@ impl<View: EntityView> ViewResolver<View> {
         Ok(quote! {})
     }
 
-    pub fn resolve_second_parameter(pat: &Pat) -> MacroResult<PreviousView> {
-        /*
+    fn resolve_ident(ident: &PatIdent) -> MacroResult<Ident> {
+        if ident.by_ref.is_some() {
+            Err(ViewResolveError::RefIsInvalid.as_macro_error(ident.by_ref.unwrap().span()))
+        } else if ident.subpat.is_some() {
+            Err(ViewResolveError::SubPatternIsInvalid
+                .as_macro_error(ident.subpat.as_ref().map(|(_, p)| p.span()).unwrap()))
+        } else if ident.mutability.is_some() {
+            Err(ViewResolveError::MutableIsInvalid.as_macro_error(ident.mutability.unwrap().span()))
+        } else {
+            Ok(ident.ident.clone())
+        }
+    }
+
+    fn resolve_tuple(
+        tuple: &PatTuple,
+        parent: TokenStream,
+    ) -> MacroResult<(Vec<Ident>, Vec<TokenStream>)> {
+        if tuple.elems.len() == 2 {
+            let (idents, unwrap_token_streams): (Vec<_>, Vec<_>) = tuple
+                .elems
+                .iter()
+                .enumerate()
+                .map(|(index, ele)| {
+                    let current = quote! {
+                        #parent.#index
+                    };
+                    match ele {
+                        Pat::Ident(pat_ident) => {
+                            let ident = Self::resolve_ident(pat_ident)?;
+                            let unwrap = quote! {
+                                let #ident = #current
+                            };
+
+                            Ok((vec![ident], vec![unwrap]))
+                        }
+                        Pat::Tuple(pat_tuple) => Self::resolve_tuple(pat_tuple, current),
+                        Pat::Wild(_) => Ok((vec![], vec![])),
+                        _ => Err(ViewResolveError::CannotUnwrap.as_macro_error(ele.span())),
+                    }
+                })
+                .collect::<MacroResult<Vec<_>>>()?
+                .into_iter()
+                .unzip();
+            Ok((
+                idents.into_iter().flatten().collect(),
+                unwrap_token_streams.into_iter().flatten().collect(),
+            ))
+        } else {
+            Err(ViewResolveError::NotTwoElementsTuple.as_macro_error(tuple.span()))
+        }
+    }
+
+    fn resolve_second_parameter(pat: &Pat) -> MacroResult<PreviousView> {
         match pat {
-            Pat::Box(_) => {
+            Pat::Ident(ident) => Self::resolve_ident(ident).map(|i| PreviousView {
+                input: Some(PatIdent {
+                    attrs: vec![],
+                    by_ref: None,
+                    mutability: None,
+                    ident: i.clone(),
+                    subpat: None,
+                }),
+                idents: vec![i],
+                unwrap: Default::default(),
+            }),
+            Pat::Tuple(tuple) => {
+                let input = PatIdent {
+                    attrs: vec![],
+                    by_ref: None,
+                    mutability: None,
+                    ident: format_ident!("__v"),
+                    subpat: None,
+                };
+                let (idents, unwraps) = Self::resolve_tuple(
+                    tuple,
+                    quote! {
+                        #input
+                    },
+                )?;
 
+                Ok(PreviousView {
+                    input: Some(input),
+                    idents,
+                    unwrap: quote! {
+                        #(#unwraps;)*
+                    },
+                })
             }
-            Pat::Ident(_) => {}
-            Pat::Slice(_) => {}
-            Pat::Struct(_) => {}
-            Pat::Tuple(_) => {}
-            Pat::TupleStruct(_) => {}
-            Pat::Type(_) => {}
-            Pat::Wild(_) => {}
-            _ => Err(ViewResolveError::CannotUnwrap)
-        }.map_err(|e| e.as_macro_error(pat.span()));*/
-
-        Err(ViewResolveError::CannotUnwrap.as_macro_error(pat.span()))
+            Pat::Wild(_) => Ok(PreviousView {
+                input: None,
+                idents: vec![],
+                unwrap: TokenStream::new(),
+            }),
+            _ => Err(ViewResolveError::CannotUnwrap.as_macro_error(pat.span())),
+        }
     }
 }

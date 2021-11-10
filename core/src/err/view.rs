@@ -37,6 +37,10 @@ pub enum ViewResolveError {
     RefIsInvalid,
     #[error("SubPatternIsInvalid: sub pattern at here is not supported")]
     SubPatternIsInvalid,
+    #[error("MutableIsInvalid: mut at here is not supported")]
+    MutableIsInvalid,
+    #[error("NotTwoElementsTuple: only two elements tuple is supported")]
+    NotTwoElementsTuple,
     #[error("CannotUnwrap: cannot unwrap view into this pattern")]
     CannotUnwrap,
 }
