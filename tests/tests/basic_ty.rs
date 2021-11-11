@@ -18,14 +18,14 @@ pub fn test_expr() {
 
     let view = BasicView::pure(&alias);
 
-    let add_const = view.int.expr_clone() + 114514i32;
-    let sub_const = view.int.expr_clone() - 114514i32;
-    let mul_const = view.int.expr_clone() * 114514i32;
-    let div_const = view.int.expr_clone() / 114514i32;
-    let add = view.long.expr_clone() + view.long.expr_clone();
-    let sub = view.long.expr_clone() - view.long.expr_clone();
-    let mul = view.long.expr_clone() * view.long.expr_clone();
-    let div = view.long.expr_clone() / view.long;
+    let add_const = view.int.clone() + 114514i32;
+    let sub_const = view.int.clone() - 114514i32;
+    let mul_const = view.int.clone() * 114514i32;
+    let div_const = view.int.clone() / 114514i32;
+    let add = view.long.clone() + view.long.clone();
+    let sub = view.long.clone() - view.long.clone();
+    let mul = view.long.clone() * view.long.clone();
+    let div = view.long.clone() / view.long;
 
     cmp_view(add_const, "b.int + 114514");
     cmp_view(sub_const, "b.int - 114514");
