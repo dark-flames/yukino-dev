@@ -91,10 +91,7 @@ impl FieldAttribute {
         } else {
             Err(Error::new_spanned(
                 attr,
-                format!(
-                    "Unexpected attribute: {}",
-                    attr.path.to_token_stream()
-                ),
+                format!("Unexpected attribute: {}", attr.path.to_token_stream()),
             ))
         }
     }

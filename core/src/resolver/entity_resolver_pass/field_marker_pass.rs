@@ -27,7 +27,6 @@ impl EntityResolvePass for FieldMakerPass {
             .map(|field| {
                 let marker_name = &field.marker_name;
                 let field_name = &field.path.field_name;
-                let ty = &field.ty;
                 let definition = &field.definition;
                 let definition_static_name = format_ident!(
                     "{}_DEFINITION",
@@ -41,8 +40,6 @@ impl EntityResolvePass for FieldMakerPass {
                     }
 
                     impl FieldMarker for #marker_name {
-                        type ValueType = #ty;
-
                         fn field_name() -> &'static str {
                             #field_name
                         }
@@ -59,7 +56,7 @@ impl EntityResolvePass for FieldMakerPass {
             pub mod #mod_name {
                 use yukino::interface::FieldMarker;
                 use yukino::interface::def::FieldDefinition;
-                use lazy_static::lazy_static;
+                use yukino::lazy_static::lazy_static;
 
                 #(#markers)*
             }

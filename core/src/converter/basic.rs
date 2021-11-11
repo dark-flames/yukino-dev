@@ -1,6 +1,8 @@
-use crate::converter::{ConvertResult, Converter};
+use crate::converter::{ConvertResult, Converter, Deserializer};
 use crate::db::ty::{DatabaseType, DatabaseValue};
 use crate::err::ConvertError;
+use generic_array::typenum::U1;
+use generic_array::{arr, GenericArray};
 use iroha::ToTokens;
 
 macro_rules! basic_ty_converter {
@@ -9,11 +11,9 @@ macro_rules! basic_ty_converter {
         #[Iroha(mod_path = "yukino::converter::basic")]
         pub struct $name;
 
-        unsafe impl Sync for $name {}
-
         static $static: $name = $name;
 
-        impl Converter for $name {
+        impl Converter<U1> for $name {
             type Output = $field_type;
 
             fn instance() -> &'static Self
@@ -23,28 +23,20 @@ macro_rules! basic_ty_converter {
                 &$static
             }
 
-            fn param_count(&self) -> usize {
-                1
-            }
-
             fn deserializer(
                 &self,
-            ) -> Box<dyn Fn(&[&DatabaseValue]) -> ConvertResult<Self::Output>> {
+            ) -> Deserializer<Self::Output, U1> {
                 Box::new(|v| {
-                    v.first()
-                        .map(|value| {
-                            if let DatabaseValue::$enum_variant(nested) = value {
-                                Ok(nested.clone())
-                            } else {
-                                Err(ConvertError::UnexpectedValueType)
-                            }
-                        })
-                        .ok_or_else(|| ConvertError::UnexpectedValueCount)?
+                    if let DatabaseValue::$enum_variant(nested) = v.iter().next().unwrap() {
+                        Ok(nested.clone())
+                    } else {
+                        Err(ConvertError::UnexpectedValueType)
+                    }
                 })
             }
 
-            fn serialize(&self, value: &Self::Output) -> ConvertResult<Vec<DatabaseValue>> {
-                Ok(vec![DatabaseValue::$enum_variant(value.clone())])
+            fn serialize(&self, value: &Self::Output) -> ConvertResult<GenericArray<DatabaseValue, U1>> {
+                Ok(arr![DatabaseValue; DatabaseValue::$enum_variant(value.clone())])
             }
         }
     };
@@ -56,11 +48,9 @@ macro_rules! optional_basic_ty_converter {
         #[Iroha(mod_path = "yukino::converter::basic")]
         pub struct $name();
 
-        unsafe impl Sync for $name {}
-
         static $static: $name = $name();
 
-        impl Converter for $name {
+        impl Converter<U1> for $name {
             type Output = Option<$field_type>;
 
             fn instance() -> &'static Self
@@ -70,29 +60,21 @@ macro_rules! optional_basic_ty_converter {
                 &$static
             }
 
-            fn param_count(&self) -> usize {
-                1
-            }
-
             fn deserializer(
                 &self,
-            ) -> Box<dyn Fn(&[&DatabaseValue]) -> ConvertResult<Self::Output>> {
-                Box::new(|v| {
-                    v.first()
-                        .map(|value| match value {
-                            DatabaseValue::$enum_variant(nested) => Ok(Some(nested.clone())),
-                            DatabaseValue::Null(DatabaseType::$enum_variant) => Ok(None),
-                            _ => Err(ConvertError::UnexpectedValueType),
-                        })
-                        .ok_or_else(|| ConvertError::UnexpectedValueCount)?
+            ) -> Box<dyn Fn(&GenericArray<DatabaseValue, U1>) -> ConvertResult<Self::Output>> {
+                Box::new(|v| match v.iter().next().unwrap() {
+                    DatabaseValue::$enum_variant(nested) => Ok(Some(nested.clone())),
+                    DatabaseValue::Null(DatabaseType::$enum_variant) => Ok(None),
+                    _ => Err(ConvertError::UnexpectedValueType),
                 })
             }
 
-            fn serialize(&self, value: &Self::Output) -> ConvertResult<Vec<DatabaseValue>> {
+            fn serialize(&self, value: &Self::Output) -> ConvertResult<GenericArray<DatabaseValue, U1>> {
                 if let Some(nested) = value {
-                    Ok(vec![DatabaseValue::$enum_variant(nested.clone())])
+                    Ok(arr![DatabaseValue; DatabaseValue::$enum_variant(nested.clone())])
                 } else {
-                    Ok(vec![DatabaseValue::Null(DatabaseType::$enum_variant)])
+                    Ok(arr![DatabaseValue; DatabaseValue::Null(DatabaseType::$enum_variant)])
                 }
             }
         }

@@ -1,12 +1,16 @@
 use yukino::converter::ConverterRef;
-use yukino::converter::{ConvertResult, Converter};
+use yukino::converter::{ConvertResult, Converter, Deserializer};
 use yukino::db::ty::DatabaseValue;
 use yukino::err::{RuntimeResult, YukinoError};
+use yukino::generic_array::functional::FunctionalSequence;
+use yukino::generic_array::sequence::{Concat, Split};
+use yukino::generic_array::typenum;
+use yukino::generic_array::{arr, GenericArray};
 use yukino::interface::Entity;
 use yukino::interface::EntityView;
-use yukino::query::{Alias, TypedExpr};
-use yukino::view::Value;
-use yukino::view::{Computation, ExprView, View, ViewBox, ViewNode};
+use yukino::query::{Alias, Expr};
+use yukino::view::{ExprView, ExprViewBox, SingleExprView, ValueView, ViewBox};
+use yukino::view::{Value, View};
 #[derive(Clone, Debug)]
 pub struct Basic {
     pub boolean: bool,
@@ -23,26 +27,124 @@ pub struct Basic {
     pub u_long: u64,
     pub u_short: u16,
 }
-#[derive(Debug)]
+#[derive(Clone)]
 pub struct BasicView {
-    pub boolean: ViewBox<bool>,
-    pub character: ViewBox<char>,
-    pub double: ViewBox<f64>,
-    pub float: ViewBox<f32>,
-    pub id: ViewBox<u32>,
-    pub int: ViewBox<i32>,
-    pub long: ViewBox<i64>,
-    pub optional: ViewBox<Option<u32>>,
-    pub short: ViewBox<i16>,
-    pub string: ViewBox<String>,
-    pub u_int: ViewBox<u32>,
-    pub u_long: ViewBox<u64>,
-    pub u_short: ViewBox<u16>,
+    pub boolean: ExprViewBox<bool, <bool as Value>::L>,
+    pub character: ExprViewBox<char, <char as Value>::L>,
+    pub double: ExprViewBox<f64, <f64 as Value>::L>,
+    pub float: ExprViewBox<f32, <f32 as Value>::L>,
+    pub id: ExprViewBox<u32, <u32 as Value>::L>,
+    pub int: ExprViewBox<i32, <i32 as Value>::L>,
+    pub long: ExprViewBox<i64, <i64 as Value>::L>,
+    pub optional: ExprViewBox<Option<u32>, <Option<u32> as Value>::L>,
+    pub short: ExprViewBox<i16, <i16 as Value>::L>,
+    pub string: ExprViewBox<String, <String as Value>::L>,
+    pub u_int: ExprViewBox<u32, <u32 as Value>::L>,
+    pub u_long: ExprViewBox<u64, <u64 as Value>::L>,
+    pub u_short: ExprViewBox<u16, <u16 as Value>::L>,
 }
-unsafe impl Sync for BasicView {}
-impl Clone for BasicView {
-    fn clone(&self) -> Self {
+impl View<Basic, typenum::U13> for BasicView {
+    fn eval(&self, v: &GenericArray<DatabaseValue, typenum::U13>) -> RuntimeResult<Basic> {
+        (*Basic::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
+    }
+    fn view_clone(&self) -> ViewBox<Basic, typenum::U13> {
+        Box::new(self.clone())
+    }
+}
+impl ValueView<Basic, typenum::U13> for BasicView {
+    fn collect_expr(&self) -> GenericArray<Expr, typenum::U13> {
+        let boolean = self.boolean.collect_expr();
+        let character = self.character.collect_expr();
+        let double = self.double.collect_expr();
+        let float = self.float.collect_expr();
+        let id = self.id.collect_expr();
+        let int = self.int.collect_expr();
+        let long = self.long.collect_expr();
+        let optional = self.optional.collect_expr();
+        let short = self.short.collect_expr();
+        let string = self.string.collect_expr();
+        let u_int = self.u_int.collect_expr();
+        let u_long = self.u_long.collect_expr();
+        let u_short = self.u_short.collect_expr();
+        Concat::concat(
+            Concat::concat(
+                Concat::concat(
+                    Concat::concat(
+                        Concat::concat(
+                            Concat::concat(
+                                Concat::concat(
+                                    Concat::concat(
+                                        Concat::concat(
+                                            Concat::concat(
+                                                Concat::concat(
+                                                    Concat::concat(
+                                                        Concat::concat(arr ! [Expr ;], boolean),
+                                                        character,
+                                                    ),
+                                                    double,
+                                                ),
+                                                float,
+                                            ),
+                                            id,
+                                        ),
+                                        int,
+                                    ),
+                                    long,
+                                ),
+                                optional,
+                            ),
+                            short,
+                        ),
+                        string,
+                    ),
+                    u_int,
+                ),
+                u_long,
+            ),
+            u_short,
+        )
+    }
+}
+impl ExprView<Basic, typenum::U13> for BasicView {
+    fn from_exprs(exprs: GenericArray<Expr, typenum::U13>) -> Self
+    where
+        Self: Sized,
+    {
+        let rest = exprs;
+        let (boolean, rest) = Split::<_, typenum::U1>::split(rest);
+        let (character, rest) = Split::<_, typenum::U1>::split(rest);
+        let (double, rest) = Split::<_, typenum::U1>::split(rest);
+        let (float, rest) = Split::<_, typenum::U1>::split(rest);
+        let (id, rest) = Split::<_, typenum::U1>::split(rest);
+        let (int, rest) = Split::<_, typenum::U1>::split(rest);
+        let (long, rest) = Split::<_, typenum::U1>::split(rest);
+        let (optional, rest) = Split::<_, typenum::U1>::split(rest);
+        let (short, rest) = Split::<_, typenum::U1>::split(rest);
+        let (string, rest) = Split::<_, typenum::U1>::split(rest);
+        let (u_int, rest) = Split::<_, typenum::U1>::split(rest);
+        let (u_long, rest) = Split::<_, typenum::U1>::split(rest);
+        let (u_short, _) = Split::<_, typenum::U1>::split(rest);
         BasicView {
+            boolean: Box::new(SingleExprView::<bool>::from_exprs(boolean)),
+            character: Box::new(SingleExprView::<char>::from_exprs(character)),
+            double: Box::new(SingleExprView::<f64>::from_exprs(double)),
+            float: Box::new(SingleExprView::<f32>::from_exprs(float)),
+            id: Box::new(SingleExprView::<u32>::from_exprs(id)),
+            int: Box::new(SingleExprView::<i32>::from_exprs(int)),
+            long: Box::new(SingleExprView::<i64>::from_exprs(long)),
+            optional: Box::new(SingleExprView::<Option<u32>>::from_exprs(optional)),
+            short: Box::new(SingleExprView::<i16>::from_exprs(short)),
+            string: Box::new(SingleExprView::<String>::from_exprs(string)),
+            u_int: Box::new(SingleExprView::<u32>::from_exprs(u_int)),
+            u_long: Box::new(SingleExprView::<u64>::from_exprs(u_long)),
+            u_short: Box::new(SingleExprView::<u16>::from_exprs(u_short)),
+        }
+    }
+    fn expr_clone(&self) -> ExprViewBox<Basic, typenum::U13>
+    where
+        Self: Sized,
+    {
+        Box::new(BasicView {
             boolean: self.boolean.clone(),
             character: self.character.clone(),
             double: self.double.clone(),
@@ -56,38 +158,7 @@ impl Clone for BasicView {
             u_int: self.u_int.clone(),
             u_long: self.u_long.clone(),
             u_short: self.u_short.clone(),
-        }
-    }
-}
-impl Computation for BasicView {
-    type Output = Basic;
-    fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<Self::Output> {
-        (*Basic::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
-    }
-}
-impl View<Basic> for BasicView {
-    fn view_node(&self) -> ViewNode<Basic> {
-        ViewNode::Expr(ExprView::create(self.collect_expr()))
-    }
-    fn collect_expr(&self) -> Vec<TypedExpr> {
-        let mut exprs = vec![];
-        exprs.extend(self.boolean.collect_expr());
-        exprs.extend(self.character.collect_expr());
-        exprs.extend(self.double.collect_expr());
-        exprs.extend(self.float.collect_expr());
-        exprs.extend(self.id.collect_expr());
-        exprs.extend(self.int.collect_expr());
-        exprs.extend(self.long.collect_expr());
-        exprs.extend(self.optional.collect_expr());
-        exprs.extend(self.short.collect_expr());
-        exprs.extend(self.string.collect_expr());
-        exprs.extend(self.u_int.collect_expr());
-        exprs.extend(self.u_long.collect_expr());
-        exprs.extend(self.u_short.collect_expr());
-        exprs
-    }
-    fn clone(&self) -> ViewBox<Basic> {
-        Box::new(Clone::clone(self))
+        })
     }
 }
 impl EntityView for BasicView {
@@ -97,57 +168,45 @@ impl EntityView for BasicView {
         Self: Sized,
     {
         BasicView {
-            boolean: Box::new(ViewNode::Expr(ExprView::create(vec![
-                alias.create_ident_expr("boolean", yukino::db::ty::DatabaseType::Bool)
-            ]))),
-            character: Box::new(ViewNode::Expr(ExprView::create(vec![
-                alias.create_ident_expr("character", yukino::db::ty::DatabaseType::Character)
-            ]))),
-            double: Box::new(ViewNode::Expr(ExprView::create(vec![
-                alias.create_ident_expr("double", yukino::db::ty::DatabaseType::Double)
-            ]))),
-            float: Box::new(ViewNode::Expr(ExprView::create(vec![
-                alias.create_ident_expr("float", yukino::db::ty::DatabaseType::Float)
-            ]))),
-            id: Box::new(ViewNode::Expr(ExprView::create(vec![alias
-                .create_ident_expr(
-                    "id",
-                    yukino::db::ty::DatabaseType::UnsignedInteger,
-                )]))),
-            int: Box::new(ViewNode::Expr(ExprView::create(vec![
-                alias.create_ident_expr("int", yukino::db::ty::DatabaseType::Integer)
-            ]))),
-            long: Box::new(ViewNode::Expr(ExprView::create(vec![
-                alias.create_ident_expr("long", yukino::db::ty::DatabaseType::BigInteger)
-            ]))),
-            optional: Box::new(ViewNode::Expr(ExprView::create(vec![alias
-                .create_ident_expr(
-                    "optional",
-                    yukino::db::ty::DatabaseType::UnsignedInteger,
-                )]))),
-            short: Box::new(ViewNode::Expr(ExprView::create(vec![alias
-                .create_ident_expr(
-                    "short",
-                    yukino::db::ty::DatabaseType::SmallInteger,
-                )]))),
-            string: Box::new(ViewNode::Expr(ExprView::create(vec![
-                alias.create_ident_expr("string", yukino::db::ty::DatabaseType::String)
-            ]))),
-            u_int: Box::new(ViewNode::Expr(ExprView::create(vec![alias
-                .create_ident_expr(
-                    "u_int",
-                    yukino::db::ty::DatabaseType::UnsignedInteger,
-                )]))),
-            u_long: Box::new(ViewNode::Expr(ExprView::create(vec![alias
-                .create_ident_expr(
-                    "u_long",
-                    yukino::db::ty::DatabaseType::UnsignedBigInteger,
-                )]))),
-            u_short: Box::new(ViewNode::Expr(ExprView::create(vec![alias
-                .create_ident_expr(
-                    "u_short",
-                    yukino::db::ty::DatabaseType::UnsignedSmallInteger,
-                )]))),
+            boolean: Box::new(SingleExprView::from_exprs(
+                arr ! [Expr ; alias . create_ident_expr ("boolean" , yukino :: db :: ty :: DatabaseType :: Bool)],
+            )),
+            character: Box::new(SingleExprView::from_exprs(
+                arr ! [Expr ; alias . create_ident_expr ("character" , yukino :: db :: ty :: DatabaseType :: Character)],
+            )),
+            double: Box::new(SingleExprView::from_exprs(
+                arr ! [Expr ; alias . create_ident_expr ("double" , yukino :: db :: ty :: DatabaseType :: Double)],
+            )),
+            float: Box::new(SingleExprView::from_exprs(
+                arr ! [Expr ; alias . create_ident_expr ("float" , yukino :: db :: ty :: DatabaseType :: Float)],
+            )),
+            id: Box::new(SingleExprView::from_exprs(
+                arr ! [Expr ; alias . create_ident_expr ("id" , yukino :: db :: ty :: DatabaseType :: UnsignedInteger)],
+            )),
+            int: Box::new(SingleExprView::from_exprs(
+                arr ! [Expr ; alias . create_ident_expr ("int" , yukino :: db :: ty :: DatabaseType :: Integer)],
+            )),
+            long: Box::new(SingleExprView::from_exprs(
+                arr ! [Expr ; alias . create_ident_expr ("long" , yukino :: db :: ty :: DatabaseType :: BigInteger)],
+            )),
+            optional: Box::new(SingleExprView::from_exprs(
+                arr ! [Expr ; alias . create_ident_expr ("optional" , yukino :: db :: ty :: DatabaseType :: UnsignedInteger)],
+            )),
+            short: Box::new(SingleExprView::from_exprs(
+                arr ! [Expr ; alias . create_ident_expr ("short" , yukino :: db :: ty :: DatabaseType :: SmallInteger)],
+            )),
+            string: Box::new(SingleExprView::from_exprs(
+                arr ! [Expr ; alias . create_ident_expr ("string" , yukino :: db :: ty :: DatabaseType :: String)],
+            )),
+            u_int: Box::new(SingleExprView::from_exprs(
+                arr ! [Expr ; alias . create_ident_expr ("u_int" , yukino :: db :: ty :: DatabaseType :: UnsignedInteger)],
+            )),
+            u_long: Box::new(SingleExprView::from_exprs(
+                arr ! [Expr ; alias . create_ident_expr ("u_long" , yukino :: db :: ty :: DatabaseType :: UnsignedBigInteger)],
+            )),
+            u_short: Box::new(SingleExprView::from_exprs(
+                arr ! [Expr ; alias . create_ident_expr ("u_short" , yukino :: db :: ty :: DatabaseType :: UnsignedSmallInteger)],
+            )),
         }
     }
 }
@@ -155,18 +214,26 @@ impl Entity for Basic {
     type View = BasicView;
 }
 impl Value for Basic {
-    fn converter() -> ConverterRef<Self>
+    type L = typenum::U13;
+    fn converter() -> ConverterRef<Self, Self::L>
     where
         Self: Sized,
     {
         BasicConverter::instance()
     }
+    fn view(&self) -> ExprViewBox<Self, Self::L>
+    where
+        Self: Sized,
+    {
+        Box::new(BasicView::from_exprs(
+            Self::converter().serialize(self).unwrap().map(Expr::Lit),
+        ))
+    }
 }
 #[derive(Clone)]
 pub struct BasicConverter;
-unsafe impl Sync for BasicConverter {}
 static BASIC_CONVERTER: BasicConverter = BasicConverter;
-impl Converter for BasicConverter {
+impl Converter<typenum::U13> for BasicConverter {
     type Output = Basic;
     fn instance() -> &'static Self
     where
@@ -174,53 +241,101 @@ impl Converter for BasicConverter {
     {
         &BASIC_CONVERTER
     }
-    fn param_count(&self) -> usize {
-        13usize
-    }
-    fn deserializer(&self) -> Box<dyn Fn(&[&DatabaseValue]) -> ConvertResult<Self::Output>> {
-        Box::new(|v| {
+    fn deserializer(&self) -> Deserializer<Self::Output, typenum::U13> {
+        Box::new(|rest| {
+            let (boolean, rest) = Split::<_, typenum::U1>::split(rest);
+            let (character, rest) = Split::<_, typenum::U1>::split(rest);
+            let (double, rest) = Split::<_, typenum::U1>::split(rest);
+            let (float, rest) = Split::<_, typenum::U1>::split(rest);
+            let (id, rest) = Split::<_, typenum::U1>::split(rest);
+            let (int, rest) = Split::<_, typenum::U1>::split(rest);
+            let (long, rest) = Split::<_, typenum::U1>::split(rest);
+            let (optional, rest) = Split::<_, typenum::U1>::split(rest);
+            let (short, rest) = Split::<_, typenum::U1>::split(rest);
+            let (string, rest) = Split::<_, typenum::U1>::split(rest);
+            let (u_int, rest) = Split::<_, typenum::U1>::split(rest);
+            let (u_long, rest) = Split::<_, typenum::U1>::split(rest);
+            let (u_short, _) = Split::<_, typenum::U1>::split(rest);
             Ok(Basic {
-                boolean: (*<bool>::converter().deserializer())(&v[0usize..1usize])?,
-                character: (*<char>::converter().deserializer())(&v[1usize..2usize])?,
-                double: (*<f64>::converter().deserializer())(&v[2usize..3usize])?,
-                float: (*<f32>::converter().deserializer())(&v[3usize..4usize])?,
-                id: (*<u32>::converter().deserializer())(&v[4usize..5usize])?,
-                int: (*<i32>::converter().deserializer())(&v[5usize..6usize])?,
-                long: (*<i64>::converter().deserializer())(&v[6usize..7usize])?,
-                optional: (*<Option<u32>>::converter().deserializer())(&v[7usize..8usize])?,
-                short: (*<i16>::converter().deserializer())(&v[8usize..9usize])?,
-                string: (*<String>::converter().deserializer())(&v[9usize..10usize])?,
-                u_int: (*<u32>::converter().deserializer())(&v[10usize..11usize])?,
-                u_long: (*<u64>::converter().deserializer())(&v[11usize..12usize])?,
-                u_short: (*<u16>::converter().deserializer())(&v[12usize..13usize])?,
+                boolean: (*<bool>::converter().deserializer())(boolean)?,
+                character: (*<char>::converter().deserializer())(character)?,
+                double: (*<f64>::converter().deserializer())(double)?,
+                float: (*<f32>::converter().deserializer())(float)?,
+                id: (*<u32>::converter().deserializer())(id)?,
+                int: (*<i32>::converter().deserializer())(int)?,
+                long: (*<i64>::converter().deserializer())(long)?,
+                optional: (*<Option<u32>>::converter().deserializer())(optional)?,
+                short: (*<i16>::converter().deserializer())(short)?,
+                string: (*<String>::converter().deserializer())(string)?,
+                u_int: (*<u32>::converter().deserializer())(u_int)?,
+                u_long: (*<u64>::converter().deserializer())(u_long)?,
+                u_short: (*<u16>::converter().deserializer())(u_short)?,
             })
         })
     }
-    fn serialize(&self, value: &Self::Output) -> ConvertResult<Vec<DatabaseValue>> {
-        Ok(vec![
-            <bool>::converter().serialize(&value.boolean)?,
-            <char>::converter().serialize(&value.character)?,
-            <f64>::converter().serialize(&value.double)?,
-            <f32>::converter().serialize(&value.float)?,
-            <u32>::converter().serialize(&value.id)?,
-            <i32>::converter().serialize(&value.int)?,
-            <i64>::converter().serialize(&value.long)?,
-            <Option<u32>>::converter().serialize(&value.optional)?,
-            <i16>::converter().serialize(&value.short)?,
-            <String>::converter().serialize(&value.string)?,
-            <u32>::converter().serialize(&value.u_int)?,
-            <u64>::converter().serialize(&value.u_long)?,
-            <u16>::converter().serialize(&value.u_short)?,
-        ]
-        .into_iter()
-        .flatten()
-        .collect())
+    fn serialize(
+        &self,
+        value: &Self::Output,
+    ) -> ConvertResult<GenericArray<DatabaseValue, typenum::U13>> {
+        let boolean = <bool>::converter().serialize(&value.boolean)?;
+        let character = <char>::converter().serialize(&value.character)?;
+        let double = <f64>::converter().serialize(&value.double)?;
+        let float = <f32>::converter().serialize(&value.float)?;
+        let id = <u32>::converter().serialize(&value.id)?;
+        let int = <i32>::converter().serialize(&value.int)?;
+        let long = <i64>::converter().serialize(&value.long)?;
+        let optional = <Option<u32>>::converter().serialize(&value.optional)?;
+        let short = <i16>::converter().serialize(&value.short)?;
+        let string = <String>::converter().serialize(&value.string)?;
+        let u_int = <u32>::converter().serialize(&value.u_int)?;
+        let u_long = <u64>::converter().serialize(&value.u_long)?;
+        let u_short = <u16>::converter().serialize(&value.u_short)?;
+        Ok(Concat::concat(
+            Concat::concat(
+                Concat::concat(
+                    Concat::concat(
+                        Concat::concat(
+                            Concat::concat(
+                                Concat::concat(
+                                    Concat::concat(
+                                        Concat::concat(
+                                            Concat::concat(
+                                                Concat::concat(
+                                                    Concat::concat(
+                                                        Concat::concat(
+                                                            arr ! [DatabaseValue ;],
+                                                            boolean,
+                                                        ),
+                                                        character,
+                                                    ),
+                                                    double,
+                                                ),
+                                                float,
+                                            ),
+                                            id,
+                                        ),
+                                        int,
+                                    ),
+                                    long,
+                                ),
+                                optional,
+                            ),
+                            short,
+                        ),
+                        string,
+                    ),
+                    u_int,
+                ),
+                u_long,
+            ),
+            u_short,
+        ))
     }
 }
 pub mod basic {
-    use lazy_static::lazy_static;
     use yukino::interface::def::FieldDefinition;
     use yukino::interface::FieldMarker;
+    use yukino::lazy_static::lazy_static;
     #[allow(non_camel_case_types)]
     pub struct boolean();
     lazy_static! {
@@ -247,7 +362,6 @@ pub mod basic {
             );
     }
     impl FieldMarker for boolean {
-        type ValueType = bool;
         fn field_name() -> &'static str {
             "boolean"
         }
@@ -281,7 +395,6 @@ pub mod basic {
             );
     }
     impl FieldMarker for character {
-        type ValueType = char;
         fn field_name() -> &'static str {
             "character"
         }
@@ -315,7 +428,6 @@ pub mod basic {
             );
     }
     impl FieldMarker for double {
-        type ValueType = f64;
         fn field_name() -> &'static str {
             "double"
         }
@@ -348,7 +460,6 @@ pub mod basic {
         );
     }
     impl FieldMarker for float {
-        type ValueType = f32;
         fn field_name() -> &'static str {
             "float"
         }
@@ -381,7 +492,6 @@ pub mod basic {
         );
     }
     impl FieldMarker for id {
-        type ValueType = u32;
         fn field_name() -> &'static str {
             "id"
         }
@@ -414,7 +524,6 @@ pub mod basic {
         );
     }
     impl FieldMarker for int {
-        type ValueType = i32;
         fn field_name() -> &'static str {
             "int"
         }
@@ -447,7 +556,6 @@ pub mod basic {
         );
     }
     impl FieldMarker for long {
-        type ValueType = i64;
         fn field_name() -> &'static str {
             "long"
         }
@@ -481,7 +589,6 @@ pub mod basic {
             );
     }
     impl FieldMarker for optional {
-        type ValueType = Option<u32>;
         fn field_name() -> &'static str {
             "optional"
         }
@@ -514,7 +621,6 @@ pub mod basic {
         );
     }
     impl FieldMarker for short {
-        type ValueType = i16;
         fn field_name() -> &'static str {
             "short"
         }
@@ -548,7 +654,6 @@ pub mod basic {
             );
     }
     impl FieldMarker for string {
-        type ValueType = String;
         fn field_name() -> &'static str {
             "string"
         }
@@ -581,7 +686,6 @@ pub mod basic {
         );
     }
     impl FieldMarker for u_int {
-        type ValueType = u32;
         fn field_name() -> &'static str {
             "u_int"
         }
@@ -615,7 +719,6 @@ pub mod basic {
             );
     }
     impl FieldMarker for u_long {
-        type ValueType = u64;
         fn field_name() -> &'static str {
             "u_long"
         }
@@ -649,7 +752,6 @@ pub mod basic {
             );
     }
     impl FieldMarker for u_short {
-        type ValueType = u16;
         fn field_name() -> &'static str {
             "u_short"
         }

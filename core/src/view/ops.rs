@@ -1,130 +1,217 @@
 use crate::db::ty::DatabaseValue;
 use crate::err::RuntimeResult;
-use crate::query::TypedExpr;
-use crate::view::value::Value;
-use crate::view::{Computation, ComputationView, ConstView, ExprView, View, ViewBox, ViewNode};
+use crate::query::Expr;
+use crate::view::{
+    ComputationView, ComputationViewBox, ExprView, ExprViewBox, SingleExprView, Value, ValueCount,
+    View, ViewBox,
+};
+use generic_array::sequence::Split;
+use generic_array::typenum::Sum;
+use generic_array::{arr, GenericArray};
+use std::ops::{Add, Div, Mul, Sub};
 
-macro_rules! expr_binary_ops {
-    ($op: ident, $node: ident, $trait: ident, $method: ident, $operator: tt, $macro_name: ident, $expr_op: ident) => {
-        use std::ops::$op;
-        #[derive(Clone, Debug)]
-        pub struct $node<L, R, O>
-        where
-            L: Value + $op<R, Output = O>,
-            R: Value,
-            O: Value,
+macro_rules! impl_ops {
+    (
+        $op: tt,
+        $expr_trait: ident,
+        $trait_method: ident,
+        $computation_name: ident,
+        $ops_trait: ident,
+        $ops_method: ident,
+        $expr_variant: ident,
+        $macro_name: ident
+    ) => {
+        pub trait $expr_trait<Rhs: Value<L = Self::RL>>:
+            Value<L = Self::LL> + $ops_trait<Rhs, Output = Self::Result>
         {
-            l: ViewNode<L>,
-            r: ViewNode<R>,
+            type LL: ValueCount;
+            type RL: ValueCount;
+            type OL: ValueCount;
+            type Result: Value<L = Self::OL>;
+
+            fn $trait_method(
+                l: ExprViewBox<Self, Self::LL>,
+                r: ExprViewBox<Rhs, Self::RL>,
+            ) -> ExprViewBox<Self::Result, Self::OL>;
         }
 
-        impl<L, R, O> Computation for $node<L, R, O>
-        where
-            L: Value + $op<R, Output = O>,
-            R: Value,
-            O: Value,
-        {
-            type Output = O;
-
-            fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<Self::Output> {
-                let mid = L::converter().param_count();
-                Ok(self.l.eval(&v[0..mid])? $operator self.r.eval(&v[mid..O::converter().param_count()])?)
-            }
+        pub struct $computation_name<
+            L: Value<L = LL> + $ops_trait<R, Output = O>,
+            R: Value<L = RL>,
+            O: 'static,
+            LL: ValueCount + Add<RL>,
+            RL: ValueCount,
+        > {
+            l: ViewBox<L, LL>,
+            r: ViewBox<R, RL>,
         }
 
-        impl<L, R, O> View<O> for $node<L, R, O>
-        where
-            L: Value + $op<R, Output = O>,
-            R: Value,
-            O: Value,
+        impl<
+                L: Value<L = LL> + $ops_trait<R, Output = O>,
+                R: Value<L = RL>,
+                O: 'static,
+                LL: ValueCount + Add<RL, Output = OL>,
+                RL: ValueCount,
+                OL: ValueCount + Sub<LL, Output = RL>,
+            > View<O, Sum<LL, RL>> for $computation_name<L, R, O, LL, RL>
         {
-            fn view_node(&self) -> ViewNode<O> {
-                ViewNode::Computation(Box::new(Clone::clone(self)))
+            fn eval(&self, v: &GenericArray<DatabaseValue, Sum<LL, RL>>) -> RuntimeResult<O> {
+                let (l, r) = Split::<_, LL>::split(v);
+                Ok(self.l.eval(l)? $op self.r.eval(r)?)
             }
 
-            fn collect_expr(&self) -> Vec<TypedExpr> {
-                let mut exprs = self.l.collect_expr();
-
-                exprs.extend(self.r.collect_expr());
-
-                exprs
-            }
-
-            fn clone(&self) -> ViewBox<O> {
-                Box::new(Clone::clone(self))
-            }
-        }
-
-        impl<L, R, O> ComputationView<O> for $node<L, R, O>
-        where
-            L: Value + $op<R, Output = O>,
-            R: Value,
-            O: Value,
-        {
-            fn computation_view_box_clone(&self) -> Box<dyn ComputationView<O>> {
-                Box::new(Clone::clone(self))
-            }
-        }
-
-        pub trait $trait<Rhs: Value = Self>: Value + $op<Rhs, Output = Self::Result> {
-            type Result: Value;
-
-            fn $method(l: ExprView<Self>, r: ExprView<Rhs>) -> ExprView<<Self as $trait<Rhs>>::Result>
-            where
-                Self: Sized;
-        }
-
-        impl<L, R, O> $op<ViewBox<R>> for ViewBox<L>
-        where
-            L: Value + $trait<R, Result = O>,
-            R: Value,
-            O: Value,
-        {
-            type Output = Box<ViewNode<O>>;
-
-            fn $method(self, rhs: Box<dyn View<R>>) -> Self::Output {
-                Box::new(match (self.view_node(), rhs.view_node()) {
-                    (ViewNode::Expr(l), ViewNode::Expr(r)) => ViewNode::Expr(<L as $trait<R>>::$method(l, r)),
-                    (ViewNode::Expr(l), ViewNode::Const(r)) => {
-                        ViewNode::Expr(<L as $trait<R>>::$method(l, r.try_into().unwrap()))
-                    }
-                    (ViewNode::Const(l), ViewNode::Expr(r)) => {
-                        ViewNode::Expr(<L as $trait<R>>::$method(l.try_into().unwrap(), r))
-                    }
-                    (ViewNode::Const(l), ViewNode::Const(r)) => {
-                        ViewNode::Const(ConstView::create(l.value $operator r.value))
-                    }
-                    (l, r) => ViewNode::Computation(Box::new($node { l, r })),
+            fn view_clone(&self) -> ViewBox<O, Sum<LL, RL>> {
+                Box::new($computation_name {
+                    l: self.l.view_clone(),
+                    r: self.r.view_clone(),
                 })
             }
         }
 
-        impl<L, R, O> $op<R> for ViewBox<L>
-        where
-            L: Value + $trait<R, Result = O>,
-            R: Value,
-            O: Value,
+        impl<
+                L: Value<L = LL> + $ops_trait<R, Output = O>,
+                R: Value<L = RL>,
+                O: 'static,
+                LL: ValueCount + Add<RL, Output = OL>,
+                RL: ValueCount,
+                OL: ValueCount + Sub<LL, Output = RL>,
+            > ComputationView<O, Sum<LL, RL>> for $computation_name<L, R, O, LL, RL>
         {
-            type Output = Box<ViewNode<O>>;
+            fn computation_clone(&self) -> ComputationViewBox<O, Sum<LL, RL>>
+            where
+                Self: Sized,
+            {
+                Box::new($computation_name {
+                    l: self.l.view_clone(),
+                    r: self.r.view_clone(),
+                })
+            }
+        }
 
-            fn $method(self, rhs: R) -> Self::Output {
-                let r: ViewBox<R> = Box::new(ViewNode::Const(ConstView::create(rhs)));
-                self $operator r
+        impl<
+                L: Value<L = LL> + $expr_trait<R, LL = LL, RL = RL, OL = OL, Result = O>,
+                R: Value<L = RL>,
+                O: Value<L = OL>,
+                LL: ValueCount,
+                RL: ValueCount,
+                OL: ValueCount,
+            > $ops_trait<ExprViewBox<R, RL>> for ExprViewBox<L, LL>
+        {
+            type Output = ExprViewBox<O, OL>;
+
+            fn $ops_method(self, rhs: ExprViewBox<R, RL>) -> Self::Output {
+                L::$trait_method(self, rhs)
+            }
+        }
+
+        impl<
+                L: Value<L = LL> + $expr_trait<R, LL = LL, RL = RL, OL = OL, Result = O>,
+                R: Value<L = RL>,
+                O: Value<L = OL>,
+                LL: ValueCount,
+                RL: ValueCount,
+                OL: ValueCount,
+            > $ops_trait<R> for ExprViewBox<L, LL>
+        {
+            type Output = ExprViewBox<O, OL>;
+
+            fn $ops_method(self, rhs: R) -> Self::Output {
+                L::$trait_method(self, rhs.view())
+            }
+        }
+
+        impl<
+                L: Value<L = LL> + $expr_trait<R, LL = LL, RL = RL, OL = OL, Result = O>,
+                R: Value<L = RL>,
+                O: Value<L = OL>,
+                LL: ValueCount + Add<RL, Output = OL>,
+                RL: ValueCount,
+                OL: ValueCount + Sub<LL, Output = RL>,
+            > $ops_trait<ComputationViewBox<R, RL>> for ExprViewBox<L, LL>
+        {
+            type Output = ComputationViewBox<O, OL>;
+
+            fn $ops_method(self, rhs: ComputationViewBox<R, RL>) -> Self::Output {
+                Box::new($computation_name {
+                    l: self.view_clone(),
+                    r: rhs.view_clone(),
+                })
+            }
+        }
+
+        impl<
+                L: Value<L = LL> + $expr_trait<R, LL = LL, RL = RL, OL = OL, Result = O>,
+                R: Value<L = RL>,
+                O: Value<L = OL>,
+                LL: ValueCount + Add<RL, Output = OL>,
+                RL: ValueCount,
+                OL: ValueCount + Sub<LL, Output = RL>,
+            > $ops_trait<R> for ComputationViewBox<L, LL>
+        {
+            type Output = ComputationViewBox<O, OL>;
+
+            fn $ops_method(self, rhs: R) -> Self::Output {
+                Box::new($computation_name {
+                    l: self.view_clone(),
+                    r: rhs.view().view_clone(),
+                })
+            }
+        }
+
+        impl<
+                L: Value<L = LL> + $expr_trait<R, LL = LL, RL = RL, OL = OL, Result = O>,
+                R: Value<L = RL>,
+                O: Value<L = OL>,
+                LL: ValueCount + Add<RL, Output = OL>,
+                RL: ValueCount,
+                OL: ValueCount + Sub<LL, Output = RL>,
+            > $ops_trait<ExprViewBox<R, RL>> for ComputationViewBox<L, LL>
+        {
+            type Output = ComputationViewBox<O, OL>;
+
+            fn $ops_method(self, rhs: ExprViewBox<R, RL>) -> Self::Output {
+                Box::new($computation_name {
+                    l: self.view_clone(),
+                    r: rhs.view_clone(),
+                })
+            }
+        }
+
+        impl<
+                L: Value<L = LL> + $expr_trait<R, LL = LL, RL = RL, OL = OL, Result = O>,
+                R: Value<L = RL>,
+                O: Value<L = OL>,
+                LL: ValueCount + Add<RL, Output = OL>,
+                RL: ValueCount,
+                OL: ValueCount + Sub<LL, Output = RL>,
+            > $ops_trait<ComputationViewBox<R, RL>> for ComputationViewBox<L, LL>
+        {
+            type Output = ComputationViewBox<O, OL>;
+
+            fn $ops_method(self, rhs: ComputationViewBox<R, RL>) -> Self::Output {
+                Box::new($computation_name {
+                    l: self.view_clone(),
+                    r: rhs.view_clone(),
+                })
             }
         }
 
         macro_rules! $macro_name {
             ($ty: ty) => {
-                impl $trait<$ty> for $ty {
+                impl $expr_trait<$ty> for $ty {
+                    type LL = <$ty as Value>::L;
+                    type RL = <$ty as Value>::L;
+                    type OL = <$ty as Value>::L;
                     type Result = $ty;
 
-                    fn $method(l: ExprView<Self>, r: ExprView<$ty>) -> ExprView<<Self as $trait<$ty>>::Result>
-                    where
-                        Self: Sized {
-
-                        ExprView::create(l.exprs.into_iter().zip(r.exprs.into_iter()).map(
-                            |(l_i, r_i)| l_i.$expr_op(r_i).unwrap()
-                        ).collect())
+                    fn $trait_method(
+                        l: ExprViewBox<Self, Self::LL>,
+                        r: ExprViewBox<$ty, Self::RL>,
+                    ) -> ExprViewBox<Self::Result, Self::OL> {
+                        let l_expr = l.collect_expr().into_iter().next().unwrap();
+                        let r_expr = r.collect_expr().into_iter().next().unwrap();
+                        let result = Expr::$expr_variant(Box::new(l_expr), Box::new(r_expr));
+                        Box::new(SingleExprView::from_exprs(arr![Expr; result]))
                     }
                 }
             }
@@ -138,10 +225,10 @@ macro_rules! expr_binary_ops {
         $macro_name!(i64);
         $macro_name!(f32);
         $macro_name!(f64);
-    }
+    };
 }
 
-expr_binary_ops!(Add, AddComputationNode, ExprAdd, add, +, impl_add_basic, plus);
-expr_binary_ops!(Sub, SubComputationNode, ExprSub, sub, -, impl_sub_basic, minus);
-expr_binary_ops!(Mul, MulComputationNode, ExprMul, mul, *, impl_mul_basicm, multi);
-expr_binary_ops!(Div, DivComputationNode, ExprDiv, div, /, impl_div_basic, divide);
+impl_ops!(+, ExprAdd, expr_add, AddView, Add, add, Add, impl_add);
+impl_ops!(-, ExprSub, expr_sub, SubView, Sub, sub, Sub, impl_sub);
+impl_ops!(*, ExprMul, expr_mul, MulView, Mul, mul, Mul, impl_mul);
+impl_ops!(/, ExprDiv, expr_div, DivView, Div, div, Div, impl_div);

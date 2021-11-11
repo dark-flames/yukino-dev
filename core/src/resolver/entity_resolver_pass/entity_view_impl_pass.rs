@@ -15,8 +15,8 @@ impl EntityResolvePass for EntityViewPass {
 
     fn get_dependencies(&self) -> Vec<TokenStream> {
         vec![quote! {
-            use yukino::view::{ViewBox, View, Computation, ViewNode, ExprView};
-            use yukino::query::{TypedExpr, Alias};
+            use yukino::view::{SingleExprView, ValueView, ViewBox, ExprViewBox, ExprView};
+            use yukino::query::{Expr, Alias};
             use yukino::interface::EntityView;
             use yukino::db::ty::DatabaseValue;
             use yukino::err::{RuntimeResult, YukinoError};
@@ -26,79 +26,108 @@ impl EntityResolvePass for EntityViewPass {
     fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream> {
         let name = format_ident!("{}View", &entity.name);
         let entity_name = format_ident!("{}", &entity.name);
-        let (fields, constructs): (Vec<_>, Vec<_>) = entity
+        let value_count = format_ident!("U{}", entity.value_count);
+        let iter = entity
             .fields
             .iter()
             .filter(|f| f.definition.definition_ty != DefinitionType::Generated)
-            .map(|f| {
-                let field_name = format_ident!("{}", f.path.field_name);
-                let field_ty = &f.ty;
-                let view = &f.view;
-                (
-                    quote! {
-                        pub #field_name: ViewBox<#field_ty>
-                    },
-                    quote! {
-                        #field_name: #view
-                    },
-                )
-            })
-            .unzip();
-        let (clone_branches, node_items): (Vec<_>, Vec<_>) = entity
-            .fields
-            .iter()
-            .map(|f| {
-                let field_name = format_ident!("{}", f.path.field_name);
-                (
-                    quote! {
+            .enumerate();
+        let field_count = iter.clone().last().unwrap().0;
+
+        let (view_fields, collect_tmp, collect_rst, from_expr_tmp, from_expr_branches, clone_branches, pure_branches) = iter
+            .fold(
+                (vec![], vec![], quote! {arr![Expr;]}, vec![], vec![], vec![], vec![]),
+                |(mut fields, mut tmp, rst, mut expr_tmp, mut expr_branch, mut clone, mut pure), (index, f)| {
+                    let field_name = format_ident!("{}", f.path.field_name);
+                    let field_value_count = format_ident!("U{}", f.converter_param_count);
+                    let view_path = &f.view_path;
+                    let view_ty = &f.view_ty;
+                    let view = &f.view;
+                    fields.push(quote! {
+                        pub #field_name: #view_ty
+                    });
+                    tmp.push(quote! {
+                        let #field_name = self.#field_name.collect_expr()
+                    });
+
+                    if index == field_count {
+                        expr_tmp.push(quote! {
+                            let (#field_name, _) = Split::<_, typenum::#field_value_count>::split(rest)
+                        });
+                    } else {
+                        expr_tmp.push(quote! {
+                            let (#field_name, rest) = Split::<_, typenum::#field_value_count>::split(rest)
+                        });
+                    }
+
+                    expr_branch.push(quote! {
+                        #field_name: Box::new(#view_path::from_exprs(#field_name))
+                    });
+
+                    clone.push(quote! {
                         #field_name: self.#field_name.clone()
-                    },
-                    quote! {
-                        exprs.extend(self.#field_name.collect_expr())
-                    },
-                )
-            })
-            .unzip();
+                    });
+
+                    pure.push(quote! {
+                        #field_name: #view
+                    });
+
+                    (
+                        fields,
+                        tmp,
+                        quote! {
+                            Concat::concat(#rst, #field_name)
+                        },
+                        expr_tmp,
+                        expr_branch,
+                        clone,
+                        pure
+                    )
+                }
+            );
 
         vec![quote! {
-            #[derive(Debug)]
+            #[derive(Clone)]
             pub struct #name {
-                #(#fields),*
+                #(#view_fields),*
             }
 
-            unsafe impl Sync for #name {}
-
-            impl Clone for #name {
-                fn clone(&self) -> Self {
-                    #name {
-                        #(#clone_branches),*
-                    }
-                }
-            }
-
-            impl Computation for #name {
-                type Output = #entity_name;
-
-                fn eval(&self, v: &[&DatabaseValue]) -> RuntimeResult<Self::Output> {
+            impl View<#entity_name, typenum::#value_count> for #name {
+                fn eval(&self, v: &GenericArray<DatabaseValue, typenum::#value_count>) -> RuntimeResult<#entity_name> {
                     (*#entity_name::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
                 }
+
+                fn view_clone(&self) -> ViewBox<#entity_name, typenum::#value_count> {
+                    Box::new(self.clone())
+                }
             }
 
-            impl View<#entity_name> for #name {
-                fn view_node(&self) -> ViewNode<#entity_name> {
-                    ViewNode::Expr(ExprView::create(self.collect_expr()))
+            impl ValueView<#entity_name, typenum::#value_count> for #name {
+                fn collect_expr(&self) -> GenericArray<Expr, typenum::#value_count> {
+                    #(#collect_tmp;)*
+
+                    #collect_rst
+                }
+            }
+
+            impl ExprView<#entity_name, typenum::#value_count> for #name {
+                fn from_exprs(exprs: GenericArray<Expr, typenum::#value_count>) -> Self
+                where
+                    Self: Sized {
+                    let rest = exprs;
+                    #(#from_expr_tmp;)*
+
+                    #name {
+                        #(#from_expr_branches),*
+                    }
                 }
 
-                fn collect_expr(&self) -> Vec<TypedExpr> {
-                    let mut exprs = vec![];
-
-                    #(#node_items;)*
-
-                    exprs
-                }
-
-                fn clone(&self) -> ViewBox<#entity_name> {
-                    Box::new(Clone::clone(self))
+                fn expr_clone(&self) -> ExprViewBox<#entity_name, typenum::#value_count>
+                where
+                    Self: Sized {
+                    Box::new(#name {
+                        #(#clone_branches),*
+                    })
                 }
             }
 
@@ -107,7 +136,7 @@ impl EntityResolvePass for EntityViewPass {
 
                 fn pure(alias: &Alias) -> Self where Self: Sized {
                     #name {
-                        #(#constructs),*
+                        #(#pure_branches),*
                     }
                 }
             }
