@@ -34,10 +34,10 @@ impl EntityResolvePass for ConverterPass {
         let iter = entity
             .fields
             .iter()
-            .filter(|f| f.definition.definition_ty != DefinitionType::Generated)
-            .enumerate();
-        let field_count = iter.clone().last().unwrap().0;
+            .filter(|f| f.definition.definition_ty != DefinitionType::Generated);
+        let field_count = iter.clone().count();
         let (deserialize_tmp, deserialize_branches, serialize_tmp, serialize) = iter
+            .enumerate()
             .fold(
                 (
                     vec![],

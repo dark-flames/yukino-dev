@@ -30,11 +30,12 @@ impl EntityResolvePass for EntityViewPass {
         let iter = entity
             .fields
             .iter()
-            .filter(|f| f.definition.definition_ty != DefinitionType::Generated)
-            .enumerate();
-        let field_count = iter.clone().last().unwrap().0;
+            .filter(|f| f.definition.definition_ty != DefinitionType::Generated);
+
+        let field_count = iter.clone().count();
 
         let (view_fields, collect_tmp, collect_rst, from_expr_tmp, from_expr_branches, clone_branches, pure_branches) = iter
+            .enumerate()
             .fold(
                 (vec![], vec![], quote! {arr![Expr;]}, vec![], vec![], vec![], vec![]),
                 |(mut fields, mut tmp, rst, mut expr_tmp, mut expr_branch, mut clone, mut pure), (index, f)| {
