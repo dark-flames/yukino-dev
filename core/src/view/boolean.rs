@@ -1,3 +1,9 @@
+use std::ops::{Add, Sub};
+use generic_array::GenericArray;
+use generic_array::sequence::Split;
+use crate::db::ty::DatabaseValue;
+use crate::err::RuntimeResult;
+use crate::view::{ComputationView, ComputationViewBox, ExprViewBox, Value, ValueCount, View, ViewBox};
 macro_rules! bool_operator_trait {
     ($name: ident, $method: ident) => {
         pub trait $name<Rhs=Self> {
@@ -52,3 +58,55 @@ impl_for_ord!(Bt, bt, >);
 impl_for_ord!(Bte, bte, >=);
 impl_for_ord!(Lt, lt, <);
 impl_for_ord!(Lte, lte, <=);
+
+pub trait ExprAnd<Rhs: Value>: Value {
+    fn and(
+        l: ExprViewBox<Self, <Self as Value>::L>,
+        r: ExprViewBox<Rhs, <Rhs as Value>::L>
+    ) -> ExprViewBox<bool, <bool as Value>::L>;
+}
+
+pub struct AndView<
+    L: 'static + And<R>,
+    R: 'static,
+    LL: ValueCount,
+    RL: ValueCount
+> {
+    l: ViewBox<L, LL>,
+    r: ViewBox<R, RL>,
+}
+
+impl<
+    L: 'static + And<R>,
+    R: 'static,
+    LL: ValueCount + Add<RL, Output=OL>,
+    RL: ValueCount,
+    OL: ValueCount + Sub<LL, Output=RL>,
+> View<bool, OL> for AndView<L, R, LL, RL> {
+    fn eval(&self, v: &GenericArray<DatabaseValue, OL>) -> RuntimeResult<bool> {
+        let (l, r) = Split::<_, LL>::split(v);
+        Ok(self.l.eval(l)?.and(self.r.eval(r)?))
+    }
+
+    fn view_clone(&self) -> ViewBox<bool, OL> {
+        Box::new(AndView {
+            l: self.l.view_clone(),
+            r: self.r.view_clone(),
+        })
+    }
+}
+
+impl <
+    L: 'static + And<R>,
+    R: 'static,
+    LL: ValueCount + Add<RL, Output=OL>,
+    RL: ValueCount,
+    OL: ValueCount + Sub<LL, Output=RL>,
+> ComputationView<bool, OL> for AndView<L, R, LL, RL> {
+    fn computation_clone(&self) -> ComputationViewBox<bool, OL> {
+        Box::new(AndView {
+            l: self.l.view_clone(),
+            r: self.r.view_clone(),
+        })
+    }
+}

@@ -8,6 +8,7 @@ use crate::view::{
 use generic_array::sequence::Split;
 use generic_array::{arr, GenericArray};
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
+use generic_array::typenum::operator_aliases::Sum;
 
 macro_rules! impl_ops {
     (
@@ -33,28 +34,31 @@ macro_rules! impl_ops {
         }
 
         pub struct $computation_name<
-            L: Value + $ops_trait<R, Output = O>,
-            R: Value,
+            L: 'static + $ops_trait<R, Output = O>,
+            R: 'static,
             O: 'static,
+            LL: ValueCount,
+            RL: ValueCount
         > {
-            l: ViewBox<L, <L as Value>::L>,
-            r: ViewBox<R, <R as Value>::L>,
+            l: ViewBox<L, LL>,
+            r: ViewBox<R, RL>,
         }
 
         impl<
-                L: Value + $ops_trait<R, Output = O>,
-                R: Value,
+                L: 'static + $ops_trait<R, Output = O>,
+                R: 'static,
                 O: 'static,
-                OL: ValueCount + Sub<<L as Value>::L, Output = <R as Value>::L>,
-            > View<O, OL> for $computation_name<L, R, O>
-        where <L as Value>::L: Add<<R as Value>::L, Output = OL>
+                LL: ValueCount + Add<RL, Output=OL>,
+                RL: ValueCount,
+                OL: ValueCount + Sub<LL, Output=RL>,
+            > View<O, OL> for $computation_name<L, R, O, LL, RL>
         {
             fn eval(&self, v: &GenericArray<DatabaseValue, OL>) -> RuntimeResult<O> {
-                let (l, r) = Split::<_, <L as Value>::L>::split(v);
+                let (l, r) = Split::<_, LL>::split(v);
                 Ok(self.l.eval(l)? $op self.r.eval(r)?)
             }
 
-            fn view_clone(&self) -> ViewBox<O, OL> {
+            fn view_clone(&self) -> ViewBox<O, Sum<LL, RL>> {
                 Box::new($computation_name {
                     l: self.l.view_clone(),
                     r: self.r.view_clone(),
@@ -63,12 +67,13 @@ macro_rules! impl_ops {
         }
 
         impl<
-                L: Value + $ops_trait<R, Output = O>,
-                R: Value,
+                L: 'static + $ops_trait<R, Output = O>,
+                R: 'static,
                 O: 'static,
-                OL: ValueCount + Sub<<L as Value>::L, Output = <R as Value>::L>,
-            > ComputationView<O, OL> for $computation_name<L, R, O>
-        where <L as Value>::L: Add<<R as Value>::L, Output = OL>
+                LL: ValueCount + Add<RL, Output = OL>,
+                RL: ValueCount,
+                OL: ValueCount + Sub<LL, Output = RL>,
+            > ComputationView<O, OL> for $computation_name<L, R, O, LL, RL>
         {
             fn computation_clone(&self) -> ComputationViewBox<O, OL>
             where
@@ -108,17 +113,17 @@ macro_rules! impl_ops {
         }
 
         impl<
-                L: Value + $expr_trait<R, Result = O>,
-                R: Value,
-                O: Value,
-
-            > $ops_trait<ComputationViewBox<R, <R as Value>::L>> for ExprViewBox<L, <L as Value>::L>
-        where <L as Value>::L: Add<<R as Value>::L, Output = <O as Value>::L>,
-            <O as Value>::L: Sub<<L as Value>::L, Output = <R as Value>::L>
+                L: Value + $ops_trait<R, Output = O>,
+                R: 'static,
+                O: 'static,
+                RL: ValueCount,
+                OL: ValueCount + Sub<<L as Value>::L, Output = RL>
+            > $ops_trait<ComputationViewBox<R, RL>> for ExprViewBox<L, <L as Value>::L>
+        where <L as Value>::L: Add<RL, Output = OL>
         {
-            type Output = ComputationViewBox<O, <O as Value>::L>;
+            type Output = ComputationViewBox<O, OL>;
 
-            fn $ops_method(self, rhs: ComputationViewBox<R, <R as Value>::L>) -> Self::Output {
+            fn $ops_method(self, rhs: ComputationViewBox<R, RL>) -> Self::Output {
                 Box::new($computation_name {
                     l: self.view_clone(),
                     r: rhs.view_clone(),
@@ -127,14 +132,14 @@ macro_rules! impl_ops {
         }
 
         impl<
-                L: Value + $expr_trait<R, Result = O>,
+                L: 'static + $ops_trait<R, Output = O>,
                 R: Value,
-                O: Value
-            > $ops_trait<R> for ComputationViewBox<L, <L as Value>::L>
-        where <L as Value>::L: Add<<R as Value>::L, Output = <O as Value>::L>,
-            <O as Value>::L: Sub<<L as Value>::L, Output = <R as Value>::L>
+                O: 'static,
+                LL: ValueCount + Add<<R as Value>::L, Output = OL>,
+                OL: ValueCount + Sub<LL, Output = <R as Value>::L>
+            > $ops_trait<R> for ComputationViewBox<L, LL>
         {
-            type Output = ComputationViewBox<O, <O as Value>::L>;
+            type Output = ComputationViewBox<O, OL>;
 
             fn $ops_method(self, rhs: R) -> Self::Output {
                 Box::new($computation_name {
@@ -145,15 +150,14 @@ macro_rules! impl_ops {
         }
 
         impl<
-                L: Value + $expr_trait<R, Result = O>,
+                L: 'static + $ops_trait<R, Output = O>,
                 R: Value,
-                O: Value,
-
-            > $ops_trait<ExprViewBox<R, <R as Value>::L>> for ComputationViewBox<L, <L as Value>::L>
-        where <L as Value>::L: Add<<R as Value>::L, Output = <O as Value>::L>,
-            <O as Value>::L: Sub<<L as Value>::L, Output = <R as Value>::L>,
+                O: 'static,
+                LL: ValueCount + Add<<R as Value>::L, Output = OL>,
+                OL: ValueCount + Sub<LL, Output = <R as Value>::L>
+            > $ops_trait<ExprViewBox<R, <R as Value>::L>> for ComputationViewBox<L, LL>
         {
-            type Output = ComputationViewBox<O, <O as Value>::L>;
+            type Output = ComputationViewBox<O, OL>;
 
             fn $ops_method(self, rhs: ExprViewBox<R, <R as Value>::L>) -> Self::Output {
                 Box::new($computation_name {
@@ -164,17 +168,17 @@ macro_rules! impl_ops {
         }
 
         impl<
-                L: Value + $expr_trait<R, Result = O>,
-                R: Value,
-                O: Value,
-
-            > $ops_trait<ComputationViewBox<R, <R as Value>::L>> for ComputationViewBox<L, <L as Value>::L>
-        where <L as Value>::L: Add<<R as Value>::L, Output = <O as Value>::L>,
-            <O as Value>::L: ValueCount + Sub<<L as Value>::L, Output = <R as Value>::L>,
+                L: 'static + $ops_trait<R, Output = O>,
+                R: 'static,
+                O: 'static,
+                LL: ValueCount + Add<RL, Output = OL>,
+                RL: ValueCount,
+                OL: ValueCount + Sub<LL, Output = RL>,
+            > $ops_trait<ComputationViewBox<R, RL>> for ComputationViewBox<L, LL>
         {
-            type Output = ComputationViewBox<O, <O as Value>::L>;
+            type Output = ComputationViewBox<O, OL>;
 
-            fn $ops_method(self, rhs: ComputationViewBox<R, <R as Value>::L>) -> Self::Output {
+            fn $ops_method(self, rhs: ComputationViewBox<R, RL>) -> Self::Output {
                 Box::new($computation_name {
                     l: self.view_clone(),
                     r: rhs.view_clone(),
