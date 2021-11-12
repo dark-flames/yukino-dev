@@ -28,7 +28,6 @@ pub enum Expr {
     Eq(ExprBox, ExprBox),
     Not(ExprBox),
     And(ExprBox, ExprBox),
-    Xor(ExprBox, ExprBox),
     Or(ExprBox, ExprBox),
 }
 
@@ -57,7 +56,6 @@ impl Display for Expr {
             Expr::Eq(l, r) => write!(f, "{} = {}", l, r),
             Expr::Not(e) => write!(f, "!{}", e),
             Expr::And(l, r) => write!(f, "{} AND {}", l, r),
-            Expr::Xor(l, r) => write!(f, "{} XOR {}", l, r),
             Expr::Or(l, r) => write!(f, "{} OR {}", l, r),
         }
     }
