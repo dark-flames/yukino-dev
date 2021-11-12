@@ -8,7 +8,7 @@ use crate::view::{
 use generic_array::sequence::Split;
 use generic_array::typenum::Sum;
 use generic_array::{arr, GenericArray};
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
 
 macro_rules! impl_ops {
     (
@@ -221,7 +221,23 @@ macro_rules! impl_ops {
     };
 }
 
-impl_ops!(+, ExprAdd, expr_add, AddView, Add, add, Add, impl_add, [u16, i16, u32, i32, u64, i64, f32, f64]);
-impl_ops!(-, ExprSub, expr_sub, SubView, Sub, sub, Sub, impl_sub, [u16, i16, u32, i32, u64, i64, f32, f64]);
-impl_ops!(*, ExprMul, expr_mul, MulView, Mul, mul, Mul, impl_mul, [u16, i16, u32, i32, u64, i64, f32, f64]);
-impl_ops!(/, ExprDiv, expr_div, DivView, Div, div, Div, impl_div, [u16, i16, u32, i32, u64, i64, f32, f64]);
+impl_ops!(+, ExprAdd, expr_add, AddView, Add, add, Add, impl_add, [
+    u16, i16, u32, i32, u64, i64, f32, f64]);
+impl_ops!(-, ExprSub, expr_sub, SubView, Sub, sub, Sub, impl_sub, [
+    u16, i16, u32, i32, u64, i64, f32, f64]);
+impl_ops!(*, ExprMul, expr_mul, MulView, Mul, mul, Mul, impl_mul, [
+    u16, i16, u32, i32, u64, i64, f32, f64]);
+impl_ops!(/, ExprDiv, expr_div, DivView, Div, div, Div, impl_div, [
+    u16, i16, u32, i32, u64, i64, f32, f64]);
+impl_ops!(%, ExprRem, expr_rem, RemView, Rem, rem, Rem, impl_rem, [
+    u16, i16, u32, i32, u64, i64]);
+impl_ops!(<<, ExprLeftShift, expr_left_shift, LeftShiftView, Shl, shl, LeftShift,
+    impl_left_shift, [u16, i16, u32, i32, u64, i64]);
+impl_ops!(>>, ExprRightShift, expr_right_shift, RightShiftView, Shr, shr, RightShift,
+    impl_right_shift, [u16, i16, u32, i32, u64, i64]);
+impl_ops!(&, ExprBitAnd, expr_bit_and, BitAndView, BitAnd, bitand, BitAnd,
+    impl_bit_and, [u16, i16, u32, i32, u64, i64]);
+impl_ops!(|, ExprBitOr, expr_bit_or, BitOrView, BitOr, bitor, BitOr,
+    impl_bit_or, [u16, i16, u32, i32, u64, i64]);
+impl_ops!(^, ExprBitXor, expr_bit_xor, BitXorView, BitXor, bitxor, BitXor,
+    impl_bit_xor, [u16, i16, u32, i32, u64, i64]);
