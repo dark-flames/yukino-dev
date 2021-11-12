@@ -19,7 +19,8 @@ macro_rules! impl_ops {
         $ops_trait: ident,
         $ops_method: ident,
         $expr_variant: ident,
-        $macro_name: ident
+        $macro_name: ident,
+        [$($impl_tys: ty),*]
     ) => {
         pub trait $expr_trait<Rhs: Value<L = Self::RL>>:
             Value<L = Self::LL> + $ops_trait<Rhs, Output = Self::Result>
@@ -216,19 +217,11 @@ macro_rules! impl_ops {
                 }
             }
         }
-
-        $macro_name!(u16);
-        $macro_name!(i16);
-        $macro_name!(u32);
-        $macro_name!(i32);
-        $macro_name!(u64);
-        $macro_name!(i64);
-        $macro_name!(f32);
-        $macro_name!(f64);
+        $($macro_name!($impl_tys);)*
     };
 }
 
-impl_ops!(+, ExprAdd, expr_add, AddView, Add, add, Add, impl_add);
-impl_ops!(-, ExprSub, expr_sub, SubView, Sub, sub, Sub, impl_sub);
-impl_ops!(*, ExprMul, expr_mul, MulView, Mul, mul, Mul, impl_mul);
-impl_ops!(/, ExprDiv, expr_div, DivView, Div, div, Div, impl_div);
+impl_ops!(+, ExprAdd, expr_add, AddView, Add, add, Add, impl_add, [u16, i16, u32, i32, u64, i64, f32, f64]);
+impl_ops!(-, ExprSub, expr_sub, SubView, Sub, sub, Sub, impl_sub, [u16, i16, u32, i32, u64, i64, f32, f64]);
+impl_ops!(*, ExprMul, expr_mul, MulView, Mul, mul, Mul, impl_mul, [u16, i16, u32, i32, u64, i64, f32, f64]);
+impl_ops!(/, ExprDiv, expr_div, DivView, Div, div, Div, impl_div, [u16, i16, u32, i32, u64, i64, f32, f64]);

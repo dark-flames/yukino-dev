@@ -35,7 +35,7 @@ impl EntityResolvePass for ConverterPass {
             .fields
             .iter()
             .filter(|f| f.definition.definition_ty != DefinitionType::Generated);
-        let field_count = iter.clone().count();
+        let last_index = iter.clone().count() - 1;
         let (deserialize_tmp, deserialize_branches, serialize_tmp, serialize) = iter
             .enumerate()
             .fold(
@@ -52,7 +52,7 @@ impl EntityResolvePass for ConverterPass {
                     let field_ty = &f.ty;
                     let field_value_count = format_ident!("U{}", f.converter_param_count);
 
-                    if index == field_count {
+                    if index == last_index {
                         de_tmp.push(quote! {
                             let (#field_name, _) = Split::<_, typenum::#field_value_count>::split(rest)
                         });

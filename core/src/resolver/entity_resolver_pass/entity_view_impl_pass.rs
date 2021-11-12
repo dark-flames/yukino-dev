@@ -32,7 +32,7 @@ impl EntityResolvePass for EntityViewPass {
             .iter()
             .filter(|f| f.definition.definition_ty != DefinitionType::Generated);
 
-        let field_count = iter.clone().count();
+        let last_index = iter.clone().count() - 1;
 
         let (view_fields, collect_tmp, collect_rst, from_expr_tmp, from_expr_branches, clone_branches, pure_branches) = iter
             .enumerate()
@@ -51,7 +51,7 @@ impl EntityResolvePass for EntityViewPass {
                         let #field_name = self.#field_name.collect_expr()
                     });
 
-                    if index == field_count {
+                    if index == last_index {
                         expr_tmp.push(quote! {
                             let (#field_name, _) = Split::<_, typenum::#field_value_count>::split(rest)
                         });
