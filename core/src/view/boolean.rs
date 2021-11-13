@@ -208,10 +208,10 @@ impl_bool_operator!(==, PartialEq, eq, ViewEq, view_eq, ExprEq, expr_eq, EqView,
 impl_bool_operator!(!=, PartialEq, ne, ViewNeq, view_neq, ExprNeq, expr_neq, NeqView, Neq,
     [bool, u16, i16, u32, i32, u64, i64, f32, f64, char, String]);
 impl_bool_operator!(>, Bt, bt, ViewBt, view_bt, ExprBt, expr_bt, BtView, Bt,
-    [bool, u16, i16, u32, i32, u64, i64, f32, f64, char, String]);
+    [u16, i16, u32, i32, u64, i64, f32, f64, char, String]);
 impl_bool_operator!(>=, Bte, bte, ViewBte, view_bte, ExprBte, expr_bte, BteView, Bte,
-    [bool, u16, i16, u32, i32, u64, i64, f32, f64, char, String]);
+    [u16, i16, u32, i32, u64, i64, f32, f64, char, String]);
 impl_bool_operator!(<, Lt, lt, ViewLt, view_lt, ExprLt, expr_lt, LtView, Lt,
-    [bool, u16, i16, u32, i32, u64, i64, f32, f64, char, String]);
+    [u16, i16, u32, i32, u64, i64, f32, f64, char, String]);
 impl_bool_operator!(<=, Lte, lte, ViewLte, view_lte, ExprLte, expr_lte, LteView, Lte,
-    [bool, u16, i16, u32, i32, u64, i64, f32, f64, char, String]);
+    [u16, i16, u32, i32, u64, i64, f32, f64, char, String]);

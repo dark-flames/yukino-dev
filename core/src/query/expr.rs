@@ -53,7 +53,7 @@ impl Display for Expr {
             Expr::Neq(l, r) => write!(f, "{} != {}", l, r),
             Expr::Bt(l, r) => write!(f, "{} > {}", l, r),
             Expr::Lt(l, r) => write!(f, "{} < {}", l, r),
-            Expr::Eq(l, r) => write!(f, "{} = {}", l, r),
+            Expr::Eq(l, r) => write!(f, "{} == {}", l, r),
             Expr::Not(e) => write!(f, "!{}", e),
             Expr::And(l, r) => write!(f, "{} AND {}", l, r),
             Expr::Or(l, r) => write!(f, "{} OR {}", l, r),
