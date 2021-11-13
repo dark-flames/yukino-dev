@@ -12,7 +12,7 @@ pub trait Entity: Value {
     type View: EntityView<Entity = Self>;
 }
 
-pub trait EntityView: ExprView<Self::Entity, <<Self as EntityView>::Entity as Value>::L> {
+pub trait EntityView: ExprView<Self::Entity> {
     type Entity: Entity;
 
     fn pure(alias: &Alias) -> Self

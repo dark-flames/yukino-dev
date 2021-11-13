@@ -29,30 +29,30 @@ pub struct Basic {
 }
 #[derive(Clone)]
 pub struct BasicView {
-    pub boolean: ExprViewBox<bool, <bool as Value>::L>,
-    pub character: ExprViewBox<char, <char as Value>::L>,
-    pub double: ExprViewBox<f64, <f64 as Value>::L>,
-    pub float: ExprViewBox<f32, <f32 as Value>::L>,
-    pub id: ExprViewBox<u32, <u32 as Value>::L>,
-    pub int: ExprViewBox<i32, <i32 as Value>::L>,
-    pub long: ExprViewBox<i64, <i64 as Value>::L>,
-    pub optional: ExprViewBox<Option<u32>, <Option<u32> as Value>::L>,
-    pub short: ExprViewBox<i16, <i16 as Value>::L>,
-    pub string: ExprViewBox<String, <String as Value>::L>,
-    pub u_int: ExprViewBox<u32, <u32 as Value>::L>,
-    pub u_long: ExprViewBox<u64, <u64 as Value>::L>,
-    pub u_short: ExprViewBox<u16, <u16 as Value>::L>,
+    pub boolean: ExprViewBox<bool>,
+    pub character: ExprViewBox<char>,
+    pub double: ExprViewBox<f64>,
+    pub float: ExprViewBox<f32>,
+    pub id: ExprViewBox<u32>,
+    pub int: ExprViewBox<i32>,
+    pub long: ExprViewBox<i64>,
+    pub optional: ExprViewBox<Option<u32>>,
+    pub short: ExprViewBox<i16>,
+    pub string: ExprViewBox<String>,
+    pub u_int: ExprViewBox<u32>,
+    pub u_long: ExprViewBox<u64>,
+    pub u_short: ExprViewBox<u16>,
 }
-impl View<Basic, typenum::U13> for BasicView {
-    fn eval(&self, v: &GenericArray<DatabaseValue, typenum::U13>) -> RuntimeResult<Basic> {
+impl View<Basic, <Basic as Value>::L> for BasicView {
+    fn eval(&self, v: &GenericArray<DatabaseValue, <Basic as Value>::L>) -> RuntimeResult<Basic> {
         (*Basic::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
     }
-    fn view_clone(&self) -> ViewBox<Basic, typenum::U13> {
+    fn view_clone(&self) -> ViewBox<Basic, <Basic as Value>::L> {
         Box::new(self.clone())
     }
 }
-impl ValueView<Basic, typenum::U13> for BasicView {
-    fn collect_expr(&self) -> GenericArray<Expr, typenum::U13> {
+impl ValueView<Basic> for BasicView {
+    fn collect_expr(&self) -> GenericArray<Expr, <Basic as Value>::L> {
         let boolean = self.boolean.collect_expr();
         let character = self.character.collect_expr();
         let double = self.double.collect_expr();
@@ -105,8 +105,8 @@ impl ValueView<Basic, typenum::U13> for BasicView {
         )
     }
 }
-impl ExprView<Basic, typenum::U13> for BasicView {
-    fn from_exprs(exprs: GenericArray<Expr, typenum::U13>) -> Self
+impl ExprView<Basic> for BasicView {
+    fn from_exprs(exprs: GenericArray<Expr, <Basic as Value>::L>) -> Self
     where
         Self: Sized,
     {
@@ -140,7 +140,7 @@ impl ExprView<Basic, typenum::U13> for BasicView {
             u_short: Box::new(SingleExprView::<u16>::from_exprs(u_short)),
         }
     }
-    fn expr_clone(&self) -> ExprViewBox<Basic, typenum::U13>
+    fn expr_clone(&self) -> ExprViewBox<Basic>
     where
         Self: Sized,
     {
@@ -215,13 +215,13 @@ impl Entity for Basic {
 }
 impl Value for Basic {
     type L = typenum::U13;
-    fn converter() -> ConverterRef<Self, Self::L>
+    fn converter() -> ConverterRef<Self>
     where
         Self: Sized,
     {
         BasicConverter::instance()
     }
-    fn view(&self) -> ExprViewBox<Self, Self::L>
+    fn view(&self) -> ExprViewBox<Self>
     where
         Self: Sized,
     {
@@ -233,7 +233,7 @@ impl Value for Basic {
 #[derive(Clone)]
 pub struct BasicConverter;
 static BASIC_CONVERTER: BasicConverter = BasicConverter;
-impl Converter<typenum::U13> for BasicConverter {
+impl Converter for BasicConverter {
     type Output = Basic;
     fn instance() -> &'static Self
     where
@@ -241,7 +241,7 @@ impl Converter<typenum::U13> for BasicConverter {
     {
         &BASIC_CONVERTER
     }
-    fn deserializer(&self) -> Deserializer<Self::Output, typenum::U13> {
+    fn deserializer(&self) -> Deserializer<Self::Output> {
         Box::new(|rest| {
             let (boolean, rest) = Split::<_, typenum::U1>::split(rest);
             let (character, rest) = Split::<_, typenum::U1>::split(rest);
@@ -276,7 +276,7 @@ impl Converter<typenum::U13> for BasicConverter {
     fn serialize(
         &self,
         value: &Self::Output,
-    ) -> ConvertResult<GenericArray<DatabaseValue, typenum::U13>> {
+    ) -> ConvertResult<GenericArray<DatabaseValue, <Self::Output as Value>::L>> {
         let boolean = <bool>::converter().serialize(&value.boolean)?;
         let character = <char>::converter().serialize(&value.character)?;
         let double = <f64>::converter().serialize(&value.double)?;

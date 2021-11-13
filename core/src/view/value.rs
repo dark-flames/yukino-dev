@@ -18,11 +18,11 @@ impl<N: ValueCount> ValueCount for UInt<N, B1> {}
 
 pub trait Value: 'static + Clone + Debug {
     type L: ValueCount;
-    fn converter() -> ConverterRef<Self, Self::L>
+    fn converter() -> ConverterRef<Self>
     where
         Self: Sized;
 
-    fn view(&self) -> ExprViewBox<Self, Self::L>
+    fn view(&self) -> ExprViewBox<Self>
     where
         Self: Sized;
 }
@@ -36,10 +36,7 @@ where
     _ty: PhantomData<T>,
 }
 
-impl<T> View<T, U1> for SingleExprView<T>
-where
-    T: Value<L = U1>,
-{
+impl<T: Value<L = U1>> View<T, U1> for SingleExprView<T> {
     fn eval(&self, v: &GenericArray<DatabaseValue, U1>) -> RuntimeResult<T> {
         (*T::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
     }
@@ -49,19 +46,13 @@ where
     }
 }
 
-impl<T> ValueView<T, U1> for SingleExprView<T>
-where
-    T: Value<L = U1>,
-{
+impl<T: Value<L = U1>> ValueView<T> for SingleExprView<T> {
     fn collect_expr(&self) -> GenericArray<Expr, U1> {
         arr![Expr; self.expr.clone()]
     }
 }
 
-impl<T> ExprView<T, U1> for SingleExprView<T>
-where
-    T: Value<L = U1>,
-{
+impl<T: Value<L = U1>> ExprView<T> for SingleExprView<T> {
     fn from_exprs(exprs: GenericArray<Expr, U1>) -> Self
     where
         Self: Sized,
@@ -72,7 +63,7 @@ where
         }
     }
 
-    fn expr_clone(&self) -> ExprViewBox<T, U1>
+    fn expr_clone(&self) -> ExprViewBox<T>
     where
         Self: Sized,
     {
@@ -84,14 +75,14 @@ macro_rules! impl_value {
     ($ty: ty, $converter: ty) => {
         impl Value for $ty {
             type L = U1;
-            fn converter() -> ConverterRef<Self, Self::L>
+            fn converter() -> ConverterRef<Self>
             where
                 Self: Sized,
             {
                 <$converter>::instance()
             }
 
-            fn view(&self) -> ExprViewBox<Self, Self::L>
+            fn view(&self) -> ExprViewBox<Self>
             where
                 Self: Sized,
             {

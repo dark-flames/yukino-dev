@@ -6,9 +6,9 @@ use crate::view::{
     View, ViewBox,
 };
 use generic_array::sequence::Split;
+use generic_array::typenum::operator_aliases::Sum;
 use generic_array::{arr, GenericArray};
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
-use generic_array::typenum::operator_aliases::Sum;
 
 macro_rules! impl_ops {
     (
@@ -28,9 +28,9 @@ macro_rules! impl_ops {
             type Result: Value;
 
             fn $trait_method(
-                l: ExprViewBox<Self, <Self as Value>::L>,
-                r: ExprViewBox<Rhs, <Rhs as Value>::L>,
-            ) -> ExprViewBox<Self::Result, <Self::Result as Value>::L>;
+                l: ExprViewBox<Self>,
+                r: ExprViewBox<Rhs>,
+            ) -> ExprViewBox<Self::Result>;
         }
 
         pub struct $computation_name<
@@ -45,14 +45,13 @@ macro_rules! impl_ops {
         }
 
         impl<
-                L: 'static + $ops_trait<R, Output = O>,
-                R: 'static,
-                O: 'static,
-                LL: ValueCount + Add<RL, Output=OL>,
-                RL: ValueCount,
-                OL: ValueCount + Sub<LL, Output=RL>,
-            > View<O, OL> for $computation_name<L, R, O, LL, RL>
-        {
+            L: 'static + $ops_trait<R, Output = O>,
+            R: 'static,
+            O: 'static,
+            LL: ValueCount + Add<RL, Output=OL>,
+            RL: ValueCount,
+            OL: ValueCount + Sub<LL, Output=RL>,
+        > View<O, OL> for $computation_name<L, R, O, LL, RL> {
             fn eval(&self, v: &GenericArray<DatabaseValue, OL>) -> RuntimeResult<O> {
                 let (l, r) = Split::<_, LL>::split(v);
                 Ok(self.l.eval(l)? $op self.r.eval(r)?)
@@ -90,11 +89,11 @@ macro_rules! impl_ops {
                 L: Value + $expr_trait<R, Result = O>,
                 R: Value,
                 O: Value,
-            > $ops_trait<ExprViewBox<R, <R as Value>::L>> for ExprViewBox<L, <L as Value>::L>
+            > $ops_trait<ExprViewBox<R>> for ExprViewBox<L>
         {
-            type Output = ExprViewBox<O, <O as Value>::L>;
+            type Output = ExprViewBox<O>;
 
-            fn $ops_method(self, rhs: ExprViewBox<R, <R as Value>::L>) -> Self::Output {
+            fn $ops_method(self, rhs: ExprViewBox<R>) -> Self::Output {
                 L::$trait_method(self, rhs)
             }
         }
@@ -103,9 +102,9 @@ macro_rules! impl_ops {
                 L: Value + $expr_trait<R, Result = O>,
                 R: Value,
                 O: Value,
-            > $ops_trait<R> for ExprViewBox<L, <L as Value>::L>
+            > $ops_trait<R> for ExprViewBox<L>
         {
-            type Output = ExprViewBox<O, <O as Value>::L>;
+            type Output = ExprViewBox<O>;
 
             fn $ops_method(self, rhs: R) -> Self::Output {
                 L::$trait_method(self, rhs.view())
@@ -118,7 +117,7 @@ macro_rules! impl_ops {
                 O: 'static,
                 RL: ValueCount,
                 OL: ValueCount + Sub<<L as Value>::L, Output = RL>
-            > $ops_trait<ComputationViewBox<R, RL>> for ExprViewBox<L, <L as Value>::L>
+            > $ops_trait<ComputationViewBox<R, RL>> for ExprViewBox<L>
         where <L as Value>::L: Add<RL, Output = OL>
         {
             type Output = ComputationViewBox<O, OL>;
@@ -155,11 +154,11 @@ macro_rules! impl_ops {
                 O: 'static,
                 LL: ValueCount + Add<<R as Value>::L, Output = OL>,
                 OL: ValueCount + Sub<LL, Output = <R as Value>::L>
-            > $ops_trait<ExprViewBox<R, <R as Value>::L>> for ComputationViewBox<L, LL>
+            > $ops_trait<ExprViewBox<R>> for ComputationViewBox<L, LL>
         {
             type Output = ComputationViewBox<O, OL>;
 
-            fn $ops_method(self, rhs: ExprViewBox<R, <R as Value>::L>) -> Self::Output {
+            fn $ops_method(self, rhs: ExprViewBox<R>) -> Self::Output {
                 Box::new($computation_name {
                     l: self.view_clone(),
                     r: rhs.view_clone(),
@@ -192,9 +191,9 @@ macro_rules! impl_ops {
                     type Result = $ty;
 
                     fn $trait_method(
-                        l: ExprViewBox<Self, <Self as Value>::L>,
-                        r: ExprViewBox<$ty, <$ty as Value>::L>,
-                    ) -> ExprViewBox<Self::Result, <$ty as Value>::L> {
+                        l: ExprViewBox<Self>,
+                        r: ExprViewBox<$ty>,
+                    ) -> ExprViewBox<Self::Result> {
                         let l_expr = l.collect_expr().into_iter().next().unwrap();
                         let r_expr = r.collect_expr().into_iter().next().unwrap();
                         let result = Expr::$expr_variant(Box::new(l_expr), Box::new(r_expr));

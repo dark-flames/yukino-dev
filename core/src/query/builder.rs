@@ -1,6 +1,6 @@
 use crate::interface::{Entity, EntityView};
 use crate::query::{Alias, Expr};
-use crate::view::{ExprViewBox, Value};
+use crate::view::ExprViewBox;
 use std::marker::PhantomData;
 
 pub struct QueryResultFilter<E: Entity> {
@@ -11,7 +11,7 @@ pub struct QueryResultFilter<E: Entity> {
 impl<E: Entity> QueryResultFilter<E> {
     pub fn filter<F>(&mut self, f: F)
     where
-        F: Fn(E::View) -> ExprViewBox<bool, <bool as Value>::L>,
+        F: Fn(E::View) -> ExprViewBox<bool>,
     {
         let view = f(E::View::pure(&self.root_alias));
         // join

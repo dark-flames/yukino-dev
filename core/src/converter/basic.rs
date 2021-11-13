@@ -1,6 +1,7 @@
 use crate::converter::{ConvertResult, Converter, Deserializer};
 use crate::db::ty::{DatabaseType, DatabaseValue};
 use crate::err::ConvertError;
+use crate::view::Value;
 use generic_array::typenum::U1;
 use generic_array::{arr, GenericArray};
 use iroha::ToTokens;
@@ -13,7 +14,7 @@ macro_rules! basic_ty_converter {
 
         static $static: $name = $name;
 
-        impl Converter<U1> for $name {
+        impl Converter for $name {
             type Output = $field_type;
 
             fn instance() -> &'static Self
@@ -25,7 +26,7 @@ macro_rules! basic_ty_converter {
 
             fn deserializer(
                 &self,
-            ) -> Deserializer<Self::Output, U1> {
+            ) -> Deserializer<Self::Output> {
                 Box::new(|v| {
                     if let DatabaseValue::$enum_variant(nested) = v.iter().next().unwrap() {
                         Ok(nested.clone())
@@ -35,7 +36,7 @@ macro_rules! basic_ty_converter {
                 })
             }
 
-            fn serialize(&self, value: &Self::Output) -> ConvertResult<GenericArray<DatabaseValue, U1>> {
+            fn serialize(&self, value: &Self::Output) -> ConvertResult<GenericArray<DatabaseValue, <Self::Output as Value>::L>> {
                 Ok(arr![DatabaseValue; DatabaseValue::$enum_variant(value.clone())])
             }
         }
@@ -50,7 +51,7 @@ macro_rules! optional_basic_ty_converter {
 
         static $static: $name = $name();
 
-        impl Converter<U1> for $name {
+        impl Converter for $name {
             type Output = Option<$field_type>;
 
             fn instance() -> &'static Self
@@ -70,7 +71,7 @@ macro_rules! optional_basic_ty_converter {
                 })
             }
 
-            fn serialize(&self, value: &Self::Output) -> ConvertResult<GenericArray<DatabaseValue, U1>> {
+            fn serialize(&self, value: &Self::Output) -> ConvertResult<GenericArray<DatabaseValue, <Self::Output as Value>::L>> {
                 if let Some(nested) = value {
                     Ok(arr![DatabaseValue; DatabaseValue::$enum_variant(nested.clone())])
                 } else {

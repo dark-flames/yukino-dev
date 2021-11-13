@@ -26,7 +26,6 @@ impl EntityResolvePass for EntityViewPass {
     fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream> {
         let name = format_ident!("{}View", &entity.name);
         let entity_name = format_ident!("{}", &entity.name);
-        let value_count = format_ident!("U{}", entity.value_count);
         let iter = entity
             .fields
             .iter()
@@ -93,26 +92,26 @@ impl EntityResolvePass for EntityViewPass {
                 #(#view_fields),*
             }
 
-            impl View<#entity_name, typenum::#value_count> for #name {
-                fn eval(&self, v: &GenericArray<DatabaseValue, typenum::#value_count>) -> RuntimeResult<#entity_name> {
+            impl View<#entity_name, <#entity_name as Value>::L> for #name {
+                fn eval(&self, v: &GenericArray<DatabaseValue, <#entity_name as Value>::L>) -> RuntimeResult<#entity_name> {
                     (*#entity_name::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
                 }
 
-                fn view_clone(&self) -> ViewBox<#entity_name, typenum::#value_count> {
+                fn view_clone(&self) -> ViewBox<#entity_name, <#entity_name as Value>::L> {
                     Box::new(self.clone())
                 }
             }
 
-            impl ValueView<#entity_name, typenum::#value_count> for #name {
-                fn collect_expr(&self) -> GenericArray<Expr, typenum::#value_count> {
+            impl ValueView<#entity_name> for #name {
+                fn collect_expr(&self) -> GenericArray<Expr, <#entity_name as Value>::L> {
                     #(#collect_tmp;)*
 
                     #collect_rst
                 }
             }
 
-            impl ExprView<#entity_name, typenum::#value_count> for #name {
-                fn from_exprs(exprs: GenericArray<Expr, typenum::#value_count>) -> Self
+            impl ExprView<#entity_name> for #name {
+                fn from_exprs(exprs: GenericArray<Expr, <#entity_name as Value>::L>) -> Self
                 where
                     Self: Sized {
                     let rest = exprs;
@@ -123,7 +122,7 @@ impl EntityResolvePass for EntityViewPass {
                     }
                 }
 
-                fn expr_clone(&self) -> ExprViewBox<#entity_name, typenum::#value_count>
+                fn expr_clone(&self) -> ExprViewBox<#entity_name>
                 where
                     Self: Sized {
                     Box::new(#name {

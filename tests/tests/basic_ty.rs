@@ -1,9 +1,9 @@
 use yukino::interface::EntityView;
 use yukino::query::Alias;
-use yukino::view::{ExprViewBox, Value, ValueCount};
+use yukino::view::{ExprViewBox, Value};
 use yukino_tests::schema::*;
 
-pub fn cmp_view<T: Value<L = L>, L: ValueCount>(view: ExprViewBox<T, L>, query: &str) {
+pub fn cmp_view<T: Value>(view: ExprViewBox<T>, query: &str) {
     assert_eq!(
         query.to_string(),
         view.collect_expr().into_iter().next().unwrap().to_string()
@@ -36,7 +36,7 @@ pub fn test_expr() {
     let shl = view.long.clone() << view.long.clone();
     let shr = view.long.clone() >> view.long.clone();
     let and = view.long.clone() & view.long.clone();
-    let or= view.long.clone() | view.long.clone();
+    let or = view.long.clone() | view.long.clone();
     let xor = view.long.clone() ^ view.long;
 
     cmp_view(add_const, "b.int + 114514");

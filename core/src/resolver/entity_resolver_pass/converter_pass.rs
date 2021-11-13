@@ -80,21 +80,21 @@ impl EntityResolvePass for ConverterPass {
                     )
                 },
             );
-        let value_count = format_ident!("U{}", entity.value_count);
+
         vec![quote! {
             #[derive(Clone)]
             pub struct #converter_name;
 
             static #static_name: #name = #converter_name;
 
-            impl Converter<typenum::#value_count> for #name {
+            impl Converter for #name {
                 type Output = #entity_name;
 
                 fn instance() -> &'static Self where Self: Sized {
                     &#static_name
                 }
 
-                fn deserializer(&self) -> Deserializer<Self::Output, typenum::#value_count> {
+                fn deserializer(&self) -> Deserializer<Self::Output> {
                     Box::new(|rest| {
                         #(#deserialize_tmp;)*
                         Ok(#entity_name {
@@ -103,7 +103,8 @@ impl EntityResolvePass for ConverterPass {
                     })
                 }
 
-                fn serialize(&self, value: &Self::Output) -> ConvertResult<GenericArray<DatabaseValue, typenum::#value_count>> {
+                fn serialize(&self, value: &Self::Output)
+                    -> ConvertResult<GenericArray<DatabaseValue, <Self::Output as Value>::L>> {
                     #(#serialize_tmp;)*
                     Ok(#serialize)
                 }

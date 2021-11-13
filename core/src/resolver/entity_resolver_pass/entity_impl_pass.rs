@@ -40,11 +40,11 @@ impl EntityResolvePass for EntityImplementPass {
             impl Value for #name {
                 type L = typenum::#value_count;
 
-                fn converter() -> ConverterRef<Self, Self::L> where Self: Sized {
+                fn converter() -> ConverterRef<Self> where Self: Sized {
                     #converter_name::instance()
                 }
 
-                fn view(&self) -> ExprViewBox<Self, Self::L>
+                fn view(&self) -> ExprViewBox<Self>
                     where
                         Self: Sized {
                     Box::new(#view_name::from_exprs(

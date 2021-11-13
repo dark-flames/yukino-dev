@@ -237,7 +237,7 @@ impl FieldType {
         let ty = self.field_ty(optional);
 
         quote! {
-            ExprViewBox<#ty, <#ty as Value>::L>
+            ExprViewBox<#ty>
         }
     }
 
