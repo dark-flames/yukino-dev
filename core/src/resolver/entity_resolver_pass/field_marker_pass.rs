@@ -20,6 +20,7 @@ impl EntityResolvePass for FieldMakerPass {
 
     fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream> {
         let mod_name = &entity.marker_mod;
+        let entity_name = format_ident!("{}", &entity.name);
         let markers: Vec<_> = entity
             .fields
             .iter()
@@ -40,6 +41,7 @@ impl EntityResolvePass for FieldMakerPass {
                     }
 
                     impl FieldMarker for #marker_name {
+                        type Entity = #entity_name;
                         fn field_name() -> &'static str {
                             #field_name
                         }
@@ -57,6 +59,7 @@ impl EntityResolvePass for FieldMakerPass {
                 use yukino::interface::FieldMarker;
                 use yukino::interface::def::FieldDefinition;
                 use yukino::lazy_static::lazy_static;
+                use super::#entity_name;
 
                 #(#markers)*
             }

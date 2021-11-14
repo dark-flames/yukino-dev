@@ -333,6 +333,7 @@ impl Converter for BasicConverter {
     }
 }
 pub mod basic {
+    use super::Basic;
     use yukino::interface::def::FieldDefinition;
     use yukino::interface::FieldMarker;
     use yukino::lazy_static::lazy_static;
@@ -362,6 +363,7 @@ pub mod basic {
             );
     }
     impl FieldMarker for boolean {
+        type Entity = Basic;
         fn field_name() -> &'static str {
             "boolean"
         }
@@ -395,6 +397,7 @@ pub mod basic {
             );
     }
     impl FieldMarker for character {
+        type Entity = Basic;
         fn field_name() -> &'static str {
             "character"
         }
@@ -428,6 +431,7 @@ pub mod basic {
             );
     }
     impl FieldMarker for double {
+        type Entity = Basic;
         fn field_name() -> &'static str {
             "double"
         }
@@ -460,6 +464,7 @@ pub mod basic {
         );
     }
     impl FieldMarker for float {
+        type Entity = Basic;
         fn field_name() -> &'static str {
             "float"
         }
@@ -492,6 +497,7 @@ pub mod basic {
         );
     }
     impl FieldMarker for id {
+        type Entity = Basic;
         fn field_name() -> &'static str {
             "id"
         }
@@ -524,6 +530,7 @@ pub mod basic {
         );
     }
     impl FieldMarker for int {
+        type Entity = Basic;
         fn field_name() -> &'static str {
             "int"
         }
@@ -556,6 +563,7 @@ pub mod basic {
         );
     }
     impl FieldMarker for long {
+        type Entity = Basic;
         fn field_name() -> &'static str {
             "long"
         }
@@ -589,6 +597,7 @@ pub mod basic {
             );
     }
     impl FieldMarker for optional {
+        type Entity = Basic;
         fn field_name() -> &'static str {
             "optional"
         }
@@ -621,6 +630,7 @@ pub mod basic {
         );
     }
     impl FieldMarker for short {
+        type Entity = Basic;
         fn field_name() -> &'static str {
             "short"
         }
@@ -654,6 +664,7 @@ pub mod basic {
             );
     }
     impl FieldMarker for string {
+        type Entity = Basic;
         fn field_name() -> &'static str {
             "string"
         }
@@ -686,6 +697,7 @@ pub mod basic {
         );
     }
     impl FieldMarker for u_int {
+        type Entity = Basic;
         fn field_name() -> &'static str {
             "u_int"
         }
@@ -719,6 +731,7 @@ pub mod basic {
             );
     }
     impl FieldMarker for u_long {
+        type Entity = Basic;
         fn field_name() -> &'static str {
             "u_long"
         }
@@ -752,6 +765,7 @@ pub mod basic {
             );
     }
     impl FieldMarker for u_short {
+        type Entity = Basic;
         fn field_name() -> &'static str {
             "u_short"
         }

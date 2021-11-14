@@ -3,6 +3,8 @@ use crate::query::Alias;
 use crate::view::{ExprView, Value};
 
 pub trait FieldMarker {
+    type Entity: Entity;
+
     fn field_name() -> &'static str;
 
     fn definition() -> &'static FieldDefinition;

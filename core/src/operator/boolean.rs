@@ -194,7 +194,7 @@ macro_rules! generate_macro {
             ($l: expr, $r: expr) => {{
                 use yukino::operator::$view_trait;
                 ($l).$view_trait_method($r)
-            }}
+            }};
         }
     };
 }
