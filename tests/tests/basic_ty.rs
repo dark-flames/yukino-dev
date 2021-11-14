@@ -1,7 +1,9 @@
 use yukino::interface::EntityView;
+use yukino::operator::*;
 use yukino::query::Alias;
 use yukino::view::*;
 use yukino_tests::schema::*;
+use yukino::{eq, and, or, neq, bt, bte, lt, lte};
 
 pub fn cmp_view<T: Value>(view: ExprViewBox<T>, query: &str) {
     assert_eq!(
@@ -88,15 +90,14 @@ pub fn test_boolean() {
     cmp_view(lt_const, "b.double < 114.514");
     cmp_view(lte_const, "b.float < 19.19");
 
-    let and = view.boolean.clone().view_and(view.boolean.clone());
-    let or = view.boolean.clone().view_or(view.boolean.clone());
-    let eq = view.boolean.clone().view_eq(view.boolean);
-    let neq = view.u_int.clone().view_neq(view.u_int);
-    let bt = view.string.clone().view_bt(view.string);
-    let bte = view.character.clone().view_bte(view.character);
-    let lt = view.double.clone().view_lt(view.double);
-    let lte = view.float.clone().view_lt(view.float);
-
+    let and = and!(view.boolean.clone(), view.boolean.clone());
+    let or = or!(view.boolean.clone(), view.boolean.clone());
+    let eq = eq!(view.boolean.clone(), view.boolean);
+    let neq = neq!(view.u_int.clone(), view.u_int);
+    let bt = bt!(view.string.clone(), view.string);
+    let bte = bte!(view.character.clone(), view.character);
+    let lt = lt!(view.double.clone(), view.double);
+    let lte = lte!(view.float.clone(), view.float);
 
     cmp_view(and, "b.boolean AND b.boolean");
     cmp_view(or, "b.boolean OR b.boolean");
@@ -105,5 +106,5 @@ pub fn test_boolean() {
     cmp_view(bt, "b.string > b.string");
     cmp_view(bte, "b.character >= b.character");
     cmp_view(lt, "b.double < b.double");
-    cmp_view(lte, "b.float < b.float");
+    cmp_view(lte, "b.float <= b.float");
 }

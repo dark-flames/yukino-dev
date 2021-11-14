@@ -187,6 +187,18 @@ macro_rules! impl_bool_operator {
     };
 }
 
+macro_rules! generate_macro {
+    ($name: ident, $view_trait: ident, $view_trait_method: ident) => {
+        #[macro_export]
+        macro_rules! $name {
+            ($l: expr, $r: expr) => {{
+                use yukino::operator::$view_trait;
+                ($l).$view_trait_method($r)
+            }}
+        }
+    };
+}
+
 op_trait!(And, and);
 op_trait!(Or, or);
 op_trait!(Bt, bt);
@@ -215,3 +227,12 @@ impl_bool_operator!(<, Lt, lt, ViewLt, view_lt, ExprLt, expr_lt, LtView, Lt,
     [u16, i16, u32, i32, u64, i64, f32, f64, char, String]);
 impl_bool_operator!(<=, Lte, lte, ViewLte, view_lte, ExprLte, expr_lte, LteView, Lte,
     [u16, i16, u32, i32, u64, i64, f32, f64, char, String]);
+
+generate_macro!(and, ViewAnd, view_and);
+generate_macro!(or, ViewOr, view_or);
+generate_macro!(eq, ViewEq, view_eq);
+generate_macro!(neq, ViewNeq, view_neq);
+generate_macro!(bt, ViewBt, view_bt);
+generate_macro!(bte, ViewBte, view_bte);
+generate_macro!(lt, ViewLt, view_lt);
+generate_macro!(lte, ViewLte, view_lte);

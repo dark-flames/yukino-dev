@@ -3,6 +3,7 @@ pub mod converter;
 pub mod db;
 pub mod err;
 pub mod interface;
+pub mod operator;
 pub mod query;
 pub mod resolver;
 pub mod view;
