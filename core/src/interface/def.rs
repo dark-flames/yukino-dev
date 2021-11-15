@@ -1,6 +1,6 @@
-use crate::db::ty::DatabaseType;
 use crate::interface::attr::IndexMethod;
 use iroha::ToTokens;
+use query_builder::DatabaseType;
 use std::collections::HashMap;
 
 #[derive(ToTokens, Clone)]

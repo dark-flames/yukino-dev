@@ -4,7 +4,6 @@ use quote::{format_ident, quote};
 use syn::spanned::Spanned;
 use syn::{parse_str, Field as SynField, Type};
 
-use crate::db::ty::DatabaseType;
 use crate::err::CliResult;
 use crate::err::{ResolveError, YukinoError};
 use crate::interface::attr::{Field, FieldAttribute, IndexMethod};
@@ -16,6 +15,7 @@ use crate::resolver::field::{
     FieldResolverSeedBox, ResolvedField,
 };
 use crate::resolver::path::{FileTypePathResolver, TypeMatchResult};
+use query_builder::DatabaseType;
 
 pub struct BasicFieldResolverSeed();
 

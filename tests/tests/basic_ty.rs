@@ -1,6 +1,6 @@
 use yukino::interface::EntityView;
 use yukino::operator::*;
-use yukino::query::Alias;
+use yukino::query_builder::Alias;
 use yukino::view::*;
 use yukino::{and, bt, bte, eq, lt, lte, neq, or};
 use yukino_tests::schema::*;

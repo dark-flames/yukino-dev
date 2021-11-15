@@ -1,6 +1,5 @@
 use yukino::converter::ConverterRef;
 use yukino::converter::{ConvertResult, Converter, Deserializer};
-use yukino::db::ty::DatabaseValue;
 use yukino::err::{RuntimeResult, YukinoError};
 use yukino::generic_array::functional::FunctionalSequence;
 use yukino::generic_array::sequence::{Concat, Split};
@@ -8,7 +7,7 @@ use yukino::generic_array::typenum;
 use yukino::generic_array::{arr, GenericArray};
 use yukino::interface::Entity;
 use yukino::interface::EntityView;
-use yukino::query::{Alias, Expr};
+use yukino::query_builder::{Alias, DatabaseValue, Expr};
 use yukino::view::{ExprView, ExprViewBox, SingleExprView, ValueView, ViewBox};
 use yukino::view::{Value, View};
 #[derive(Clone, Debug)]
@@ -169,43 +168,43 @@ impl EntityView for BasicView {
     {
         BasicView {
             boolean: Box::new(SingleExprView::from_exprs(
-                arr ! [Expr ; alias . create_ident_expr ("boolean" , yukino :: db :: ty :: DatabaseType :: Bool)],
+                arr![Expr ; alias . create_ident_expr ("boolean" , yukino :: query_builder :: DatabaseType :: Bool)],
             )),
             character: Box::new(SingleExprView::from_exprs(
-                arr ! [Expr ; alias . create_ident_expr ("character" , yukino :: db :: ty :: DatabaseType :: Character)],
+                arr![Expr ; alias . create_ident_expr ("character" , yukino :: query_builder :: DatabaseType :: Character)],
             )),
             double: Box::new(SingleExprView::from_exprs(
-                arr ! [Expr ; alias . create_ident_expr ("double" , yukino :: db :: ty :: DatabaseType :: Double)],
+                arr![Expr ; alias . create_ident_expr ("double" , yukino :: query_builder :: DatabaseType :: Double)],
             )),
             float: Box::new(SingleExprView::from_exprs(
-                arr ! [Expr ; alias . create_ident_expr ("float" , yukino :: db :: ty :: DatabaseType :: Float)],
+                arr![Expr ; alias . create_ident_expr ("float" , yukino :: query_builder :: DatabaseType :: Float)],
             )),
             id: Box::new(SingleExprView::from_exprs(
-                arr ! [Expr ; alias . create_ident_expr ("id" , yukino :: db :: ty :: DatabaseType :: UnsignedInteger)],
+                arr![Expr ; alias . create_ident_expr ("id" , yukino :: query_builder :: DatabaseType :: UnsignedInteger)],
             )),
             int: Box::new(SingleExprView::from_exprs(
-                arr ! [Expr ; alias . create_ident_expr ("int" , yukino :: db :: ty :: DatabaseType :: Integer)],
+                arr![Expr ; alias . create_ident_expr ("int" , yukino :: query_builder :: DatabaseType :: Integer)],
             )),
             long: Box::new(SingleExprView::from_exprs(
-                arr ! [Expr ; alias . create_ident_expr ("long" , yukino :: db :: ty :: DatabaseType :: BigInteger)],
+                arr![Expr ; alias . create_ident_expr ("long" , yukino :: query_builder :: DatabaseType :: BigInteger)],
             )),
             optional: Box::new(SingleExprView::from_exprs(
-                arr ! [Expr ; alias . create_ident_expr ("optional" , yukino :: db :: ty :: DatabaseType :: UnsignedInteger)],
+                arr![Expr ; alias . create_ident_expr ("optional" , yukino :: query_builder :: DatabaseType :: UnsignedInteger)],
             )),
             short: Box::new(SingleExprView::from_exprs(
-                arr ! [Expr ; alias . create_ident_expr ("short" , yukino :: db :: ty :: DatabaseType :: SmallInteger)],
+                arr![Expr ; alias . create_ident_expr ("short" , yukino :: query_builder :: DatabaseType :: SmallInteger)],
             )),
             string: Box::new(SingleExprView::from_exprs(
-                arr ! [Expr ; alias . create_ident_expr ("string" , yukino :: db :: ty :: DatabaseType :: String)],
+                arr![Expr ; alias . create_ident_expr ("string" , yukino :: query_builder :: DatabaseType :: String)],
             )),
             u_int: Box::new(SingleExprView::from_exprs(
-                arr ! [Expr ; alias . create_ident_expr ("u_int" , yukino :: db :: ty :: DatabaseType :: UnsignedInteger)],
+                arr![Expr ; alias . create_ident_expr ("u_int" , yukino :: query_builder :: DatabaseType :: UnsignedInteger)],
             )),
             u_long: Box::new(SingleExprView::from_exprs(
-                arr ! [Expr ; alias . create_ident_expr ("u_long" , yukino :: db :: ty :: DatabaseType :: UnsignedBigInteger)],
+                arr![Expr ; alias . create_ident_expr ("u_long" , yukino :: query_builder :: DatabaseType :: UnsignedBigInteger)],
             )),
             u_short: Box::new(SingleExprView::from_exprs(
-                arr ! [Expr ; alias . create_ident_expr ("u_short" , yukino :: db :: ty :: DatabaseType :: UnsignedSmallInteger)],
+                arr![Expr ; alias . create_ident_expr ("u_short" , yukino :: query_builder :: DatabaseType :: UnsignedSmallInteger)],
             )),
         }
     }
@@ -350,7 +349,7 @@ pub mod basic {
                     "boolean".to_string(),
                     yukino::interface::def::ColumnDefinition::new(
                         "boolean".to_string(),
-                        yukino::db::ty::DatabaseType::Bool,
+                        yukino::query_builder::DatabaseType::Bool,
                         false,
                         false
                     )
@@ -384,7 +383,7 @@ pub mod basic {
                     "character".to_string(),
                     yukino::interface::def::ColumnDefinition::new(
                         "character".to_string(),
-                        yukino::db::ty::DatabaseType::Character,
+                        yukino::query_builder::DatabaseType::Character,
                         false,
                         false
                     )
@@ -418,7 +417,7 @@ pub mod basic {
                     "double".to_string(),
                     yukino::interface::def::ColumnDefinition::new(
                         "double".to_string(),
-                        yukino::db::ty::DatabaseType::Double,
+                        yukino::query_builder::DatabaseType::Double,
                         false,
                         false
                     )
@@ -451,7 +450,7 @@ pub mod basic {
                 "float".to_string(),
                 yukino::interface::def::ColumnDefinition::new(
                     "float".to_string(),
-                    yukino::db::ty::DatabaseType::Float,
+                    yukino::query_builder::DatabaseType::Float,
                     false,
                     false
                 )
@@ -484,7 +483,7 @@ pub mod basic {
                 "id".to_string(),
                 yukino::interface::def::ColumnDefinition::new(
                     "id".to_string(),
-                    yukino::db::ty::DatabaseType::UnsignedInteger,
+                    yukino::query_builder::DatabaseType::UnsignedInteger,
                     false,
                     false
                 )
@@ -517,7 +516,7 @@ pub mod basic {
                 "int".to_string(),
                 yukino::interface::def::ColumnDefinition::new(
                     "int".to_string(),
-                    yukino::db::ty::DatabaseType::Integer,
+                    yukino::query_builder::DatabaseType::Integer,
                     false,
                     false
                 )
@@ -550,7 +549,7 @@ pub mod basic {
                 "long".to_string(),
                 yukino::interface::def::ColumnDefinition::new(
                     "long".to_string(),
-                    yukino::db::ty::DatabaseType::BigInteger,
+                    yukino::query_builder::DatabaseType::BigInteger,
                     false,
                     false
                 )
@@ -584,7 +583,7 @@ pub mod basic {
                     "optional".to_string(),
                     yukino::interface::def::ColumnDefinition::new(
                         "optional".to_string(),
-                        yukino::db::ty::DatabaseType::UnsignedInteger,
+                        yukino::query_builder::DatabaseType::UnsignedInteger,
                         true,
                         false
                     )
@@ -617,7 +616,7 @@ pub mod basic {
                 "short".to_string(),
                 yukino::interface::def::ColumnDefinition::new(
                     "short".to_string(),
-                    yukino::db::ty::DatabaseType::SmallInteger,
+                    yukino::query_builder::DatabaseType::SmallInteger,
                     false,
                     false
                 )
@@ -651,7 +650,7 @@ pub mod basic {
                     "string".to_string(),
                     yukino::interface::def::ColumnDefinition::new(
                         "string".to_string(),
-                        yukino::db::ty::DatabaseType::String,
+                        yukino::query_builder::DatabaseType::String,
                         false,
                         false
                     )
@@ -684,7 +683,7 @@ pub mod basic {
                 "u_int".to_string(),
                 yukino::interface::def::ColumnDefinition::new(
                     "u_int".to_string(),
-                    yukino::db::ty::DatabaseType::UnsignedInteger,
+                    yukino::query_builder::DatabaseType::UnsignedInteger,
                     false,
                     false
                 )
@@ -718,7 +717,7 @@ pub mod basic {
                     "u_long".to_string(),
                     yukino::interface::def::ColumnDefinition::new(
                         "u_long".to_string(),
-                        yukino::db::ty::DatabaseType::UnsignedBigInteger,
+                        yukino::query_builder::DatabaseType::UnsignedBigInteger,
                         false,
                         false
                     )
@@ -752,7 +751,7 @@ pub mod basic {
                     "u_short".to_string(),
                     yukino::interface::def::ColumnDefinition::new(
                         "u_short".to_string(),
-                        yukino::db::ty::DatabaseType::UnsignedSmallInteger,
+                        yukino::query_builder::DatabaseType::UnsignedSmallInteger,
                         false,
                         false
                     )

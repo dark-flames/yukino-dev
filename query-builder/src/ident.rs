@@ -1,5 +1,4 @@
-use crate::db::ty::DatabaseType;
-use crate::query::Expr;
+use crate::{DatabaseType, Expr};
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
 #[derive(Clone, Debug, Eq, PartialEq)]

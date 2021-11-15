@@ -1,4 +1,3 @@
-use crate::db::ty::DatabaseType;
 use crate::err::CliResult;
 use crate::err::{ResolveError, YukinoError};
 use crate::interface::attr::{Entity, Index, IndexMethod};
@@ -10,6 +9,7 @@ use annotation_rs::AnnotationStructure;
 use heck::CamelCase;
 use heck::SnakeCase;
 use proc_macro2::{Ident, Span, TokenStream};
+use query_builder::DatabaseType;
 use quote::format_ident;
 use std::collections::HashMap;
 use std::iter::Extend;

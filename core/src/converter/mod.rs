@@ -1,9 +1,9 @@
 pub mod basic;
 
-use crate::db::ty::DatabaseValue;
 use crate::err::ConvertError;
 use crate::view::Value;
 use generic_array::GenericArray;
+use query_builder::DatabaseValue;
 
 pub type ConverterRef<T> = &'static dyn Converter<Output = T>;
 

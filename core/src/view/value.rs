@@ -1,12 +1,11 @@
 use crate::converter::basic::*;
 use crate::converter::{Converter, ConverterRef};
-use crate::db::ty::DatabaseValue;
 use crate::err::{RuntimeResult, YukinoError};
-use crate::query::Expr;
 use crate::view::{ExprView, ExprViewBox, ValueView, View, ViewBox};
 use generic_array::typenum::bit::{B0, B1};
 use generic_array::typenum::{UInt, UTerm, U1};
 use generic_array::{arr, functional::FunctionalSequence, ArrayLength, GenericArray};
+use query_builder::{DatabaseValue, Expr};
 use std::fmt::Debug;
 use std::marker::PhantomData;
 

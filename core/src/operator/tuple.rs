@@ -1,7 +1,7 @@
-use crate::db::ty::DatabaseValue;
 use crate::err::RuntimeResult;
 use crate::view::{ComputationView, ComputationViewBox, ValueCount, View, ViewBox};
 use generic_array::{sequence::Split, GenericArray};
+use query_builder::DatabaseValue;
 use std::ops::{Add, Sub};
 
 impl<

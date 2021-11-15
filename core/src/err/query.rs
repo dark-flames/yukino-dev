@@ -1,6 +1,6 @@
-use crate::db::ty::DatabaseType;
 use crate::err::YukinoError;
-use crate::query::Expr;
+use query_builder::DatabaseType;
+use query_builder::Expr;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use thiserror::Error;

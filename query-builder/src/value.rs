@@ -2,11 +2,10 @@ use iroha::ToTokens;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-#[cfg(any(feature = "data-time"))]
 use time::{Date, PrimitiveDateTime, Time};
 
 #[derive(Copy, Clone, ToTokens, Debug, Eq, PartialEq)]
-#[Iroha(mod_path = "yukino::db::ty")]
+#[Iroha(mod_path = "yukino::query_builder")]
 pub enum DatabaseType {
     Bool,
     SmallInteger,

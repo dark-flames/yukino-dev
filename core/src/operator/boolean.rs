@@ -1,12 +1,12 @@
-use crate::db::ty::DatabaseValue;
 use crate::err::RuntimeResult;
-use crate::query::Expr;
 use crate::view::{
     ComputationView, ComputationViewBox, ExprView, ExprViewBox, SingleExprView, Value, ValueCount,
     View, ViewBox,
 };
 use generic_array::sequence::Split;
 use generic_array::{arr, GenericArray};
+use query_builder::DatabaseValue;
+use query_builder::Expr;
 use std::ops::{Add, Sub};
 
 macro_rules! op_trait {

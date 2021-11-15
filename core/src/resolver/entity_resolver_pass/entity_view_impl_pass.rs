@@ -16,9 +16,8 @@ impl EntityResolvePass for EntityViewPass {
     fn get_dependencies(&self) -> Vec<TokenStream> {
         vec![quote! {
             use yukino::view::{SingleExprView, ValueView, ViewBox, ExprViewBox, ExprView};
-            use yukino::query::{Expr, Alias};
+            use yukino::query_builder::{Expr, Alias, DatabaseValue};
             use yukino::interface::EntityView;
-            use yukino::db::ty::DatabaseValue;
             use yukino::err::{RuntimeResult, YukinoError};
         }]
     }

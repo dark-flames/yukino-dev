@@ -10,13 +10,14 @@ license = "MIT"
 [dependencies]
 core = { package = "yukino-core", path = "./core", version = "0.1.0" }
 cli = { package = "yukino-cli", path = "./cli", version = "0.1.0" }
+query_builder = { package = "yukino-query-builder", path = "./query-builder", version = "0.1.0" }
 generic-array = "0.14.4"
 lazy_static = "1.4.0"
 
 [workspace]
 members = [
+    "query-builder",
     "core",
-    "macro",
     "cli",
     "tests"
 ]

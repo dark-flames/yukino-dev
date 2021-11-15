@@ -1,6 +1,6 @@
 use crate::interface::{Entity, EntityView};
-use crate::query::{Alias, Expr};
 use crate::view::ExprViewBox;
+use query_builder::{Alias, Expr};
 use std::marker::PhantomData;
 
 pub struct QueryResultFilter<E: Entity> {

@@ -1,6 +1,6 @@
 use crate::interface::def::FieldDefinition;
-use crate::query::Alias;
 use crate::view::{ExprView, Value};
+use query_builder::Alias;
 
 pub trait FieldMarker {
     type Entity: Entity;

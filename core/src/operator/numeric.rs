@@ -1,6 +1,4 @@
-use crate::db::ty::DatabaseValue;
 use crate::err::RuntimeResult;
-use crate::query::Expr;
 use crate::view::{
     ComputationView, ComputationViewBox, ExprView, ExprViewBox, SingleExprView, Value, ValueCount,
     View, ViewBox,
@@ -8,6 +6,7 @@ use crate::view::{
 use generic_array::sequence::Split;
 use generic_array::typenum::operator_aliases::Sum;
 use generic_array::{arr, GenericArray};
+use query_builder::{DatabaseValue, Expr};
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
 
 macro_rules! impl_ops {

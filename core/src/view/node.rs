@@ -1,8 +1,7 @@
-use crate::db::ty::DatabaseValue;
 use crate::err::RuntimeResult;
-use crate::query::Expr;
 use crate::view::{Value, ValueCount};
 use generic_array::GenericArray;
+use query_builder::{DatabaseValue, Expr};
 
 pub type ExprViewBox<T> = Box<dyn ExprView<T>>;
 pub type ComputationViewBox<T, L> = Box<dyn ComputationView<T, L>>;

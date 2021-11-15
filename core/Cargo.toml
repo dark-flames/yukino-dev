@@ -6,10 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+query-builder = { package = "yukino-query-builder", path = "../query-builder", version = "0.1.0" }
 annotation-rs = "0.1.0"
-time = { version = "0.2", optional = true }
-serde = { version = "1.0", optional = true }
-serde_json = { version = "1.0", optional = true }
 iroha = "0.1.7"
 quote = "1.0"
 heck = "0.3.3"
@@ -20,9 +18,3 @@ unzip3 = "1.0.0"
 generic-array = "0.14.4"
 
 [features]
-default = ["mysql", "json", "data-time"]
-mysql = []
-postgre-sql = []
-sqlite = []
-json = ["serde_json", "serde"]
-data-time = ["time"]
