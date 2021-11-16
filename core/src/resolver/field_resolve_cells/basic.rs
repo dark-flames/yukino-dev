@@ -221,11 +221,9 @@ impl FieldType {
     }
 
     pub fn view(&self, column: &str) -> TokenStream {
-        let database_ty = DatabaseType::from(self);
-
         quote! {
             Box::new(SingleExprView::from_exprs(arr![Expr;
-                alias.create_ident_expr(#column, #database_ty)
+                alias.create_ident_expr(#column)
             ]))
         }
     }

@@ -17,5 +17,6 @@ proc-macro2 = { version = "1.0", features= ["span-locations"] }
 thiserror = "1.0"
 unzip3 = "1.0.0"
 generic-array = "0.14.4"
+rand = "0.8.4"
 
 [features]

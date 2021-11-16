@@ -1,7 +1,7 @@
 use iroha::ToTokens;
 use std::fmt::{Display, Formatter};
 
-#[derive(Copy, Clone, ToTokens, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, ToTokens, Debug, Eq, PartialEq, Hash)]
 #[Iroha(mod_path = "yukino")]
 pub enum DatabaseType {
     Bool,

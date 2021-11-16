@@ -1,5 +1,5 @@
-use crate::{Alias, AliasedTable, Expr, Ident, Join, JoinType};
-use interface::YukinoEntity;
+use crate::{Alias, AliasedTable, Expr, Ident, Join};
+use interface::{JoinType, YukinoEntity};
 use std::marker::PhantomData;
 
 #[derive(Clone, Copy, Eq, PartialEq)]

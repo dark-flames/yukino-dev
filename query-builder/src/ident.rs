@@ -1,11 +1,9 @@
 use crate::Expr;
-use interface::DatabaseType;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Ident {
     pub seg: Vec<String>,
-    pub ty: DatabaseType,
 }
 
 #[derive(Clone, Debug)]
@@ -14,15 +12,14 @@ pub struct Alias {
 }
 
 impl Alias {
-    pub fn create_ident(&self, column: &str, ty: DatabaseType) -> Ident {
+    pub fn create_ident(&self, column: &str) -> Ident {
         Ident {
             seg: vec![self.name.clone(), column.to_string()],
-            ty,
         }
     }
 
-    pub fn create_ident_expr(&self, column: &str, ty: DatabaseType) -> Expr {
-        Expr::Ident(self.create_ident(column, ty))
+    pub fn create_ident_expr(&self, column: &str) -> Expr {
+        Expr::Ident(self.create_ident(column))
     }
 }
 

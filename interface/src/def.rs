@@ -61,15 +61,45 @@ pub enum DefinitionType {
     Generated,
 }
 
+#[derive(Clone, Copy, Eq, PartialEq, ToTokens)]
+#[Iroha(mod_path = "yukino")]
+pub enum JoinType {
+    LeftJoin,
+    RightJoin,
+    InnerJoin,
+}
+
 #[derive(ToTokens, Clone)]
 #[Iroha(mod_path = "yukino")]
 pub enum AssociatedDefinition {
     AssociatedEntity {
+        ty: JoinType,
         entity_id: usize,
         map: HashMap<String, String>,
     },
     ReversedAssociatedEntity {
+        ty: JoinType,
         entity_id: usize,
         field: String,
     },
+}
+
+pub struct DefinitionManager {
+    definitions: HashMap<usize, &'static EntityDefinition>,
+}
+
+impl DefinitionManager {
+    pub fn create(items: Vec<(usize, &'static EntityDefinition)>) -> DefinitionManager {
+        DefinitionManager {
+            definitions: items.into_iter().collect(),
+        }
+    }
+
+    pub fn entity(&self, id: &usize) -> Option<&'static EntityDefinition> {
+        self.definitions.get(id).copied()
+    }
+
+    pub fn field(&self, id: &usize, field: &str) -> Option<&'static FieldDefinition> {
+        self.definitions.get(id).and_then(|f| f.fields.get(field))
+    }
 }
