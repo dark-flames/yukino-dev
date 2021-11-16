@@ -128,83 +128,83 @@ impl ExprNode for Expr {
             Expr::Lit(lit) => lit.apply(visitor),
             Expr::FunctionCall(func_call) => func_call.apply(visitor),
             Expr::BitInverse(e) => {
+                e.apply(visitor);
                 visitor.visit_bit_inverse(e);
-                e.apply(visitor)
             }
             Expr::BitXor(l, r) => {
-                visitor.visit_bit_xor(l, r);
                 l.apply(visitor);
                 r.apply(visitor);
+                visitor.visit_bit_xor(l, r);
             },
             Expr::Mul(l, r) => {
-                visitor.visit_mul(l, r);
                 l.apply(visitor);
                 r.apply(visitor);
+                visitor.visit_mul(l, r);
             },
             Expr::Div(l, r) => {
-                visitor.visit_div(l, r);
                 l.apply(visitor);
                 r.apply(visitor);
+                visitor.visit_div(l, r);
             },
             Expr::Rem(l, r) => {
-                visitor.visit_rem(l, r);
                 l.apply(visitor);
                 r.apply(visitor);
+                visitor.visit_rem(l, r);
             },
             Expr::Add(l, r) => {
-                visitor.visit_add(l, r);
                 l.apply(visitor);
                 r.apply(visitor);
+                visitor.visit_add(l, r);
             },
             Expr::Sub(l, r) => {
-                visitor.visit_sub(l, r);
                 l.apply(visitor);
                 r.apply(visitor);
+                visitor.visit_sub(l, r);
             },
             Expr::LeftShift(l, r) => {
-                visitor.visit_left_shift(l, r);
                 l.apply(visitor);
                 r.apply(visitor);
+                visitor.visit_left_shift(l, r);
             },
             Expr::RightShift(l, r) => {
-                visitor.visit_right_shift(l, r);
                 l.apply(visitor);
                 r.apply(visitor);
+                visitor.visit_right_shift(l, r);
             },
             Expr::BitAnd(l, r) => {
-                visitor.visit_bit_and(l, r);
                 l.apply(visitor);
                 r.apply(visitor);
+                visitor.visit_bit_and(l, r);
             },
             Expr::BitOr(l, r) => {
-                visitor.visit_bit_or(l, r);
                 l.apply(visitor);
                 r.apply(visitor);
+                visitor.visit_bit_or(l, r);
             },
             Expr::Bte(l, r) => {
-                visitor.visit_bte(l, r);
                 l.apply(visitor);
                 r.apply(visitor);
+                visitor.visit_bte(l, r);
             },
             Expr::Lte(l, r) => {
-                visitor.visit_lte(l, r);
                 l.apply(visitor);
                 r.apply(visitor);
+                visitor.visit_lte(l, r);
             },
             Expr::Neq(l, r) => {
-                visitor.visit_neq(l, r);
                 l.apply(visitor);
                 r.apply(visitor);
+                visitor.visit_neq(l, r);
             },
             Expr::Bt(l, r) => {
-                visitor.visit_bit_xor(l, r);
                 l.apply(visitor);
                 r.apply(visitor);
+                visitor.visit_bit_xor(l, r);
             },
             Expr::Lt(l, r) => {
-                visitor.visit_lt(l, r);
                 l.apply(visitor);
                 r.apply(visitor);
+                visitor.visit_lt(l, r);
             },
             Expr::Eq(l, r) => {
                 visitor.visit_eq(l, r);
@@ -212,18 +212,18 @@ impl ExprNode for Expr {
                 r.apply(visitor);
             },
             Expr::Not(e) => {
-                visitor.visit_not(e);
                 e.apply(visitor);
+                visitor.visit_not(e);
             },
             Expr::And(l, r) => {
-                visitor.visit_and(l, r);
                 l.apply(visitor);
                 r.apply(visitor);
+                visitor.visit_and(l, r);
             },
             Expr::Or(l, r) => {
-                visitor.visit_or(l, r);
                 l.apply(visitor);
                 r.apply(visitor);
+                visitor.visit_or(l, r);
             },
         }
     }
@@ -235,33 +235,33 @@ impl ExprNode for Expr {
             Expr::Lit(lit) => lit.apply_mut(visitor),
             Expr::FunctionCall(func_call) => func_call.apply_mut(visitor),
             Expr::BitInverse(e) => {
+                e.apply_mut(visitor);
                 visitor.visit_bit_inverse(e);
-                e.apply_mut(visitor)
             }
             Expr::BitXor(l, r) => {
-                visitor.visit_bit_xor(l, r);
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
+                visitor.visit_bit_xor(l, r);
             },
             Expr::Mul(l, r) => {
-                visitor.visit_mul(l, r);
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
+                visitor.visit_mul(l, r);
             },
             Expr::Div(l, r) => {
-                visitor.visit_div(l, r);
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
+                visitor.visit_div(l, r);
             },
             Expr::Rem(l, r) => {
-                visitor.visit_rem(l, r);
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
+                visitor.visit_rem(l, r);
             },
             Expr::Add(l, r) => {
-                visitor.visit_add(l, r);
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
+                visitor.visit_add(l, r);
             },
             Expr::Sub(l, r) => {
                 visitor.visit_sub(l, r);
@@ -269,44 +269,44 @@ impl ExprNode for Expr {
                 r.apply_mut(visitor);
             },
             Expr::LeftShift(l, r) => {
-                visitor.visit_left_shift(l, r);
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
+                visitor.visit_left_shift(l, r);
             },
             Expr::RightShift(l, r) => {
-                visitor.visit_right_shift(l, r);
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
+                visitor.visit_right_shift(l, r);
             },
             Expr::BitAnd(l, r) => {
-                visitor.visit_bit_and(l, r);
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
+                visitor.visit_bit_and(l, r);
             },
             Expr::BitOr(l, r) => {
-                visitor.visit_bit_or(l, r);
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
+                visitor.visit_bit_or(l, r);
             },
             Expr::Bte(l, r) => {
-                visitor.visit_bte(l, r);
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
+                visitor.visit_bte(l, r);
             },
             Expr::Lte(l, r) => {
-                visitor.visit_lte(l, r);
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
+                visitor.visit_lte(l, r);
             },
             Expr::Neq(l, r) => {
-                visitor.visit_neq(l, r);
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
+                visitor.visit_neq(l, r);
             },
             Expr::Bt(l, r) => {
-                visitor.visit_bit_xor(l, r);
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
+                visitor.visit_bit_xor(l, r);
             },
             Expr::Lt(l, r) => {
                 visitor.visit_lt(l, r);
@@ -314,23 +314,23 @@ impl ExprNode for Expr {
                 r.apply_mut(visitor);
             },
             Expr::Eq(l, r) => {
-                visitor.visit_eq(l, r);
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
+                visitor.visit_eq(l, r);
             },
             Expr::Not(e) => {
                 visitor.visit_not(e);
                 e.apply_mut(visitor);
             },
             Expr::And(l, r) => {
-                visitor.visit_and(l, r);
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
+                visitor.visit_and(l, r);
             },
             Expr::Or(l, r) => {
-                visitor.visit_or(l, r);
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
+                visitor.visit_or(l, r);
             },
         }
     }
