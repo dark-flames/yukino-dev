@@ -1,4 +1,4 @@
-use crate::Expr;
+use crate::{Expr, ExprMutVisitor, ExprNode, ExprVisitor};
 use interface::DatabaseType;
 use std::fmt::{Debug, Display, Formatter};
 
@@ -37,5 +37,17 @@ impl Display for FunctionCall {
                 .collect::<Vec<_>>()
                 .join(", ")
         )
+    }
+}
+
+impl ExprNode for FunctionCall {
+    fn apply<V: ExprVisitor>(&self, visitor: &mut V) {
+        visitor.visit_function_call(self);
+        self.params.iter().for_each(|p| p.apply(visitor))
+    }
+
+    fn apply_mut<V: ExprMutVisitor>(&mut self, visitor: &mut V) {
+        visitor.visit_function_call(self);
+        self.params.iter_mut().for_each(|p| p.apply_mut(visitor))
     }
 }

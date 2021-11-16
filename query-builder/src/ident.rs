@@ -1,4 +1,4 @@
-use crate::Expr;
+use crate::{Expr, ExprMutVisitor, ExprNode, ExprVisitor};
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
@@ -9,6 +9,12 @@ pub struct Ident {
 #[derive(Clone, Debug)]
 pub struct Alias {
     pub name: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct AliasedTable {
+    pub table: String,
+    pub alias: Alias,
 }
 
 impl Alias {
@@ -29,7 +35,12 @@ impl Display for Ident {
     }
 }
 
-pub struct AliasedTable {
-    pub table: String,
-    pub alias: Alias,
+impl ExprNode for Ident {
+    fn apply<V: ExprVisitor>(&self, visitor: &mut V) {
+        visitor.visit_ident(self)
+    }
+
+    fn apply_mut<V: ExprMutVisitor>(&mut self, visitor: &mut V) {
+        visitor.visit_ident(self)
+    }
 }
