@@ -1,28 +1,36 @@
 use crate::view::EntityWithView;
-use interface::{
-    AssociatedDefinition, DefinitionManager, FieldDefinition,
-};
+use interface::{AssociatedDefinition, DefinitionManager, FieldDefinition, JoinType};
 use query_builder::{Alias, AliasedTable, Expr, Ident, Join};
 use rand::rngs::ThreadRng;
-use rand::{distributions::Alphanumeric, Rng};
+use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::iter::repeat;
-use std::marker::PhantomData;
 
 pub type AliasName = String;
 pub type TableName = String;
 
-pub struct AliasGenerator<E: EntityWithView> {
+pub struct AliasGenerator {
     rng: ThreadRng,
-    _root: Alias,
     definition_manager: &'static DefinitionManager,
     alias: HashMap<AliasName, usize>,
     path: HashMap<(String, String), AliasName>,
-    _root_entity: PhantomData<E>,
 }
 
-impl<E: EntityWithView> AliasGenerator<E> {
+impl AliasGenerator {
+    pub fn create(definition_manager: &'static DefinitionManager) -> AliasGenerator {
+        AliasGenerator {
+            rng: thread_rng(),
+            definition_manager,
+            alias: Default::default(),
+            path: Default::default(),
+        }
+    }
+
+    pub fn generate_root_alias<E: EntityWithView>(&mut self) -> Alias {
+        self.generate_alias(E::entity_id())
+    }
+
     pub fn handle_ident(&mut self, ident: Ident) -> (Ident, Vec<Join>) {
         if ident.seg.len() == 1 {
             (ident, vec![])
@@ -63,23 +71,55 @@ impl<E: EntityWithView> AliasGenerator<E> {
             (Ident { seg }, joins)
         }
     }
-    /**
 
-     */
+    fn generate_alias(&mut self, entity_id: usize) -> Alias {
+        let name = loop {
+            let alias_name: String = repeat(())
+                .map(|()| self.rng.sample(Alphanumeric))
+                .map(char::from)
+                .take(3)
+                .collect();
 
-    fn generate_alias(&mut self, root: AliasName, field_name: String) -> Alias {
-        let entry = self.path.entry((root, field_name));
+            if let Entry::Vacant(e) = self.alias.entry(alias_name.clone()) {
+                e.insert(entity_id);
+                break alias_name;
+            }
+        };
 
-        Alias {
-            name: entry
-                .or_insert_with(|| {
-                    repeat(())
-                        .map(|()| self.rng.sample(Alphanumeric))
-                        .map(char::from)
-                        .take(3)
-                        .collect()
-                })
-                .clone(),
+        Alias { name }
+    }
+
+    fn generate_alias_of_path(
+        &mut self,
+        root: AliasName,
+        field_name: String,
+        entity_id: usize,
+    ) -> Alias {
+        match self.path.entry((root.clone(), field_name.clone())) {
+            Entry::Occupied(e) => Alias {
+                name: e.get().clone(),
+            },
+            Entry::Vacant(_) => {
+                let alias = self.generate_alias(entity_id);
+
+                self.path.insert((root, field_name), alias.name.clone());
+
+                alias
+            }
+        }
+    }
+
+    fn generate_join(table: String, alias: Alias, mut exprs: Vec<Expr>, ty: JoinType) -> Join {
+        let first = exprs.pop().unwrap();
+        Join {
+            ty,
+            table: AliasedTable {
+                table,
+                alias,
+            },
+            on: exprs
+                .into_iter()
+                .fold(first, |c, i| Expr::And(Box::new(c), Box::new(i))),
         }
     }
 
@@ -93,7 +133,8 @@ impl<E: EntityWithView> AliasGenerator<E> {
         };
         match &field.association {
             Some(AssociatedDefinition::AssociatedEntity { ty, entity_id, map }) => {
-                let r_alias = self.generate_alias(alias.to_string(), field.name.clone());
+                let r_alias =
+                    self.generate_alias_of_path(alias.to_string(), field.name.clone(), *entity_id);
                 let table = self
                     .definition_manager
                     .entity(entity_id)
@@ -101,7 +142,7 @@ impl<E: EntityWithView> AliasGenerator<E> {
                     .name
                     .clone();
 
-                let mut exprs: Vec<_> = map
+                let exprs = map
                     .iter()
                     .map(|(l, r)| {
                         Expr::Eq(
@@ -111,19 +152,8 @@ impl<E: EntityWithView> AliasGenerator<E> {
                     })
                     .collect();
 
-                let first = exprs.pop().unwrap();
-
                 Some((
-                    Join {
-                        ty: *ty,
-                        table: AliasedTable {
-                            table,
-                            alias: r_alias.clone(),
-                        },
-                        on: exprs
-                            .into_iter()
-                            .fold(first, |c, i| Expr::And(Box::new(c), Box::new(i))),
-                    },
+                    Self::generate_join(table, r_alias.clone(), exprs, *ty),
                     r_alias.name,
                 ))
             }
@@ -144,7 +174,8 @@ impl<E: EntityWithView> AliasGenerator<E> {
                     .as_ref()
                     .unwrap()
                 {
-                    let r_alias = self.generate_alias(alias.to_string(), field.clone());
+                    let r_alias =
+                        self.generate_alias_of_path(alias.to_string(), field.clone(), *entity_id);
                     let table = self
                         .definition_manager
                         .entity(entity_id)
@@ -152,7 +183,7 @@ impl<E: EntityWithView> AliasGenerator<E> {
                         .name
                         .clone();
 
-                    let mut exprs: Vec<_> = map
+                    let exprs: Vec<_> = map
                         .iter()
                         .map(|(r, l)| {
                             Expr::Eq(
@@ -162,19 +193,8 @@ impl<E: EntityWithView> AliasGenerator<E> {
                         })
                         .collect();
 
-                    let first = exprs.pop().unwrap();
-
                     Some((
-                        Join {
-                            ty: *ty,
-                            table: AliasedTable {
-                                table,
-                                alias: r_alias.clone(),
-                            },
-                            on: exprs
-                                .into_iter()
-                                .fold(first, |c, i| Expr::And(Box::new(c), Box::new(i))),
-                        },
+                        Self::generate_join(table, r_alias.clone(), exprs, *ty),
                         r_alias.name,
                     ))
                 } else {

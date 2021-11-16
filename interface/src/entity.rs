@@ -10,4 +10,6 @@ pub trait FieldMarker {
 
 pub trait YukinoEntity: 'static {
     fn definition() -> &'static EntityDefinition;
+
+    fn entity_id() -> usize;
 }

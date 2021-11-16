@@ -23,7 +23,7 @@ impl EntityResolvePass for ConverterPass {
         }]
     }
 
-    fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream> {
+    fn get_entity_implements(&mut self, entity: &ResolvedEntity) -> Vec<TokenStream> {
         let entity_name = format_ident!("{}", &entity.name);
         let name = &entity.converter_name;
         let converter_name = &entity.converter_name;

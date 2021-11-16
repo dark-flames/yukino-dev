@@ -51,7 +51,7 @@ pub trait EntityResolvePass {
 
     fn get_dependencies(&self) -> Vec<TokenStream>;
 
-    fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream>;
+    fn get_entity_implements(&mut self, entity: &ResolvedEntity) -> Vec<TokenStream>;
 
     fn get_additional_implements(&self) -> Vec<TokenStream>;
 }
@@ -254,7 +254,7 @@ impl EntityResolver {
         self.unassembled.is_empty()
     }
 
-    pub fn get_implements(&self) -> Vec<TokenStream> {
+    pub fn get_implements(&mut self) -> Vec<TokenStream> {
         assert!(self.all_finished());
         let mut implements: Vec<_> = self
             .passes
@@ -262,11 +262,13 @@ impl EntityResolver {
             .flat_map(|pass| pass.get_dependencies())
             .collect();
 
-        implements.extend(self.resolved.values().flat_map(|entity| {
-            self.passes
-                .iter()
-                .flat_map(|pass| pass.get_entity_implements(entity))
-        }));
+        for entity in self.resolved.values() {
+            implements.extend(
+                self.passes
+                    .iter_mut()
+                    .flat_map(|pass| pass.get_entity_implements(entity)),
+            );
+        }
 
         implements.extend(
             self.passes

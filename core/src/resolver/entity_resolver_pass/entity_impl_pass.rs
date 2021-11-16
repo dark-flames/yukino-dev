@@ -3,14 +3,18 @@ use heck::SnakeCase;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 
-pub struct EntityImplementPass();
+pub struct EntityImplementPass {
+    definitions: Vec<TokenStream>,
+}
 
 impl EntityResolvePass for EntityImplementPass {
     fn instance() -> Box<dyn EntityResolvePass>
     where
         Self: Sized,
     {
-        Box::new(EntityImplementPass())
+        Box::new(EntityImplementPass {
+            definitions: vec![],
+        })
     }
 
     fn get_dependencies(&self) -> Vec<TokenStream> {
@@ -23,7 +27,7 @@ impl EntityResolvePass for EntityImplementPass {
         }]
     }
 
-    fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream> {
+    fn get_entity_implements(&mut self, entity: &ResolvedEntity) -> Vec<TokenStream> {
         let name = format_ident!("{}", &entity.name);
         let view_name = &entity.view_name;
         let converter_name = &entity.converter_name;
@@ -37,6 +41,10 @@ impl EntityResolvePass for EntityImplementPass {
         let definition_static_name =
             format_ident!("{}_DEFINITION", entity.name.to_snake_case().to_uppercase());
         let definition = &entity.entity_definition;
+        let entity_id = &entity.id;
+        self.definitions.push(quote! {
+            (#entity_id, #name::definition())
+        });
 
         vec![quote! {
             lazy_static! {
@@ -45,6 +53,10 @@ impl EntityResolvePass for EntityImplementPass {
             impl YukinoEntity for #name {
                 fn definition() -> &'static EntityDefinition {
                     &*#definition_static_name
+                }
+
+                fn entity_id() -> usize {
+                    #entity_id
                 }
             }
 
@@ -71,6 +83,16 @@ impl EntityResolvePass for EntityImplementPass {
     }
 
     fn get_additional_implements(&self) -> Vec<TokenStream> {
-        vec![]
+        let items = &self.definitions;
+        vec![quote! {
+            use yukino::DefinitionManager;
+            lazy_static! {
+                static ref DEFINITION_MANAGER: DefinitionManager = DefinitionManager::create(
+                    vec![
+                        #(#items),*
+                    ]
+                )
+            }
+        }]
     }
 }

@@ -17,7 +17,7 @@ impl EntityResolvePass for FieldMakerPass {
         vec![]
     }
 
-    fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream> {
+    fn get_entity_implements(&mut self, entity: &ResolvedEntity) -> Vec<TokenStream> {
         let mod_name = &entity.marker_mod;
         let entity_name = format_ident!("{}", &entity.name);
         let markers: Vec<_> = entity

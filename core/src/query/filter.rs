@@ -5,7 +5,7 @@ use query_builder::{Alias, GroupSelect, SelectFrom};
 pub struct QueryResultFilter<E: EntityWithView> {
     query: SelectFrom<E>,
     root_alias: Alias,
-    _alias_generator: AliasGenerator<E>,
+    _alias_generator: AliasGenerator,
 }
 
 #[allow(dead_code)]

@@ -21,7 +21,7 @@ impl EntityResolvePass for EntityViewPass {
         }]
     }
 
-    fn get_entity_implements(&self, entity: &ResolvedEntity) -> Vec<TokenStream> {
+    fn get_entity_implements(&mut self, entity: &ResolvedEntity) -> Vec<TokenStream> {
         let name = format_ident!("{}View", &entity.name);
         let entity_name = format_ident!("{}", &entity.name);
         let iter = entity
