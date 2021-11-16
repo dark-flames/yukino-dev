@@ -3,8 +3,9 @@ use crate::err::ConvertError;
 use crate::view::Value;
 use generic_array::typenum::U1;
 use generic_array::{arr, GenericArray};
+use interface::DatabaseType;
 use iroha::ToTokens;
-use query_builder::{DatabaseType, DatabaseValue};
+use query_builder::DatabaseValue;
 
 macro_rules! basic_ty_converter {
     ($field_type:ty, $name:ident, $enum_variant:ident, $static: ident) => {

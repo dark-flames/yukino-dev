@@ -8,10 +8,10 @@ use syn::spanned::Spanned;
 use syn::{parse_file, Fields, File as SynFile, Item};
 
 use crate::err::{CliResult, ResolveError, YukinoError};
-use crate::interface::def::EntityDefinition;
 use crate::resolver::entity::{EntityResolvePass, EntityResolver};
 use crate::resolver::field::{FieldPath, FieldResolver, FieldResolverSeedBox, ReadyEntities};
 use crate::resolver::path::FileTypePathResolver;
+use interface::EntityDefinition;
 
 pub struct DefinitionResolver {
     source: Vec<PathBuf>,

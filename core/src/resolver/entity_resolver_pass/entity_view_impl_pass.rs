@@ -1,5 +1,5 @@
-use crate::interface::def::DefinitionType;
 use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
+use interface::DefinitionType;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 
@@ -15,9 +15,8 @@ impl EntityResolvePass for EntityViewPass {
 
     fn get_dependencies(&self) -> Vec<TokenStream> {
         vec![quote! {
-            use yukino::view::{SingleExprView, ValueView, ViewBox, ExprViewBox, ExprView};
+            use yukino::view::{SingleExprView, ValueView, ViewBox, ExprViewBox, ExprView, EntityView};
             use yukino::query_builder::{Expr, Alias, DatabaseValue};
-            use yukino::interface::EntityView;
             use yukino::err::{RuntimeResult, YukinoError};
         }]
     }

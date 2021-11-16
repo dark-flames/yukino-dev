@@ -4,14 +4,14 @@ use std::collections::HashMap;
 use syn::{Attribute, Error};
 
 #[derive(Annotation, Clone)]
-#[mod_path = "yukino::interface::attr"]
+#[mod_path = "yukino"]
 pub struct Entity {
     pub name: Option<String>,
     pub indexes: Option<HashMap<String, Index>>,
 }
 
 #[derive(Annotation, Clone)]
-#[mod_path = "yukino::interface::attr"]
+#[mod_path = "yukino"]
 pub struct Index {
     pub fields: Vec<String>,
     #[field(enum_value = true, default = "b_tree")]
@@ -21,7 +21,7 @@ pub struct Index {
 }
 
 #[derive(AnnotationEnumValue, Copy, Clone, Debug)]
-#[mod_path = "yukino::interface::attr"]
+#[mod_path = "yukino"]
 pub enum IndexMethod {
     BTree,
     #[cfg(any(feature = "mysql", feature = "postgre-sql"))]
@@ -38,11 +38,11 @@ pub enum IndexMethod {
 }
 
 #[derive(Annotation, Clone)]
-#[mod_path = "yukino::interface::attr"]
+#[mod_path = "yukino"]
 pub struct ID;
 
 #[derive(Annotation, Clone)]
-#[mod_path = "yukino::annotations"]
+#[mod_path = "yukino"]
 pub struct Field {
     pub name: Option<String>,
     #[field(default = false)]
@@ -52,7 +52,7 @@ pub struct Field {
 }
 
 #[derive(Annotation, Clone)]
-#[mod_path = "yukino::annotations"]
+#[mod_path = "yukino"]
 pub struct Association {
     pub mapped_by: Option<Vec<String>>,
     #[field(default = false)]
@@ -60,7 +60,7 @@ pub struct Association {
 }
 
 #[derive(Annotation, Clone)]
-#[mod_path = "yukino::annotations"]
+#[mod_path = "yukino"]
 pub struct InverseAssociation {
     pub inversed_by: String,
 }

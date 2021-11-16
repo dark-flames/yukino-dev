@@ -1,15 +1,15 @@
 use crate::err::CliResult;
 use crate::err::{ResolveError, YukinoError};
-use crate::interface::attr::{Entity, Index, IndexMethod};
-use crate::interface::def::{
-    ColumnDefinition, DefinitionType, EntityDefinition, FieldDefinition, IndexDefinition, IndexType,
-};
 use crate::resolver::field::ResolvedField;
 use annotation_rs::AnnotationStructure;
 use heck::CamelCase;
 use heck::SnakeCase;
+use interface::DatabaseType;
+use interface::{
+    ColumnDefinition, DefinitionType, EntityDefinition, FieldDefinition, IndexDefinition, IndexType,
+};
+use interface::{Entity, Index, IndexMethod};
 use proc_macro2::{Ident, Span, TokenStream};
-use query_builder::DatabaseType;
 use quote::format_ident;
 use std::collections::HashMap;
 use std::iter::Extend;
@@ -27,7 +27,8 @@ pub struct UnassembledEntity {
 pub struct ResolvedEntity {
     pub id: usize,
     pub name: String,
-    pub definitions: Vec<EntityDefinition>,
+    pub entity_definition: EntityDefinition,
+    pub generated_definitions: Vec<EntityDefinition>,
     pub fields: Vec<ResolvedField>,
     pub value_count: usize,
     pub marker_mod: Ident,
@@ -138,20 +139,10 @@ impl UnassembledEntity {
             generated_name
         };
 
-        let mut definitions: Vec<_> = fields
+        let definitions: Vec<_> = fields
             .values()
             .flat_map(|f| f.entities.clone().into_iter())
             .collect();
-
-        definitions.push(EntityDefinition {
-            id: self.id,
-            name: self.name.clone(),
-            definition_ty: DefinitionType::Normal,
-            fields: field_definitions,
-            indexes: indexes.into_iter().collect(),
-            unique_primary,
-            primary_fields: field_with_primary,
-        });
 
         let mut fields: Vec<_> = fields.into_iter().collect();
 
@@ -164,7 +155,16 @@ impl UnassembledEntity {
         Ok(ResolvedEntity {
             id: self.id,
             name: self.struct_name.clone(),
-            definitions,
+            entity_definition: EntityDefinition {
+                id: self.id,
+                name: self.name.clone(),
+                definition_ty: DefinitionType::Normal,
+                fields: field_definitions,
+                indexes: indexes.into_iter().collect(),
+                unique_primary,
+                primary_fields: field_with_primary,
+            },
+            generated_definitions: definitions,
             fields: fields.into_iter().map(|(_, v)| v).collect(),
             value_count,
             marker_mod: format_ident!("{}", self.struct_name.to_snake_case()),
@@ -282,7 +282,7 @@ impl EntityResolver {
 
         self.resolved
             .values()
-            .flat_map(|entity| entity.definitions.clone().into_iter())
+            .flat_map(|entity| entity.generated_definitions.clone().into_iter())
             .collect()
     }
 }

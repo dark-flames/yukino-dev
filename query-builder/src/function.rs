@@ -1,4 +1,5 @@
-use crate::{DatabaseType, Expr};
+use crate::Expr;
+use interface::DatabaseType;
 use std::fmt::{Debug, Display, Formatter};
 
 pub type FunctionBox = Box<dyn Function>;

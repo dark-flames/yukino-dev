@@ -1,4 +1,3 @@
-use yukino::interface::EntityView;
 use yukino::operator::*;
 use yukino::query_builder::Alias;
 use yukino::view::*;

@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+interface = { package = "yukino-interface", path = "../interface", version = "0.1.0" }
 query-builder = { package = "yukino-query-builder", path = "../query-builder", version = "0.1.0" }
 annotation-rs = "0.1.0"
 iroha = "0.1.7"

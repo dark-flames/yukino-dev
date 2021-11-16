@@ -6,16 +6,13 @@ use syn::{parse_str, Field as SynField, Type};
 
 use crate::err::CliResult;
 use crate::err::{ResolveError, YukinoError};
-use crate::interface::attr::{Field, FieldAttribute, IndexMethod};
-use crate::interface::def::{
-    ColumnDefinition, DefinitionType, FieldDefinition, IndexDefinition, IndexType,
-};
 use crate::resolver::field::{
     FieldPath, FieldResolveResult, FieldResolverCell, FieldResolverCellBox, FieldResolverSeed,
     FieldResolverSeedBox, ResolvedField,
 };
 use crate::resolver::path::{FileTypePathResolver, TypeMatchResult};
-use query_builder::DatabaseType;
+use interface::{ColumnDefinition, DefinitionType, FieldDefinition, IndexDefinition, IndexType};
+use interface::{DatabaseType, Field, FieldAttribute, IndexMethod};
 
 pub struct BasicFieldResolverSeed();
 

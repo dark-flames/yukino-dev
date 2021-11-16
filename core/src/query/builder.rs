@@ -1,17 +1,17 @@
-use crate::interface::{Entity, EntityView};
-use crate::view::ExprViewBox;
+use crate::view::{EntityView, EntityWithView, ExprViewBox};
 use query_builder::{Alias, Expr};
 use std::marker::PhantomData;
 
-pub struct QueryResultFilter<E: Entity> {
+pub struct QueryResultFilter<E: EntityWithView> {
     filter: Vec<Expr>,
     root_alias: Alias,
     _entity: PhantomData<E>,
 }
-impl<E: Entity> QueryResultFilter<E> {
+
+impl<E: EntityWithView> QueryResultFilter<E> {
     pub fn filter<F>(&mut self, f: F)
-    where
-        F: Fn(E::View) -> ExprViewBox<bool>,
+        where
+            F: Fn(E::View) -> ExprViewBox<bool>,
     {
         let view = f(E::View::pure(&self.root_alias));
         // join

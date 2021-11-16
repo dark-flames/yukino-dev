@@ -1,6 +1,5 @@
-use crate::interface::def::DefinitionType;
 use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
-use heck::SnakeCase;
+use interface::DefinitionType;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 
@@ -28,17 +27,9 @@ impl EntityResolvePass for FieldMakerPass {
             .map(|field| {
                 let marker_name = &field.marker_name;
                 let field_name = &field.path.field_name;
-                let definition = &field.definition;
-                let definition_static_name = format_ident!(
-                    "{}_DEFINITION",
-                    field.path.field_name.to_snake_case().to_uppercase()
-                );
                 quote! {
                     #[allow(non_camel_case_types)]
                     pub struct #marker_name();
-                    lazy_static! {
-                        static ref #definition_static_name: FieldDefinition = #definition;
-                    }
 
                     impl FieldMarker for #marker_name {
                         type Entity = #entity_name;
@@ -47,7 +38,7 @@ impl EntityResolvePass for FieldMakerPass {
                         }
 
                         fn definition() -> &'static FieldDefinition {
-                            &*#definition_static_name
+                            Self::Entity::definition().fields.get(Self::field_name()).unwrap()
                         }
                     }
                 }
@@ -56,9 +47,7 @@ impl EntityResolvePass for FieldMakerPass {
 
         vec![quote! {
             pub mod #mod_name {
-                use yukino::interface::FieldMarker;
-                use yukino::interface::def::FieldDefinition;
-                use yukino::lazy_static::lazy_static;
+                use yukino::{FieldMarker, YukinoEntity, FieldDefinition};
                 use super::#entity_name;
 
                 #(#markers)*

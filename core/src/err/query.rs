@@ -1,5 +1,5 @@
 use crate::err::YukinoError;
-use query_builder::DatabaseType;
+use interface::DatabaseType;
 use query_builder::Expr;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
