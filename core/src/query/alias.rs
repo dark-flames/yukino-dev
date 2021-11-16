@@ -1,6 +1,6 @@
 use crate::view::EntityWithView;
 use interface::{AssociatedDefinition, DefinitionManager, FieldDefinition, JoinType};
-use query_builder::{Alias, AliasedTable, Expr, Ident, Join};
+use query_builder::{Alias, AliasedTable, Expr, ExprMutVisitor, Ident, Join};
 use rand::rngs::ThreadRng;
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use std::collections::hash_map::Entry;
@@ -25,6 +25,10 @@ impl AliasGenerator {
             alias: Default::default(),
             path: Default::default(),
         }
+    }
+
+    pub fn substitute_visitor(&mut self) -> IdentSubstituteVisitor {
+        IdentSubstituteVisitor::create(self)
     }
 
     pub fn generate_root_alias<E: EntityWithView>(&mut self) -> Alias {
@@ -113,10 +117,7 @@ impl AliasGenerator {
         let first = exprs.pop().unwrap();
         Join {
             ty,
-            table: AliasedTable {
-                table,
-                alias,
-            },
+            table: AliasedTable { table, alias },
             on: exprs
                 .into_iter()
                 .fold(first, |c, i| Expr::And(Box::new(c), Box::new(i))),
@@ -203,5 +204,33 @@ impl AliasGenerator {
             }
             None => None,
         }
+    }
+}
+
+pub struct IdentSubstituteVisitor<'t> {
+    generator: &'t mut AliasGenerator,
+    joins: Vec<Join>,
+}
+
+impl<'t> IdentSubstituteVisitor<'t> {
+    pub fn create(generator: &'t mut AliasGenerator) -> IdentSubstituteVisitor<'t> {
+        IdentSubstituteVisitor {
+            generator,
+            joins: vec![],
+        }
+    }
+
+    pub fn joins(self) -> Vec<Join> {
+        self.joins
+    }
+}
+
+impl<'t> ExprMutVisitor for IdentSubstituteVisitor<'t> {
+    fn visit_ident(&mut self, node: &mut Ident) {
+        let (ident, joins) = self.generator.handle_ident(node.clone());
+
+        *node = ident;
+
+        self.joins.extend(joins)
     }
 }

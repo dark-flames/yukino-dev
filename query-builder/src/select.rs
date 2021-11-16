@@ -1,5 +1,5 @@
-use crate::{Alias, AliasedTable, Expr, Ident, Join};
-use interface::{JoinType, YukinoEntity};
+use crate::{Alias, Expr, Ident, Join};
+use interface::YukinoEntity;
 use std::marker::PhantomData;
 
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -116,13 +116,8 @@ impl<E: YukinoEntity> SelectFrom<E> {
         self
     }
 
-    pub fn join<F: YukinoEntity>(&mut self, ty: JoinType, alias: Alias, on: Expr) -> &mut Self {
-        let table = F::definition().name.clone();
-        self.join.push(Join {
-            ty,
-            table: AliasedTable { table, alias },
-            on,
-        });
+    pub fn add_joins(&mut self, joins: Vec<Join>) -> &mut Self {
+        self.join.extend(joins);
 
         self
     }

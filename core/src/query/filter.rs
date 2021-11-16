@@ -1,11 +1,11 @@
 use crate::query::AliasGenerator;
 use crate::view::{EntityView, EntityWithView, ExprViewBox};
-use query_builder::{Alias, GroupSelect, SelectFrom};
+use query_builder::{Alias, ExprNode, GroupSelect, SelectFrom};
 
 pub struct QueryResultFilter<E: EntityWithView> {
     query: SelectFrom<E>,
     root_alias: Alias,
-    _alias_generator: AliasGenerator,
+    alias_generator: AliasGenerator,
 }
 
 #[allow(dead_code)]
@@ -20,15 +20,17 @@ impl<E: EntityWithView> QueryResultFilter<E> {
             F: Fn(E::View) -> ExprViewBox<bool>,
     {
         let view = f(E::View::pure(&self.root_alias));
+        let mut visitor = self.alias_generator.substitute_visitor();
         view.collect_expr()
             .into_iter()
-            .map(|_e| {
-                todo!("handle join");
-                #[allow(unreachable_code)]
-                    _e
+            .map(|mut e| {
+                e.apply_mut(&mut visitor);
+                e
             })
             .for_each(|e| {
                 self.query.and_where(e);
             });
+
+        self.query.add_joins(visitor.joins());
     }
 }

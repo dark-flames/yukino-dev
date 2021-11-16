@@ -135,96 +135,96 @@ impl ExprNode for Expr {
                 l.apply(visitor);
                 r.apply(visitor);
                 visitor.visit_bit_xor(l, r);
-            },
+            }
             Expr::Mul(l, r) => {
                 l.apply(visitor);
                 r.apply(visitor);
                 visitor.visit_mul(l, r);
-            },
+            }
             Expr::Div(l, r) => {
                 l.apply(visitor);
                 r.apply(visitor);
                 visitor.visit_div(l, r);
-            },
+            }
             Expr::Rem(l, r) => {
                 l.apply(visitor);
                 r.apply(visitor);
                 visitor.visit_rem(l, r);
-            },
+            }
             Expr::Add(l, r) => {
                 l.apply(visitor);
                 r.apply(visitor);
                 visitor.visit_add(l, r);
-            },
+            }
             Expr::Sub(l, r) => {
                 l.apply(visitor);
                 r.apply(visitor);
                 visitor.visit_sub(l, r);
-            },
+            }
             Expr::LeftShift(l, r) => {
                 l.apply(visitor);
                 r.apply(visitor);
                 visitor.visit_left_shift(l, r);
-            },
+            }
             Expr::RightShift(l, r) => {
                 l.apply(visitor);
                 r.apply(visitor);
                 visitor.visit_right_shift(l, r);
-            },
+            }
             Expr::BitAnd(l, r) => {
                 l.apply(visitor);
                 r.apply(visitor);
                 visitor.visit_bit_and(l, r);
-            },
+            }
             Expr::BitOr(l, r) => {
                 l.apply(visitor);
                 r.apply(visitor);
                 visitor.visit_bit_or(l, r);
-            },
+            }
             Expr::Bte(l, r) => {
                 l.apply(visitor);
                 r.apply(visitor);
                 visitor.visit_bte(l, r);
-            },
+            }
             Expr::Lte(l, r) => {
                 l.apply(visitor);
                 r.apply(visitor);
                 visitor.visit_lte(l, r);
-            },
+            }
             Expr::Neq(l, r) => {
                 l.apply(visitor);
                 r.apply(visitor);
                 visitor.visit_neq(l, r);
-            },
+            }
             Expr::Bt(l, r) => {
                 l.apply(visitor);
                 r.apply(visitor);
                 visitor.visit_bit_xor(l, r);
-            },
+            }
             Expr::Lt(l, r) => {
                 l.apply(visitor);
                 r.apply(visitor);
                 visitor.visit_lt(l, r);
-            },
+            }
             Expr::Eq(l, r) => {
                 visitor.visit_eq(l, r);
                 l.apply(visitor);
                 r.apply(visitor);
-            },
+            }
             Expr::Not(e) => {
                 e.apply(visitor);
                 visitor.visit_not(e);
-            },
+            }
             Expr::And(l, r) => {
                 l.apply(visitor);
                 r.apply(visitor);
                 visitor.visit_and(l, r);
-            },
+            }
             Expr::Or(l, r) => {
                 l.apply(visitor);
                 r.apply(visitor);
                 visitor.visit_or(l, r);
-            },
+            }
         }
     }
 
@@ -242,96 +242,96 @@ impl ExprNode for Expr {
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
                 visitor.visit_bit_xor(l, r);
-            },
+            }
             Expr::Mul(l, r) => {
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
                 visitor.visit_mul(l, r);
-            },
+            }
             Expr::Div(l, r) => {
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
                 visitor.visit_div(l, r);
-            },
+            }
             Expr::Rem(l, r) => {
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
                 visitor.visit_rem(l, r);
-            },
+            }
             Expr::Add(l, r) => {
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
                 visitor.visit_add(l, r);
-            },
+            }
             Expr::Sub(l, r) => {
                 visitor.visit_sub(l, r);
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
-            },
+            }
             Expr::LeftShift(l, r) => {
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
                 visitor.visit_left_shift(l, r);
-            },
+            }
             Expr::RightShift(l, r) => {
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
                 visitor.visit_right_shift(l, r);
-            },
+            }
             Expr::BitAnd(l, r) => {
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
                 visitor.visit_bit_and(l, r);
-            },
+            }
             Expr::BitOr(l, r) => {
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
                 visitor.visit_bit_or(l, r);
-            },
+            }
             Expr::Bte(l, r) => {
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
                 visitor.visit_bte(l, r);
-            },
+            }
             Expr::Lte(l, r) => {
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
                 visitor.visit_lte(l, r);
-            },
+            }
             Expr::Neq(l, r) => {
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
                 visitor.visit_neq(l, r);
-            },
+            }
             Expr::Bt(l, r) => {
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
                 visitor.visit_bit_xor(l, r);
-            },
+            }
             Expr::Lt(l, r) => {
                 visitor.visit_lt(l, r);
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
-            },
+            }
             Expr::Eq(l, r) => {
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
                 visitor.visit_eq(l, r);
-            },
+            }
             Expr::Not(e) => {
                 visitor.visit_not(e);
                 e.apply_mut(visitor);
-            },
+            }
             Expr::And(l, r) => {
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
                 visitor.visit_and(l, r);
-            },
+            }
             Expr::Or(l, r) => {
                 l.apply_mut(visitor);
                 r.apply_mut(visitor);
                 visitor.visit_or(l, r);
-            },
+            }
         }
     }
 }
