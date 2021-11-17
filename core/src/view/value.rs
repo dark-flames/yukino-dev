@@ -4,14 +4,18 @@ use crate::view::{ExprView, ExprViewBox, View, ViewBox};
 use generic_array::typenum::bit::{B0, B1};
 use generic_array::typenum::{UInt, UTerm, U1};
 use generic_array::{arr, functional::FunctionalSequence, ArrayLength, GenericArray};
-use query_builder::{DatabaseValue, Expr};
+use query_builder::{DatabaseValue, Expr, ExprMutVisitor, ExprNode, ExprVisitor};
 use std::fmt::Debug;
 use std::marker::PhantomData;
+
+pub type ValueCountOf<T> = <T as Value>::L;
 
 pub trait ValueCount: ArrayLength<Expr> + ArrayLength<DatabaseValue> {}
 
 impl ValueCount for UTerm {}
+
 impl<N: ValueCount> ValueCount for UInt<N, B0> {}
+
 impl<N: ValueCount> ValueCount for UInt<N, B1> {}
 
 pub trait Value: 'static + Clone + Debug {
@@ -34,14 +38,24 @@ pub trait Value: 'static + Clone + Debug {
 
 #[derive(Debug, Clone)]
 pub struct SingleExprView<T>
-where
-    T: Value<L = U1>,
+    where
+        T: Value<L=U1>,
 {
     expr: Expr,
     _ty: PhantomData<T>,
 }
 
-impl<T: Value<L = U1>> View<T, U1> for SingleExprView<T> {
+impl<T: Value<L=U1>> ExprNode for SingleExprView<T> {
+    fn apply(&self, visitor: &mut dyn ExprVisitor) {
+        self.expr.apply(visitor)
+    }
+
+    fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
+        self.expr.apply_mut(visitor)
+    }
+}
+
+impl<T: Value<L=U1>> View<T, U1> for SingleExprView<T> {
     fn collect_expr(&self) -> GenericArray<Expr, U1> {
         arr![Expr; self.expr.clone()]
     }

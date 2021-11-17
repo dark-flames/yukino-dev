@@ -1,7 +1,7 @@
 use crate::err::RuntimeResult;
 use crate::view::{Value, ValueCount};
 use generic_array::GenericArray;
-use query_builder::{DatabaseValue, Expr};
+use query_builder::{DatabaseValue, Expr, ExprNode};
 
 pub type ExprViewBox<T> = Box<dyn ExprView<T>>;
 pub type ComputationViewBox<T, L> = Box<dyn ComputationView<T, L>>;
@@ -19,7 +19,7 @@ pub trait ComputationView<T, L: ValueCount>: View<T, L> {
     fn computation_clone(&self) -> ComputationViewBox<T, L>;
 }
 
-pub trait View<T, L: ValueCount> {
+pub trait View<T, L: ValueCount>: ExprNode {
     fn collect_expr(&self) -> GenericArray<Expr, L>;
 
     fn eval(&self, v: &GenericArray<DatabaseValue, L>) -> RuntimeResult<T>;

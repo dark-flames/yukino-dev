@@ -41,12 +41,12 @@ impl Display for FunctionCall {
 }
 
 impl ExprNode for FunctionCall {
-    fn apply<V: ExprVisitor>(&self, visitor: &mut V) {
+    fn apply(&self, visitor: &mut dyn ExprVisitor) {
         visitor.visit_function_call(self);
         self.params.iter().for_each(|p| p.apply(visitor))
     }
 
-    fn apply_mut<V: ExprMutVisitor>(&mut self, visitor: &mut V) {
+    fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
         visitor.visit_function_call(self);
         self.params.iter_mut().for_each(|p| p.apply_mut(visitor))
     }

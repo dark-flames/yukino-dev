@@ -1,34 +1,69 @@
-use crate::query::AliasGenerator;
-use crate::view::{EntityWithView, ExprViewBox, Value};
-use query_builder::GroupSelect;
+use crate::query::{AliasGenerator, Filter};
+use crate::view::{EntityWithView, ExprView, ExprViewBox, Value};
+use query_builder::{ExprVisitor, GroupSelect, Ident, SelectFrom};
+use std::marker::PhantomData;
 
 pub trait GroupBy<E: EntityWithView> {
-    fn group_by<V0: Value, R: Into<ExprViewBox<V0>>, F: Fn(E::View) -> R>(
+    fn group_by<V0: Value, R: ExprView<V0>, F: Fn(E::View) -> R>(
         self,
         f: F,
-    ) -> GroupedQueryResult<E, V0>;
-
-    fn group_by2<V0: Value, V1: Value, R: Into<ExprViewBox<(V0, V1)>>, F: Fn(E::View) -> R>(
-        self,
-        f: F,
-    ) -> GroupedQueryResult2<E, V0, V1>
-        where
-            (V0, V1): Value;
+    ) -> GroupedQueryResult<E, V0, R>;
 }
 
-#[allow(dead_code)]
-pub struct GroupedQueryResult<E: EntityWithView, V0: Value> {
-    alias_generator: AliasGenerator,
+pub struct GroupedQueryResult<E: EntityWithView, V0: Value, V0View: ExprView<V0>> {
+    _alias_generator: AliasGenerator,
     query: GroupSelect<E>,
-    grouped_view: ExprViewBox<V0>,
+    grouped_view: V0View,
+    _marker: PhantomData<V0>,
 }
 
-#[allow(dead_code)]
-pub struct GroupedQueryResult2<E: EntityWithView, V0: Value, V1: Value>
-    where
-        (V0, V1): Value,
+#[derive(Default)]
+pub struct ColumnCollectVisitor {
+    idents: Vec<Ident>,
+}
+
+impl ColumnCollectVisitor {
+    pub fn unwrap(self) -> Vec<Ident> {
+        self.idents
+    }
+}
+
+impl ExprVisitor for ColumnCollectVisitor {
+    fn visit_ident(&mut self, node: &Ident) {
+        self.idents.push(node.clone())
+    }
+}
+
+impl<E: EntityWithView, V0: Value, V0View: ExprView<V0>> GroupedQueryResult<E, V0, V0View> {
+    pub fn create(
+        query: SelectFrom<E>,
+        alias_generator: AliasGenerator,
+        grouped_view: V0View,
+    ) -> Self {
+        let mut visitor = ColumnCollectVisitor::default();
+        grouped_view.apply(&mut visitor);
+        let grouped_query = query.group_by(visitor.unwrap());
+
+        GroupedQueryResult {
+            _alias_generator: alias_generator,
+            query: grouped_query,
+            grouped_view,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<E: EntityWithView, V0: Value, V0View: ExprView<V0>> Filter
+for GroupedQueryResult<E, V0, V0View>
 {
-    alias_generator: AliasGenerator,
-    query: GroupSelect<E>,
-    grouped_view: ExprViewBox<(V0, V1)>,
+    type View = V0View;
+
+    fn filter<F, R: Into<ExprViewBox<bool>>>(&mut self, f: F)
+        where
+            F: Fn(&Self::View) -> R,
+            Self: Sized,
+    {
+        let view = f(&self.grouped_view).into();
+        self.query.having(view.collect_expr().into_iter().collect());
+    }
 }

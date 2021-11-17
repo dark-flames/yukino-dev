@@ -92,11 +92,11 @@ impl From<&DatabaseValue> for DatabaseType {
 }
 
 impl ExprNode for DatabaseValue {
-    fn apply<V: ExprVisitor>(&self, visitor: &mut V) {
+    fn apply(&self, visitor: &mut dyn ExprVisitor) {
         visitor.visit_lit(self)
     }
 
-    fn apply_mut<V: ExprMutVisitor>(&mut self, visitor: &mut V) {
+    fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
         visitor.visit_lit(self)
     }
 }

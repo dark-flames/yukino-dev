@@ -6,7 +6,7 @@ use crate::view::{
 use generic_array::sequence::{Concat, Split};
 use generic_array::typenum::operator_aliases::Sum;
 use generic_array::{arr, GenericArray};
-use query_builder::{DatabaseValue, Expr};
+use query_builder::{DatabaseValue, Expr, ExprMutVisitor, ExprNode, ExprVisitor};
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
 
 macro_rules! impl_ops {
@@ -41,6 +41,25 @@ macro_rules! impl_ops {
         > {
             l: ViewBox<L, LL>,
             r: ViewBox<R, RL>,
+        }
+
+        impl<
+            L: 'static + $ops_trait<R, Output = O>,
+            R: 'static,
+            O: 'static,
+            LL: ValueCount + Add<RL, Output=OL>,
+            RL: ValueCount,
+            OL: ValueCount + Sub<LL, Output=RL>,
+        > ExprNode for $computation_name<L, R, O, LL, RL> {
+            fn apply(&self, visitor: &mut dyn ExprVisitor) {
+                self.l.apply(visitor);
+                self.r.apply(visitor);
+            }
+
+            fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
+                self.l.apply_mut(visitor);
+                self.r.apply_mut(visitor);
+            }
         }
 
         impl<

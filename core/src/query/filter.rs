@@ -1,6 +1,6 @@
 use crate::query::AliasGenerator;
 use crate::view::{EntityView, EntityWithView, ExprViewBox};
-use query_builder::{Alias, ExprNode, SelectFrom};
+use query_builder::{Alias, SelectFrom};
 
 pub struct QueryResultFilter<E: EntityWithView> {
     query: SelectFrom<E>,
@@ -8,22 +8,27 @@ pub struct QueryResultFilter<E: EntityWithView> {
     alias_generator: AliasGenerator,
 }
 
-impl<E: EntityWithView> QueryResultFilter<E> {
-    pub fn filter<F, R: Into<ExprViewBox<bool>>>(&mut self, f: F)
+pub trait Filter {
+    type View;
+
+    fn filter<F, R: Into<ExprViewBox<bool>>>(&mut self, f: F)
         where
-            F: Fn(E::View) -> R,
+            F: Fn(&Self::View) -> R;
+}
+
+impl<E: EntityWithView> Filter for QueryResultFilter<E> {
+    type View = E::View;
+    fn filter<F, R: Into<ExprViewBox<bool>>>(&mut self, f: F)
+        where
+            F: Fn(&Self::View) -> R,
     {
-        let view = f(E::View::pure(&self.root_alias)).into();
+        let entity_view = E::View::pure(&self.root_alias);
+        let mut view = f(&entity_view).into();
         let mut visitor = self.alias_generator.substitute_visitor();
-        view.collect_expr()
-            .into_iter()
-            .map(|mut e| {
-                e.apply_mut(&mut visitor);
-                e
-            })
-            .for_each(|e| {
-                self.query.and_where(e);
-            });
+        view.apply_mut(&mut visitor);
+        view.collect_expr().into_iter().for_each(|e| {
+            self.query.and_where(e);
+        });
 
         self.query.add_joins(visitor.joins());
     }

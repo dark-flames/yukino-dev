@@ -4,9 +4,9 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 pub type ExprBox = Box<Expr>;
 
 pub trait ExprNode {
-    fn apply<V: ExprVisitor>(&self, visitor: &mut V);
+    fn apply(&self, visitor: &mut dyn ExprVisitor);
 
-    fn apply_mut<V: ExprMutVisitor>(&mut self, visitor: &mut V);
+    fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor);
 }
 
 pub trait ExprMutVisitor {
@@ -121,7 +121,7 @@ impl Display for Expr {
 }
 
 impl ExprNode for Expr {
-    fn apply<V: ExprVisitor>(&self, visitor: &mut V) {
+    fn apply(&self, visitor: &mut dyn ExprVisitor) {
         visitor.visit_expr(self);
         match self {
             Expr::Ident(ident) => ident.apply(visitor),
@@ -228,7 +228,7 @@ impl ExprNode for Expr {
         }
     }
 
-    fn apply_mut<V: ExprMutVisitor>(&mut self, visitor: &mut V) {
+    fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
         visitor.visit_expr(self);
         match self {
             Expr::Ident(ident) => ident.apply_mut(visitor),

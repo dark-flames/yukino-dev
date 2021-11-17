@@ -1,12 +1,13 @@
 use crate::err::RuntimeResult;
 use crate::view::{
-    ComputationView, ComputationViewBox, ExprViewBox, Value, ValueCount, View, ViewBox,
+    ComputationView, ComputationViewBox, ExprViewBox, TupleExprView, Value, ValueCount, View,
+    ViewBox,
 };
 use generic_array::{
     sequence::{Concat, Split},
     GenericArray,
 };
-use query_builder::{DatabaseValue, Expr};
+use query_builder::{DatabaseValue, Expr, ExprMutVisitor, ExprNode, ExprVisitor};
 use std::ops::{Add, Sub};
 
 pub struct TupleComputationView<L, R, LL, RL>(ViewBox<L, LL>, ViewBox<R, RL>);
@@ -24,6 +25,25 @@ impl<
             self.0.view_clone(),
             self.1.view_clone(),
         ))
+    }
+}
+
+impl<
+    L: 'static,
+    R: 'static,
+    LL: ValueCount + Add<RL, Output=OL>,
+    RL: ValueCount,
+    OL: ValueCount + Sub<LL, Output=RL>,
+> ExprNode for TupleComputationView<L, R, LL, RL>
+{
+    fn apply(&self, visitor: &mut dyn ExprVisitor) {
+        self.0.apply(visitor);
+        self.1.apply(visitor);
+    }
+
+    fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
+        self.0.apply_mut(visitor);
+        self.1.apply_mut(visitor);
     }
 }
 
@@ -59,7 +79,8 @@ impl<L: Value, R: Value> From<(ExprViewBox<L>, ExprViewBox<R>)> for ExprViewBox<
         <(L, R) as Value>::L: Sub<<L as Value>::L, Output=<R as Value>::L>,
 {
     fn from(tuple: (ExprViewBox<L>, ExprViewBox<R>)) -> Self {
-        Box::new(tuple)
+        let (l, r) = tuple;
+        Box::new(TupleExprView(l, r))
     }
 }
 
@@ -71,7 +92,7 @@ impl<L: Value, R: Value> From<(ExprViewBox<L>, R)> for ExprViewBox<(L, R)>
 {
     fn from(tuple: (ExprViewBox<L>, R)) -> Self {
         let (l, r) = tuple;
-        Box::new((l, r.view()))
+        Box::new(TupleExprView(l, r.view()))
     }
 }
 
@@ -82,7 +103,7 @@ From<(ExprViewBox<L>, ComputationViewBox<R, RL>)> for ComputationViewBox<(L, R),
 {
     fn from(tuple: (ExprViewBox<L>, ComputationViewBox<R, RL>)) -> Self {
         let (l, r) = tuple;
-        Box::new(TupleComputationView(l.view_clone(), r.view_clone()))
+        Box::new(TupleComputationView(l.into(), r.into()))
     }
 }
 
@@ -94,7 +115,7 @@ impl<L: Value, R: Value> From<(L, ExprViewBox<R>)> for ExprViewBox<(L, R)>
 {
     fn from(tuple: (L, ExprViewBox<R>)) -> Self {
         let (l, r) = tuple;
-        Box::new((l.view(), r))
+        Box::new(TupleExprView(l.view(), r))
     }
 }
 

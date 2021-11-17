@@ -5,8 +5,7 @@ use crate::view::{
 };
 use generic_array::sequence::{Concat, Split};
 use generic_array::{arr, GenericArray};
-use query_builder::DatabaseValue;
-use query_builder::Expr;
+use query_builder::{DatabaseValue, Expr, ExprMutVisitor, ExprNode, ExprVisitor};
 use std::ops::{Add, Sub};
 
 macro_rules! op_trait {
@@ -85,6 +84,24 @@ macro_rules! impl_bool_operator {
         > {
             l: ViewBox<L, LL>,
             r: ViewBox<R, RL>,
+        }
+
+        impl<
+                L: 'static + $op_trait<R>,
+                R: 'static,
+                LL: ValueCount + Add<RL, Output = OL>,
+                RL: ValueCount,
+                OL: ValueCount + Sub<LL, Output = RL>,
+            > ExprNode for $computation<L, R, LL, RL> {
+            fn apply(&self, visitor: &mut dyn ExprVisitor) {
+                self.l.apply(visitor);
+                self.r.apply(visitor);
+            }
+
+            fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
+                self.l.apply_mut(visitor);
+                self.r.apply_mut(visitor);
+            }
         }
 
         impl<
