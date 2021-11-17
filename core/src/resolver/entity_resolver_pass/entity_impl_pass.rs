@@ -22,7 +22,6 @@ impl EntityResolvePass for EntityImplementPass {
             use yukino::{YukinoEntity, EntityDefinition};
             use yukino::view::{Value, View, EntityWithView };
             use yukino::converter::ConverterRef;
-            use yukino::generic_array::functional::FunctionalSequence;
             use yukino::lazy_static::lazy_static;
         }]
     }
@@ -71,12 +70,11 @@ impl EntityResolvePass for EntityImplementPass {
                     #converter_name::instance()
                 }
 
-                fn view(&self) -> ExprViewBox<Self>
-                    where
-                        Self: Sized {
-                    Box::new(#view_name::from_exprs(
-                        Self::converter().serialize(self).unwrap().map(Expr::Lit),
-                    ))
+                fn view_from_exprs(exprs: GenericArray<Expr, Self::L>) -> ExprViewBox<Self>
+                where
+                    Self: Sized
+                {
+                    Box::new(#view_name::from_exprs(exprs))
                 }
             }
         }]

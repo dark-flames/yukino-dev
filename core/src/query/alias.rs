@@ -58,7 +58,7 @@ impl AliasGenerator {
                         let field_definition = definition.fields.get(&prefix.1).unwrap();
 
                         if let Some((join, alias)) =
-                        self.handle_association(&prefix.0, field_definition)
+                            self.handle_association(&prefix.0, field_definition)
                         {
                             joins.push(join);
                             seg.pop();

@@ -1,17 +1,11 @@
 use crate::query::AliasGenerator;
 use crate::view::{EntityView, EntityWithView, ExprViewBox};
-use query_builder::{Alias, ExprNode, GroupSelect, SelectFrom};
+use query_builder::{Alias, ExprNode, SelectFrom};
 
 pub struct QueryResultFilter<E: EntityWithView> {
     query: SelectFrom<E>,
     root_alias: Alias,
     alias_generator: AliasGenerator,
-}
-
-#[allow(dead_code)]
-pub struct GroupQueryResult<E: EntityWithView> {
-    query: GroupSelect<E>,
-    root_alias: Alias,
 }
 
 impl<E: EntityWithView> QueryResultFilter<E> {

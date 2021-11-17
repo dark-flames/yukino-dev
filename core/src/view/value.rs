@@ -1,5 +1,4 @@
-use crate::converter::basic::*;
-use crate::converter::{Converter, ConverterRef};
+use crate::converter::*;
 use crate::err::{RuntimeResult, YukinoError};
 use crate::view::{ExprView, ExprViewBox, ValueView, View, ViewBox};
 use generic_array::typenum::bit::{B0, B1};
@@ -18,12 +17,19 @@ impl<N: ValueCount> ValueCount for UInt<N, B1> {}
 pub trait Value: 'static + Clone + Debug {
     type L: ValueCount;
     fn converter() -> ConverterRef<Self>
-    where
-        Self: Sized;
+        where
+            Self: Sized;
 
     fn view(&self) -> ExprViewBox<Self>
-    where
-        Self: Sized;
+        where
+            Self: Sized,
+    {
+        Self::view_from_exprs(Self::converter().serialize(self).unwrap().map(Expr::Lit))
+    }
+
+    fn view_from_exprs(exprs: GenericArray<Expr, Self::L>) -> ExprViewBox<Self>
+        where
+            Self: Sized;
 }
 
 #[derive(Debug, Clone)]
@@ -81,13 +87,11 @@ macro_rules! impl_value {
                 <$converter>::instance()
             }
 
-            fn view(&self) -> ExprViewBox<Self>
+            fn view_from_exprs(exprs: GenericArray<Expr, Self::L>) -> ExprViewBox<Self>
             where
                 Self: Sized,
             {
-                Box::new(SingleExprView::<$ty>::from_exprs(
-                    Self::converter().serialize(self).unwrap().map(Expr::Lit),
-                ))
+                Box::new(SingleExprView::from_exprs(exprs))
             }
         }
     };
