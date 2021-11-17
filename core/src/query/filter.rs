@@ -9,11 +9,11 @@ pub struct QueryResultFilter<E: EntityWithView> {
 }
 
 impl<E: EntityWithView> QueryResultFilter<E> {
-    pub fn filter<F>(&mut self, f: F)
+    pub fn filter<F, R: Into<ExprViewBox<bool>>>(&mut self, f: F)
         where
-            F: Fn(E::View) -> ExprViewBox<bool>,
+            F: Fn(E::View) -> R,
     {
-        let view = f(E::View::pure(&self.root_alias));
+        let view = f(E::View::pure(&self.root_alias)).into();
         let mut visitor = self.alias_generator.substitute_visitor();
         view.collect_expr()
             .into_iter()

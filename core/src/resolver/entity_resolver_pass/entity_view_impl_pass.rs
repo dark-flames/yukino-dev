@@ -15,7 +15,7 @@ impl EntityResolvePass for EntityViewPass {
 
     fn get_dependencies(&self) -> Vec<TokenStream> {
         vec![quote! {
-            use yukino::view::{SingleExprView, ValueView, ViewBox, ExprViewBox, ExprView, EntityView};
+            use yukino::view::{SingleExprView, ViewBox, ExprViewBox, ExprView, EntityView};
             use yukino::query_builder::{Expr, Alias, DatabaseValue};
             use yukino::err::{RuntimeResult, YukinoError};
         }]
@@ -91,6 +91,12 @@ impl EntityResolvePass for EntityViewPass {
             }
 
             impl View<#entity_name, <#entity_name as Value>::L> for #name {
+                fn collect_expr(&self) -> GenericArray<Expr, <#entity_name as Value>::L> {
+                    #(#collect_tmp;)*
+
+                    #collect_rst
+                }
+
                 fn eval(&self, v: &GenericArray<DatabaseValue, <#entity_name as Value>::L>) -> RuntimeResult<#entity_name> {
                     (*#entity_name::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
                 }
@@ -100,15 +106,8 @@ impl EntityResolvePass for EntityViewPass {
                 }
             }
 
-            impl ValueView<#entity_name> for #name {
-                fn collect_expr(&self) -> GenericArray<Expr, <#entity_name as Value>::L> {
-                    #(#collect_tmp;)*
-
-                    #collect_rst
-                }
-            }
-
             impl ExprView<#entity_name> for #name {
+
                 fn from_exprs(exprs: GenericArray<Expr, <#entity_name as Value>::L>) -> Self
                 where
                     Self: Sized {

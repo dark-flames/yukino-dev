@@ -1,6 +1,6 @@
 use crate::converter::*;
 use crate::err::{RuntimeResult, YukinoError};
-use crate::view::{ExprView, ExprViewBox, ValueView, View, ViewBox};
+use crate::view::{ExprView, ExprViewBox, View, ViewBox};
 use generic_array::typenum::bit::{B0, B1};
 use generic_array::typenum::{UInt, UTerm, U1};
 use generic_array::{arr, functional::FunctionalSequence, ArrayLength, GenericArray};
@@ -42,18 +42,16 @@ where
 }
 
 impl<T: Value<L = U1>> View<T, U1> for SingleExprView<T> {
+    fn collect_expr(&self) -> GenericArray<Expr, U1> {
+        arr![Expr; self.expr.clone()]
+    }
+
     fn eval(&self, v: &GenericArray<DatabaseValue, U1>) -> RuntimeResult<T> {
         (*T::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
     }
 
     fn view_clone(&self) -> ViewBox<T, U1> {
         Box::new(Clone::clone(self))
-    }
-}
-
-impl<T: Value<L = U1>> ValueView<T> for SingleExprView<T> {
-    fn collect_expr(&self) -> GenericArray<Expr, U1> {
-        arr![Expr; self.expr.clone()]
     }
 }
 

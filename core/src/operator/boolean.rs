@@ -3,7 +3,7 @@ use crate::view::{
     ComputationView, ComputationViewBox, ExprView, ExprViewBox, SingleExprView, Value, ValueCount,
     View, ViewBox,
 };
-use generic_array::sequence::Split;
+use generic_array::sequence::{Concat, Split};
 use generic_array::{arr, GenericArray};
 use query_builder::DatabaseValue;
 use query_builder::Expr;
@@ -95,6 +95,10 @@ macro_rules! impl_bool_operator {
                 OL: ValueCount + Sub<LL, Output = RL>,
             > View<bool, OL> for $computation<L, R, LL, RL>
         {
+            fn collect_expr(&self) -> GenericArray<Expr, OL> {
+                Concat::concat(self.l.collect_expr(), self.r.collect_expr())
+            }
+
             fn eval(&self, v: &GenericArray<DatabaseValue, OL>) -> RuntimeResult<bool> {
                 let (l, r) = Split::<_, LL>::split(v);
                 let r_result = self.r.eval(r)?;

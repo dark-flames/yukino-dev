@@ -3,7 +3,7 @@ use crate::view::{
     ComputationView, ComputationViewBox, ExprView, ExprViewBox, SingleExprView, Value, ValueCount,
     View, ViewBox,
 };
-use generic_array::sequence::Split;
+use generic_array::sequence::{Concat, Split};
 use generic_array::typenum::operator_aliases::Sum;
 use generic_array::{arr, GenericArray};
 use query_builder::{DatabaseValue, Expr};
@@ -51,6 +51,10 @@ macro_rules! impl_ops {
             RL: ValueCount,
             OL: ValueCount + Sub<LL, Output=RL>,
         > View<O, OL> for $computation_name<L, R, O, LL, RL> {
+            fn collect_expr(&self) -> GenericArray<Expr, OL> {
+                Concat::concat(self.l.collect_expr(), self.r.collect_expr())
+            }
+
             fn eval(&self, v: &GenericArray<DatabaseValue, OL>) -> RuntimeResult<O> {
                 let (l, r) = Split::<_, LL>::split(v);
                 Ok(self.l.eval(l)? $op self.r.eval(r)?)
