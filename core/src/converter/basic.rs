@@ -1,4 +1,4 @@
-use crate::converter::{ConvertResult, Converter, Deserializer};
+use crate::converter::{ConvertResult, Converter, ConverterInstance, Deserializer};
 use crate::err::ConvertError;
 use crate::view::ValueCountOf;
 use generic_array::typenum::U1;
@@ -13,8 +13,6 @@ macro_rules! basic_ty_converter {
         #[Iroha(mod_path = "yukino::converter::basic")]
         pub struct $name;
 
-        static $static: $name = $name;
-
         impl Converter for $name {
             type Output = $field_type;
 
@@ -22,7 +20,7 @@ macro_rules! basic_ty_converter {
             where
                 Self: Sized,
             {
-                &$static
+                &Self::INSTANCE
             }
 
             fn deserializer(
@@ -41,6 +39,10 @@ macro_rules! basic_ty_converter {
                 Ok(arr![DatabaseValue; DatabaseValue::$enum_variant(value.clone())])
             }
         }
+
+        impl ConverterInstance for $name {
+            const INSTANCE: Self = $name;
+        }
     };
 }
 
@@ -48,9 +50,7 @@ macro_rules! optional_basic_ty_converter {
     ($field_type:ty, $name:ident, $enum_variant:ident, $static: ident) => {
         #[derive(ToTokens, Clone)]
         #[Iroha(mod_path = "yukino::converter::basic")]
-        pub struct $name();
-
-        static $static: $name = $name();
+        pub struct $name;
 
         impl Converter for $name {
             type Output = Option<$field_type>;
@@ -59,7 +59,7 @@ macro_rules! optional_basic_ty_converter {
             where
                 Self: Sized,
             {
-                &$static
+                &Self::INSTANCE
             }
 
             fn deserializer(
@@ -79,6 +79,10 @@ macro_rules! optional_basic_ty_converter {
                     Ok(arr![DatabaseValue; DatabaseValue::Null(DatabaseType::$enum_variant)])
                 }
             }
+        }
+
+        impl ConverterInstance for $name {
+            const INSTANCE: Self = $name;
         }
     };
 }

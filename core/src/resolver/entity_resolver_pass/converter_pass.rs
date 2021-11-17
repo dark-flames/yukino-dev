@@ -1,5 +1,4 @@
 use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
-use heck::SnakeCase;
 use interface::DefinitionType;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
@@ -16,7 +15,7 @@ impl EntityResolvePass for ConverterPass {
 
     fn get_dependencies(&self) -> Vec<TokenStream> {
         vec![quote! {
-            use yukino::converter::{Converter, ConvertResult, Deserializer};
+            use yukino::converter::{Converter, ConverterInstance, ConvertResult, Deserializer};
             use yukino::generic_array::typenum;
             use yukino::generic_array::sequence::{Concat, Split};
             use yukino::generic_array::{GenericArray, arr};
@@ -27,10 +26,6 @@ impl EntityResolvePass for ConverterPass {
         let entity_name = format_ident!("{}", &entity.name);
         let name = &entity.converter_name;
         let converter_name = &entity.converter_name;
-        let static_name = format_ident!(
-            "{}",
-            converter_name.to_string().to_snake_case().to_uppercase()
-        );
         let iter = entity
             .fields
             .iter()
@@ -85,13 +80,11 @@ impl EntityResolvePass for ConverterPass {
             #[derive(Clone)]
             pub struct #converter_name;
 
-            static #static_name: #name = #converter_name;
-
             impl Converter for #name {
                 type Output = #entity_name;
 
                 fn instance() -> &'static Self where Self: Sized {
-                    &#static_name
+                    &Self::INSTANCE
                 }
 
                 fn deserializer(&self) -> Deserializer<Self::Output> {
@@ -108,6 +101,10 @@ impl EntityResolvePass for ConverterPass {
                     #(#serialize_tmp;)*
                     Ok(#serialize)
                 }
+            }
+
+            impl ConverterInstance for #name {
+                const INSTANCE: Self = #name;
             }
         }]
     }
