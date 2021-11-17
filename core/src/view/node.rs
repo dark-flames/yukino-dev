@@ -1,5 +1,5 @@
 use crate::err::RuntimeResult;
-use crate::view::{Value, ValueCount};
+use crate::view::{Value, ValueCount, ValueCountOf};
 use generic_array::GenericArray;
 use query_builder::{DatabaseValue, Expr, ExprNode};
 
@@ -7,8 +7,8 @@ pub type ExprViewBox<T> = Box<dyn ExprView<T>>;
 pub type ComputationViewBox<T, L> = Box<dyn ComputationView<T, L>>;
 pub type ViewBox<T, L> = Box<dyn View<T, L>>;
 
-pub trait ExprView<T: Value>: View<T, <T as Value>::L> {
-    fn from_exprs(exprs: GenericArray<Expr, <T as Value>::L>) -> Self
+pub trait ExprView<T: Value>: View<T, ValueCountOf<T>> {
+    fn from_exprs(exprs: GenericArray<Expr, ValueCountOf<T>>) -> Self
         where
             Self: Sized;
 
@@ -45,7 +45,7 @@ impl<T: Value, L: ValueCount> Clone for ViewBox<T, L> {
     }
 }
 
-impl<T: Value> From<ExprViewBox<T>> for ViewBox<T, <T as Value>::L> {
+impl<T: Value> From<ExprViewBox<T>> for ViewBox<T, ValueCountOf<T>> {
     fn from(expr: ExprViewBox<T>) -> Self {
         expr.view_clone()
     }

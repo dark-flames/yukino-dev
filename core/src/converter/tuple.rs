@@ -1,7 +1,8 @@
 use crate::converter::{ConvertResult, Converter, ConverterInstance, Deserializer};
-use crate::view::{Value, ValueCount};
+use crate::view::{Value, ValueCount, ValueCountOf};
 use generic_array::{
     sequence::{Concat, Split},
+    typenum::Sum,
     GenericArray,
 };
 use query_builder::DatabaseValue;
@@ -10,10 +11,11 @@ use std::ops::{Add, Sub};
 
 pub struct TupleConverter<L: Value, R: Value>(PhantomData<(L, R)>);
 
-impl<L: Value, R: Value, OL: ValueCount + Sub<<L as Value>::L, Output=<R as Value>::L>> Converter
-for TupleConverter<L, R>
+impl<L: Value, R: Value> Converter for TupleConverter<L, R>
     where
-        <L as Value>::L: Add<<R as Value>::L, Output=OL>,
+        ValueCountOf<L>: Add<ValueCountOf<R>>,
+        Sum<ValueCountOf<L>, ValueCountOf<R>>:
+        ValueCount + Sub<ValueCountOf<L>, Output=ValueCountOf<R>>,
 {
     type Output = (L, R);
 
@@ -37,7 +39,7 @@ for TupleConverter<L, R>
     fn serialize(
         &self,
         value: &Self::Output,
-    ) -> ConvertResult<GenericArray<DatabaseValue, <Self::Output as Value>::L>> {
+    ) -> ConvertResult<GenericArray<DatabaseValue, ValueCountOf<Self::Output>>> {
         Ok(Concat::concat(
             L::converter().serialize(&value.0)?,
             R::converter().serialize(&value.1)?,
@@ -45,10 +47,11 @@ for TupleConverter<L, R>
     }
 }
 
-impl<L: Value, R: Value, OL: ValueCount + Sub<<L as Value>::L, Output=<R as Value>::L>>
-ConverterInstance for TupleConverter<L, R>
+impl<L: Value, R: Value> ConverterInstance for TupleConverter<L, R>
     where
-        <L as Value>::L: Add<<R as Value>::L, Output=OL>,
+        ValueCountOf<L>: Add<ValueCountOf<R>>,
+        Sum<ValueCountOf<L>, ValueCountOf<R>>:
+        ValueCount + Sub<ValueCountOf<L>, Output=ValueCountOf<R>>,
 {
     const INSTANCE: Self = TupleConverter(PhantomData);
 }

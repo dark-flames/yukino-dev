@@ -57,7 +57,7 @@ impl<L: Value, R: Value> ExprView<(L, R)> for TupleExprView<L, R>
         Sum<ValueCountOf<L>, ValueCountOf<R>>:
         ValueCount + Sub<ValueCountOf<L>, Output=ValueCountOf<R>>,
 {
-    fn from_exprs(exprs: GenericArray<Expr, <(L, R) as Value>::L>) -> Self
+    fn from_exprs(exprs: GenericArray<Expr, ValueCountOf<(L, R)>>) -> Self
         where
             Self: Sized,
     {

@@ -104,7 +104,7 @@ impl EntityResolvePass for ConverterPass {
                 }
 
                 fn serialize(&self, value: &Self::Output)
-                    -> ConvertResult<GenericArray<DatabaseValue, <Self::Output as Value>::L>> {
+                    -> ConvertResult<GenericArray<DatabaseValue, ValueCountOf<Self::Output>>> {
                     #(#serialize_tmp;)*
                     Ok(#serialize)
                 }

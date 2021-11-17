@@ -1,6 +1,6 @@
 use crate::converter::{ConvertResult, Converter, Deserializer};
 use crate::err::ConvertError;
-use crate::view::Value;
+use crate::view::ValueCountOf;
 use generic_array::typenum::U1;
 use generic_array::{arr, GenericArray};
 use interface::DatabaseType;
@@ -37,7 +37,7 @@ macro_rules! basic_ty_converter {
                 })
             }
 
-            fn serialize(&self, value: &Self::Output) -> ConvertResult<GenericArray<DatabaseValue, <Self::Output as Value>::L>> {
+            fn serialize(&self, value: &Self::Output) -> ConvertResult<GenericArray<DatabaseValue, ValueCountOf<Self::Output>>> {
                 Ok(arr![DatabaseValue; DatabaseValue::$enum_variant(value.clone())])
             }
         }
@@ -72,7 +72,7 @@ macro_rules! optional_basic_ty_converter {
                 })
             }
 
-            fn serialize(&self, value: &Self::Output) -> ConvertResult<GenericArray<DatabaseValue, <Self::Output as Value>::L>> {
+            fn serialize(&self, value: &Self::Output) -> ConvertResult<GenericArray<DatabaseValue, ValueCountOf<Self::Output>>> {
                 if let Some(nested) = value {
                     Ok(arr![DatabaseValue; DatabaseValue::$enum_variant(nested.clone())])
                 } else {

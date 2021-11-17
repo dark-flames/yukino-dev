@@ -121,25 +121,25 @@ impl EntityResolvePass for EntityViewPass {
                 }
             }
 
-            impl View<#entity_name, <#entity_name as Value>::L> for #name {
-                fn collect_expr(&self) -> GenericArray<Expr, <#entity_name as Value>::L> {
+            impl View<#entity_name, ValueCountOf<#entity_name>> for #name {
+                fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<#entity_name>> {
                     #(#collect_tmp;)*
 
                     #collect_rst
                 }
 
-                fn eval(&self, v: &GenericArray<DatabaseValue, <#entity_name as Value>::L>) -> RuntimeResult<#entity_name> {
+                fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<#entity_name>>) -> RuntimeResult<#entity_name> {
                     (*#entity_name::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
                 }
 
-                fn view_clone(&self) -> ViewBox<#entity_name, <#entity_name as Value>::L> {
+                fn view_clone(&self) -> ViewBox<#entity_name, ValueCountOf<#entity_name>> {
                     Box::new(self.clone())
                 }
             }
 
             impl ExprView<#entity_name> for #name {
 
-                fn from_exprs(exprs: GenericArray<Expr, <#entity_name as Value>::L>) -> Self
+                fn from_exprs(exprs: GenericArray<Expr, ValueCountOf<#entity_name>>) -> Self
                 where
                     Self: Sized {
                     let rest = exprs;

@@ -1,9 +1,10 @@
 use crate::err::RuntimeResult;
 use crate::view::{
     ComputationView, ComputationViewBox, ExprView, ExprViewBox, SingleExprView, Value, ValueCount,
-    View, ViewBox,
+    ValueCountOf, View, ViewBox,
 };
 use generic_array::sequence::{Concat, Split};
+use generic_array::typenum::Sum;
 use generic_array::{arr, GenericArray};
 use query_builder::{DatabaseValue, Expr, ExprMutVisitor, ExprNode, ExprVisitor};
 use std::ops::{Add, Sub};
@@ -87,12 +88,13 @@ macro_rules! impl_bool_operator {
         }
 
         impl<
-                L: 'static + $op_trait<R>,
-                R: 'static,
-                LL: ValueCount + Add<RL, Output = OL>,
-                RL: ValueCount,
-                OL: ValueCount + Sub<LL, Output = RL>,
-            > ExprNode for $computation<L, R, LL, RL> {
+            L: 'static + $op_trait<R>,
+            R: 'static,
+            LL: ValueCount + Add<RL>,
+            RL: ValueCount
+        > ExprNode for $computation<L, R, LL, RL>
+        where Sum<LL, RL>: ValueCount + Sub<LL, Output = RL>
+        {
             fn apply(&self, visitor: &mut dyn ExprVisitor) {
                 self.l.apply(visitor);
                 self.r.apply(visitor);
@@ -105,24 +107,24 @@ macro_rules! impl_bool_operator {
         }
 
         impl<
-                L: 'static + $op_trait<R>,
-                R: 'static,
-                LL: ValueCount + Add<RL, Output = OL>,
-                RL: ValueCount,
-                OL: ValueCount + Sub<LL, Output = RL>,
-            > View<bool, OL> for $computation<L, R, LL, RL>
+            L: 'static + $op_trait<R>,
+            R: 'static,
+            LL: ValueCount + Add<RL>,
+            RL: ValueCount,
+        > View<bool, Sum<LL, RL>> for $computation<L, R, LL, RL>
+        where Sum<LL, RL>: ValueCount + Sub<LL, Output = RL>
         {
-            fn collect_expr(&self) -> GenericArray<Expr, OL> {
+            fn collect_expr(&self) -> GenericArray<Expr, Sum<LL, RL>> {
                 Concat::concat(self.l.collect_expr(), self.r.collect_expr())
             }
 
-            fn eval(&self, v: &GenericArray<DatabaseValue, OL>) -> RuntimeResult<bool> {
+            fn eval(&self, v: &GenericArray<DatabaseValue, Sum<LL, RL>>) -> RuntimeResult<bool> {
                 let (l, r) = Split::<_, LL>::split(v);
                 let r_result = self.r.eval(r)?;
                 Ok(self.l.eval(l)?.$op_trait_method(&r_result))
             }
 
-            fn view_clone(&self) -> ViewBox<bool, OL> {
+            fn view_clone(&self) -> ViewBox<bool, Sum<LL, RL>> {
                 Box::new($computation {
                     l: self.l.view_clone(),
                     r: self.r.view_clone(),
@@ -131,14 +133,14 @@ macro_rules! impl_bool_operator {
         }
 
         impl<
-                L: 'static + $op_trait<R>,
-                R: 'static,
-                LL: ValueCount + Add<RL, Output = OL>,
-                RL: ValueCount,
-                OL: ValueCount + Sub<LL, Output = RL>,
-            > ComputationView<bool, OL> for $computation<L, R, LL, RL>
+            L: 'static + $op_trait<R>,
+            R: 'static,
+            LL: ValueCount + Add<RL>,
+            RL: ValueCount,
+        > ComputationView<bool,  Sum<LL, RL>> for $computation<L, R, LL, RL>
+        where Sum<LL, RL>: ValueCount + Sub<LL, Output = RL>
         {
-            fn computation_clone(&self) -> ComputationViewBox<bool, OL> {
+            fn computation_clone(&self) -> ComputationViewBox<bool,  Sum<LL, RL>> {
                 Box::new($computation {
                     l: self.l.view_clone(),
                     r: self.r.view_clone(),
@@ -157,14 +159,14 @@ macro_rules! impl_bool_operator {
         }
 
         impl<
-                L: Value<L = LL> + $op_trait<R>,
-                R: 'static,
-                LL: ValueCount + Add<RL, Output = OL>,
-                RL: ValueCount,
-                OL: ValueCount + Sub<LL, Output = RL>,
-            > $view_op_trait<ComputationViewBox<R, RL>> for ExprViewBox<L>
+            L: Value + $op_trait<R>,
+            R: 'static,
+            RL: ValueCount
+        > $view_op_trait<ComputationViewBox<R, RL>> for ExprViewBox<L>
+        where ValueCountOf<L>: Add<RL>,
+                Sum<ValueCountOf<L>, RL>: ValueCount + Sub<ValueCountOf<L>, Output=RL>
         {
-            type Output = ComputationViewBox<bool, OL>;
+            type Output = ComputationViewBox<bool, Sum<ValueCountOf<L>, RL>>;
 
             fn $view_op_method(self, rhs: ComputationViewBox<R, RL>) -> Self::Output {
                 Box::new($computation {
@@ -183,13 +185,13 @@ macro_rules! impl_bool_operator {
         }
 
         impl<
-                L: 'static + $op_trait<R>,
-                R: Value,
-                LL: ValueCount + Add<<R as Value>::L, Output = OL>,
-                OL: ValueCount + Sub<LL, Output = <R as Value>::L>,
-            > $view_op_trait<ExprViewBox<R>> for ComputationViewBox<L, LL>
+            L: 'static + $op_trait<R>,
+            R: Value,
+            LL: ValueCount + Add<ValueCountOf<R>>
+        > $view_op_trait<ExprViewBox<R>> for ComputationViewBox<L, LL>
+        where Sum<LL, ValueCountOf<R>>: ValueCount + Sub<LL, Output=ValueCountOf<R>>
         {
-            type Output = ComputationViewBox<bool, OL>;
+            type Output = ComputationViewBox<bool, Sum<LL, ValueCountOf<R>>>;
 
             fn $view_op_method(self, rhs: ExprViewBox<R>) -> Self::Output {
                 Box::new($computation {
