@@ -19,13 +19,29 @@ pub struct AliasedTable {
 
 impl Alias {
     pub fn create_ident(&self, column: &str) -> Ident {
-        Ident {
-            seg: vec![self.name.clone(), column.to_string()],
-        }
+        let mut ident = self.single_seg_ident();
+        ident.append_str(column);
+        ident
     }
 
     pub fn create_ident_expr(&self, column: &str) -> Expr {
         Expr::Ident(self.create_ident(column))
+    }
+
+    pub fn single_seg_ident(&self) -> Ident {
+        Ident {
+            seg: vec![self.name.clone()],
+        }
+    }
+}
+
+impl Ident {
+    pub fn append_str(&mut self, column: &str) {
+        self.seg.push(column.to_string())
+    }
+
+    pub fn extend(&mut self, ident: Ident) {
+        self.seg.extend(ident.seg);
     }
 }
 

@@ -159,10 +159,10 @@ impl AliasGenerator {
                 ))
             }
             Some(AssociatedDefinition::ReversedAssociatedEntity {
-                     ty,
-                     entity_id,
-                     field,
-                 }) => {
+                ty,
+                entity_id,
+                field,
+            }) => {
                 if let AssociatedDefinition::AssociatedEntity {
                     ty: _,
                     entity_id: _,

@@ -33,6 +33,7 @@ pub struct ResolvedField {
     pub view: TokenStream,
     pub view_ty: TokenStream,
     pub view_path: TokenStream,
+    pub suit_for_group_by: bool,
     pub marker_name: Ident,
     pub primary: bool,
     pub entities: Vec<EntityDefinition>,

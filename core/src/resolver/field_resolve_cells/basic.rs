@@ -143,6 +143,7 @@ impl FieldResolverCell for BasicFieldResolverCell {
             view: self.ty.view(&self.column),
             view_ty: self.ty.view_ty(self.optional),
             view_path: self.ty.view_path(self.optional),
+            suit_for_group_by: true,
             marker_name: format_ident!("{}", field_path.field_name.to_snake_case()),
             primary: self.primary,
             entities: vec![],

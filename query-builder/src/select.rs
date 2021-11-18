@@ -46,8 +46,8 @@ pub struct OrderByItem {
 
 pub trait SelectSource: 'static {
     fn select(self, items: Vec<SelectItem>) -> SelectQuery
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         SelectQuery {
             base: Box::new(self),
@@ -59,8 +59,8 @@ pub trait SelectSource: 'static {
     }
 
     fn order_by(self, items: Vec<OrderByItem>) -> SelectQuery
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         SelectQuery {
             base: Box::new(self),
@@ -72,8 +72,8 @@ pub trait SelectSource: 'static {
     }
 
     fn limit(self, l: usize) -> SelectQuery
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         SelectQuery {
             base: Box::new(self),
@@ -85,8 +85,8 @@ pub trait SelectSource: 'static {
     }
 
     fn offset(self, o: usize) -> SelectQuery
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         SelectQuery {
             base: Box::new(self),

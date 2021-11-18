@@ -27,12 +27,25 @@ impl EntityResolvePass for FieldMakerPass {
             .map(|field| {
                 let marker_name = &field.marker_name;
                 let field_name = &field.path.field_name;
+                let field_type = &field.ty;
+                let suit_for_group_by = if field.suit_for_group_by {
+                    quote! {
+                        yukino::query::True
+                    }
+                } else {
+                    quote! {
+                        yukino::query::False
+                    }
+                };
                 quote! {
                     #[allow(non_camel_case_types)]
                     pub struct #marker_name();
 
                     impl FieldMarker for #marker_name {
                         type Entity = #entity_name;
+                        type FieldType = #field_type;
+                        type SuitForGroupBy = #suit_for_group_by;
+
                         fn field_name() -> &'static str {
                             #field_name
                         }

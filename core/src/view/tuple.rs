@@ -10,16 +10,16 @@ use query_builder::{DatabaseValue, Expr, ExprMutVisitor, ExprNode, ExprVisitor};
 use std::ops::{Add, Sub};
 
 pub struct TupleExprView<L: Value, R: Value>(pub ExprViewBox<L>, pub ExprViewBox<R>)
-    where
-        ValueCountOf<L>: Add<ValueCountOf<R>>,
-        Sum<ValueCountOf<L>, ValueCountOf<R>>:
-        ValueCount + Sub<ValueCountOf<L>, Output=ValueCountOf<R>>;
+where
+    ValueCountOf<L>: Add<ValueCountOf<R>>,
+    Sum<ValueCountOf<L>, ValueCountOf<R>>:
+        ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>;
 
 impl<L: Value, R: Value> ExprNode for TupleExprView<L, R>
-    where
-        ValueCountOf<L>: Add<ValueCountOf<R>>,
-        Sum<ValueCountOf<L>, ValueCountOf<R>>:
-        ValueCount + Sub<ValueCountOf<L>, Output=ValueCountOf<R>>,
+where
+    ValueCountOf<L>: Add<ValueCountOf<R>>,
+    Sum<ValueCountOf<L>, ValueCountOf<R>>:
+        ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
 {
     fn apply(&self, visitor: &mut dyn ExprVisitor) {
         self.0.apply(visitor);
@@ -33,10 +33,10 @@ impl<L: Value, R: Value> ExprNode for TupleExprView<L, R>
 }
 
 impl<L: Value, R: Value> View<(L, R), ValueCountOf<(L, R)>> for TupleExprView<L, R>
-    where
-        ValueCountOf<L>: Add<ValueCountOf<R>>,
-        Sum<ValueCountOf<L>, ValueCountOf<R>>:
-        ValueCount + Sub<ValueCountOf<L>, Output=ValueCountOf<R>>,
+where
+    ValueCountOf<L>: Add<ValueCountOf<R>>,
+    Sum<ValueCountOf<L>, ValueCountOf<R>>:
+        ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
 {
     fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<(L, R)>> {
         Concat::concat(self.0.collect_expr(), self.1.collect_expr())
@@ -52,14 +52,14 @@ impl<L: Value, R: Value> View<(L, R), ValueCountOf<(L, R)>> for TupleExprView<L,
 }
 
 impl<L: Value, R: Value> ExprView<(L, R)> for TupleExprView<L, R>
-    where
-        ValueCountOf<L>: Add<ValueCountOf<R>>,
-        Sum<ValueCountOf<L>, ValueCountOf<R>>:
-        ValueCount + Sub<ValueCountOf<L>, Output=ValueCountOf<R>>,
+where
+    ValueCountOf<L>: Add<ValueCountOf<R>>,
+    Sum<ValueCountOf<L>, ValueCountOf<R>>:
+        ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
 {
     fn from_exprs(exprs: GenericArray<Expr, ValueCountOf<(L, R)>>) -> Self
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         let (v0, v1) = Split::split(exprs);
         TupleExprView(L::view_from_exprs(v0), R::view_from_exprs(v1))
@@ -71,23 +71,23 @@ impl<L: Value, R: Value> ExprView<(L, R)> for TupleExprView<L, R>
 }
 
 impl<L: Value, R: Value> Value for (L, R)
-    where
-        ValueCountOf<L>: Add<ValueCountOf<R>>,
-        Sum<ValueCountOf<L>, ValueCountOf<R>>:
-        ValueCount + Sub<ValueCountOf<L>, Output=ValueCountOf<R>>,
+where
+    ValueCountOf<L>: Add<ValueCountOf<R>>,
+    Sum<ValueCountOf<L>, ValueCountOf<R>>:
+        ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
 {
     type L = Sum<ValueCountOf<L>, ValueCountOf<R>>;
 
     fn converter() -> ConverterRef<Self>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         TupleConverter::<L, R>::instance()
     }
 
     fn view_from_exprs(exprs: GenericArray<Expr, Self::L>) -> ExprViewBox<Self>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         let (view_0, view_1) = Split::split(exprs);
         Box::new(TupleExprView(

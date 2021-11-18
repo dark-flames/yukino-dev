@@ -9,19 +9,19 @@ use crate::view::{Value, ValueCountOf};
 use generic_array::GenericArray;
 use query_builder::DatabaseValue;
 
-pub type ConverterRef<T> = &'static dyn Converter<Output=T>;
+pub type ConverterRef<T> = &'static dyn Converter<Output = T>;
 
 pub type ConvertResult<T> = Result<T, ConvertError>;
 
 pub type Deserializer<T> =
-Box<dyn Fn(&GenericArray<DatabaseValue, ValueCountOf<T>>) -> ConvertResult<T>>;
+    Box<dyn Fn(&GenericArray<DatabaseValue, ValueCountOf<T>>) -> ConvertResult<T>>;
 
 pub trait Converter {
     type Output: Value;
 
     fn instance() -> &'static Self
-        where
-            Self: Sized;
+    where
+        Self: Sized;
 
     fn deserializer(&self) -> Deserializer<Self::Output>;
 

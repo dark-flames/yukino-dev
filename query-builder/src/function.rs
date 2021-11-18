@@ -1,27 +1,28 @@
 use crate::{Expr, ExprMutVisitor, ExprNode, ExprVisitor};
-use interface::DatabaseType;
 use std::fmt::{Debug, Display, Formatter};
 
-pub type FunctionBox = Box<dyn Function>;
-
-pub trait Function: Debug + Display {
-    fn box_clone(&self) -> FunctionBox;
+#[derive(Clone, Debug)]
+pub enum Function {
+    Average,
+    BitAnd,
+    BitOr,
+    BitXor,
+    Count,
+    CountDistinct,
+    Concat,
+    Max,
+    Min,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct FunctionCall {
-    pub func: FunctionBox,
+    pub func: Function,
     pub params: Vec<Expr>,
-    pub return_ty: DatabaseType,
 }
 
-impl Clone for FunctionCall {
-    fn clone(&self) -> Self {
-        FunctionCall {
-            func: self.func.box_clone(),
-            params: self.params.clone(),
-            return_ty: self.return_ty,
-        }
+impl Display for Function {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
     }
 }
 

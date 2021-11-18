@@ -9,8 +9,8 @@ pub type ViewBox<T, L> = Box<dyn View<T, L>>;
 
 pub trait ExprView<T: Value>: View<T, ValueCountOf<T>> {
     fn from_exprs(exprs: GenericArray<Expr, ValueCountOf<T>>) -> Self
-        where
-            Self: Sized;
+    where
+        Self: Sized;
 
     fn expr_clone(&self) -> ExprViewBox<T>;
 }

@@ -21,31 +21,31 @@ impl<N: ValueCount> ValueCount for UInt<N, B1> {}
 pub trait Value: 'static + Clone + Debug {
     type L: ValueCount;
     fn converter() -> ConverterRef<Self>
-        where
-            Self: Sized;
+    where
+        Self: Sized;
 
     fn view(&self) -> ExprViewBox<Self>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         Self::view_from_exprs(Self::converter().serialize(self).unwrap().map(Expr::Lit))
     }
 
     fn view_from_exprs(exprs: GenericArray<Expr, Self::L>) -> ExprViewBox<Self>
-        where
-            Self: Sized;
+    where
+        Self: Sized;
 }
 
 #[derive(Debug, Clone)]
 pub struct SingleExprView<T>
-    where
-        T: Value<L=U1>,
+where
+    T: Value<L = U1>,
 {
     expr: Expr,
     _ty: PhantomData<T>,
 }
 
-impl<T: Value<L=U1>> ExprNode for SingleExprView<T> {
+impl<T: Value<L = U1>> ExprNode for SingleExprView<T> {
     fn apply(&self, visitor: &mut dyn ExprVisitor) {
         self.expr.apply(visitor)
     }
@@ -55,7 +55,7 @@ impl<T: Value<L=U1>> ExprNode for SingleExprView<T> {
     }
 }
 
-impl<T: Value<L=U1>> View<T, U1> for SingleExprView<T> {
+impl<T: Value<L = U1>> View<T, U1> for SingleExprView<T> {
     fn collect_expr(&self) -> GenericArray<Expr, U1> {
         arr![Expr; self.expr.clone()]
     }

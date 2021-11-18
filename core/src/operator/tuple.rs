@@ -13,12 +13,12 @@ use std::ops::{Add, Sub};
 pub struct TupleComputationView<L, R, LL, RL>(ViewBox<L, LL>, ViewBox<R, RL>);
 
 impl<
-    L: 'static,
-    R: 'static,
-    LL: ValueCount + Add<RL, Output=OL>,
-    RL: ValueCount,
-    OL: ValueCount + Sub<LL, Output=RL>,
-> ComputationView<(L, R), OL> for TupleComputationView<L, R, LL, RL>
+        L: 'static,
+        R: 'static,
+        LL: ValueCount + Add<RL, Output = OL>,
+        RL: ValueCount,
+        OL: ValueCount + Sub<LL, Output = RL>,
+    > ComputationView<(L, R), OL> for TupleComputationView<L, R, LL, RL>
 {
     fn computation_clone(&self) -> ComputationViewBox<(L, R), OL> {
         Box::new(TupleComputationView(
@@ -29,12 +29,12 @@ impl<
 }
 
 impl<
-    L: 'static,
-    R: 'static,
-    LL: ValueCount + Add<RL, Output=OL>,
-    RL: ValueCount,
-    OL: ValueCount + Sub<LL, Output=RL>,
-> ExprNode for TupleComputationView<L, R, LL, RL>
+        L: 'static,
+        R: 'static,
+        LL: ValueCount + Add<RL, Output = OL>,
+        RL: ValueCount,
+        OL: ValueCount + Sub<LL, Output = RL>,
+    > ExprNode for TupleComputationView<L, R, LL, RL>
 {
     fn apply(&self, visitor: &mut dyn ExprVisitor) {
         self.0.apply(visitor);
@@ -48,12 +48,12 @@ impl<
 }
 
 impl<
-    L: 'static,
-    R: 'static,
-    LL: ValueCount + Add<RL, Output=OL>,
-    RL: ValueCount,
-    OL: ValueCount + Sub<LL, Output=RL>,
-> View<(L, R), OL> for TupleComputationView<L, R, LL, RL>
+        L: 'static,
+        R: 'static,
+        LL: ValueCount + Add<RL, Output = OL>,
+        RL: ValueCount,
+        OL: ValueCount + Sub<LL, Output = RL>,
+    > View<(L, R), OL> for TupleComputationView<L, R, LL, RL>
 {
     fn collect_expr(&self) -> GenericArray<Expr, OL> {
         Concat::concat(self.0.collect_expr(), self.1.collect_expr())
@@ -73,10 +73,10 @@ impl<
 }
 
 impl<L: Value, R: Value> From<(ExprViewBox<L>, ExprViewBox<R>)> for ExprViewBox<(L, R)>
-    where
-        (L, R): Value,
-        <L as Value>::L: Add<<R as Value>::L, Output=<(L, R) as Value>::L>,
-        <(L, R) as Value>::L: Sub<<L as Value>::L, Output=<R as Value>::L>,
+where
+    (L, R): Value,
+    <L as Value>::L: Add<<R as Value>::L, Output = <(L, R) as Value>::L>,
+    <(L, R) as Value>::L: Sub<<L as Value>::L, Output = <R as Value>::L>,
 {
     fn from(tuple: (ExprViewBox<L>, ExprViewBox<R>)) -> Self {
         let (l, r) = tuple;
@@ -85,10 +85,10 @@ impl<L: Value, R: Value> From<(ExprViewBox<L>, ExprViewBox<R>)> for ExprViewBox<
 }
 
 impl<L: Value, R: Value> From<(ExprViewBox<L>, R)> for ExprViewBox<(L, R)>
-    where
-        (L, R): Value,
-        <L as Value>::L: Add<<R as Value>::L, Output=<(L, R) as Value>::L>,
-        <(L, R) as Value>::L: Sub<<L as Value>::L, Output=<R as Value>::L>,
+where
+    (L, R): Value,
+    <L as Value>::L: Add<<R as Value>::L, Output = <(L, R) as Value>::L>,
+    <(L, R) as Value>::L: Sub<<L as Value>::L, Output = <R as Value>::L>,
 {
     fn from(tuple: (ExprViewBox<L>, R)) -> Self {
         let (l, r) = tuple;
@@ -96,10 +96,10 @@ impl<L: Value, R: Value> From<(ExprViewBox<L>, R)> for ExprViewBox<(L, R)>
     }
 }
 
-impl<L: Value, R: 'static, RL: ValueCount, OL: ValueCount + Sub<<L as Value>::L, Output=RL>>
-From<(ExprViewBox<L>, ComputationViewBox<R, RL>)> for ComputationViewBox<(L, R), OL>
-    where
-        <L as Value>::L: Add<RL, Output=OL>,
+impl<L: Value, R: 'static, RL: ValueCount, OL: ValueCount + Sub<<L as Value>::L, Output = RL>>
+    From<(ExprViewBox<L>, ComputationViewBox<R, RL>)> for ComputationViewBox<(L, R), OL>
+where
+    <L as Value>::L: Add<RL, Output = OL>,
 {
     fn from(tuple: (ExprViewBox<L>, ComputationViewBox<R, RL>)) -> Self {
         let (l, r) = tuple;
@@ -108,10 +108,10 @@ From<(ExprViewBox<L>, ComputationViewBox<R, RL>)> for ComputationViewBox<(L, R),
 }
 
 impl<L: Value, R: Value> From<(L, ExprViewBox<R>)> for ExprViewBox<(L, R)>
-    where
-        (L, R): Value,
-        <L as Value>::L: Add<<R as Value>::L, Output=<(L, R) as Value>::L>,
-        <(L, R) as Value>::L: Sub<<L as Value>::L, Output=<R as Value>::L>,
+where
+    (L, R): Value,
+    <L as Value>::L: Add<<R as Value>::L, Output = <(L, R) as Value>::L>,
+    <(L, R) as Value>::L: Sub<<L as Value>::L, Output = <R as Value>::L>,
 {
     fn from(tuple: (L, ExprViewBox<R>)) -> Self {
         let (l, r) = tuple;
@@ -119,10 +119,10 @@ impl<L: Value, R: Value> From<(L, ExprViewBox<R>)> for ExprViewBox<(L, R)>
     }
 }
 
-impl<L: Value, R: 'static, RL: ValueCount, OL: ValueCount + Sub<<L as Value>::L, Output=RL>>
-From<(L, ComputationViewBox<R, RL>)> for ViewBox<(L, R), OL>
-    where
-        <L as Value>::L: Add<RL, Output=OL>,
+impl<L: Value, R: 'static, RL: ValueCount, OL: ValueCount + Sub<<L as Value>::L, Output = RL>>
+    From<(L, ComputationViewBox<R, RL>)> for ViewBox<(L, R), OL>
+where
+    <L as Value>::L: Add<RL, Output = OL>,
 {
     fn from(tuple: (L, ComputationViewBox<R, RL>)) -> Self {
         let (l, r) = tuple;
@@ -131,11 +131,11 @@ From<(L, ComputationViewBox<R, RL>)> for ViewBox<(L, R), OL>
 }
 
 impl<
-    L: 'static,
-    R: Value,
-    LL: ValueCount + Add<<R as Value>::L, Output=OL>,
-    OL: ValueCount + Sub<LL, Output=<R as Value>::L>,
-> From<(ComputationViewBox<L, LL>, ExprViewBox<R>)> for ViewBox<(L, R), OL>
+        L: 'static,
+        R: Value,
+        LL: ValueCount + Add<<R as Value>::L, Output = OL>,
+        OL: ValueCount + Sub<LL, Output = <R as Value>::L>,
+    > From<(ComputationViewBox<L, LL>, ExprViewBox<R>)> for ViewBox<(L, R), OL>
 {
     fn from(tuple: (ComputationViewBox<L, LL>, ExprViewBox<R>)) -> Self {
         let (l, r) = tuple;
@@ -144,11 +144,11 @@ impl<
 }
 
 impl<
-    L: 'static,
-    R: Value,
-    LL: ValueCount + Add<<R as Value>::L, Output=OL>,
-    OL: ValueCount + Sub<LL, Output=<R as Value>::L>,
-> From<(ComputationViewBox<L, LL>, R)> for ViewBox<(L, R), OL>
+        L: 'static,
+        R: Value,
+        LL: ValueCount + Add<<R as Value>::L, Output = OL>,
+        OL: ValueCount + Sub<LL, Output = <R as Value>::L>,
+    > From<(ComputationViewBox<L, LL>, R)> for ViewBox<(L, R), OL>
 {
     fn from(tuple: (ComputationViewBox<L, LL>, R)) -> Self {
         let (l, r) = tuple;
@@ -157,12 +157,12 @@ impl<
 }
 
 impl<
-    L: 'static,
-    R: 'static,
-    LL: ValueCount + Add<RL, Output=OL>,
-    RL: ValueCount,
-    OL: ValueCount + Sub<LL, Output=RL>,
-> From<(ComputationViewBox<L, LL>, ComputationViewBox<R, RL>)> for ViewBox<(L, R), OL>
+        L: 'static,
+        R: 'static,
+        LL: ValueCount + Add<RL, Output = OL>,
+        RL: ValueCount,
+        OL: ValueCount + Sub<LL, Output = RL>,
+    > From<(ComputationViewBox<L, LL>, ComputationViewBox<R, RL>)> for ViewBox<(L, R), OL>
 {
     fn from(tuple: (ComputationViewBox<L, LL>, ComputationViewBox<R, RL>)) -> Self {
         let (l, r) = tuple;

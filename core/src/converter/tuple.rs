@@ -15,13 +15,13 @@ impl<L: Value, R: Value> Converter for TupleConverter<L, R>
 where
     ValueCountOf<L>: Add<ValueCountOf<R>>,
     Sum<ValueCountOf<L>, ValueCountOf<R>>:
-    ValueCount + Sub<ValueCountOf<L>, Output=ValueCountOf<R>>,
+        ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
 {
     type Output = (L, R);
 
     fn instance() -> &'static Self
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         &Self::INSTANCE
     }
@@ -48,10 +48,10 @@ where
 }
 
 impl<L: Value, R: Value> ConverterInstance for TupleConverter<L, R>
-    where
-        ValueCountOf<L>: Add<ValueCountOf<R>>,
-        Sum<ValueCountOf<L>, ValueCountOf<R>>:
-        ValueCount + Sub<ValueCountOf<L>, Output=ValueCountOf<R>>,
+where
+    ValueCountOf<L>: Add<ValueCountOf<R>>,
+    Sum<ValueCountOf<L>, ValueCountOf<R>>:
+        ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
 {
     const INSTANCE: Self = TupleConverter(PhantomData);
 }
