@@ -71,14 +71,15 @@ pub fn test_boolean() {
     };
 
     let view = BasicView::pure(&alias);
-    let and_const = view.boolean.clone().view_and(true);
-    let or_const = view.boolean.clone().view_or(false);
-    let eq_const = view.boolean.clone().view_eq(false);
-    let neq_const = view.u_int.clone().view_neq(114514);
-    let bt_const = view.string.clone().view_bt("test".to_string());
-    let bte_const = view.character.clone().view_bte('c');
-    let lt_const = view.double.clone().view_lt(114.514);
-    let lte_const = view.float.clone().view_lt(19.19);
+
+    let and_const = and!(view.boolean.clone(), true);
+    let or_const = or!(view.boolean.clone(), false);
+    let eq_const = eq!(view.boolean.clone(), false);
+    let neq_const = neq!(view.u_int.clone(), 114514);
+    let bt_const = bt!(view.string.clone(), "test".to_string());
+    let bte_const = bte!(view.character.clone(), 'c');
+    let lt_const = lt!(view.double.clone(), 114.514);
+    let lte_const = gt!(view.float.clone(), 19.19);
 
     cmp_view(and_const, "b.boolean AND true");
     cmp_view(or_const, "b.boolean OR false");
