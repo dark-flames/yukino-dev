@@ -1,4 +1,3 @@
-use yukino::operator::*;
 use yukino::query_builder::Alias;
 use yukino::view::*;
 use yukino::{and, bt, bte, eq, lt, lte, neq, or};
