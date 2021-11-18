@@ -79,7 +79,7 @@ pub fn test_boolean() {
     let bt_const = bt!(view.string.clone(), "test".to_string());
     let bte_const = bte!(view.character.clone(), 'c');
     let lt_const = lt!(view.double.clone(), 114.514);
-    let lte_const = gt!(view.float.clone(), 19.19);
+    let lte_const = lte!(view.float.clone(), 19.19);
 
     cmp_view(and_const, "b.boolean AND true");
     cmp_view(or_const, "b.boolean OR false");
@@ -88,7 +88,7 @@ pub fn test_boolean() {
     cmp_view(bt_const, "b.string > \"test\"");
     cmp_view(bte_const, "b.character >= 'c'");
     cmp_view(lt_const, "b.double < 114.514");
-    cmp_view(lte_const, "b.float < 19.19");
+    cmp_view(lte_const, "b.float <= 19.19");
 
     let and = and!(view.boolean.clone(), view.boolean.clone());
     let or = or!(view.boolean.clone(), view.boolean.clone());
