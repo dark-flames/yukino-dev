@@ -1,6 +1,8 @@
-use crate::{Alias, Expr, Ident, Join};
-use interface::YukinoEntity;
 use std::marker::PhantomData;
+
+use interface::YukinoEntity;
+
+use crate::{Alias, Expr, Ident, Join};
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum Order {
@@ -132,6 +134,9 @@ impl<E: YukinoEntity> SelectFrom<E> {
 }
 
 impl<E: YukinoEntity> GroupSelect<E> {
+    pub fn extend_group_by(&mut self, group_by: Vec<Ident>) {
+        self.group_by.extend(group_by);
+    }
     pub fn having(&mut self, conditions: Vec<Expr>) -> &mut Self {
         self.having.extend(conditions);
 

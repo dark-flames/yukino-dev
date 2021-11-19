@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use query_builder::GroupSelect;
+use query_builder::{Alias, GroupSelect};
 
 use crate::query::{AliasGenerator, ConcatList, ListConcat, SuitForGroupByList};
 use crate::view::EntityWithView;
@@ -9,6 +9,7 @@ use crate::view::EntityWithView;
 pub struct GroupedQueryResult<E: EntityWithView, G: SuitForGroupByList<Entity=E>> {
     query: GroupSelect<E>,
     alias_generator: AliasGenerator,
+    root_alias: Alias,
     _marker: PhantomData<G>,
 }
 
@@ -17,10 +18,11 @@ pub trait GroupBy<E: EntityWithView> {
 }
 
 impl<E: EntityWithView, G: SuitForGroupByList<Entity=E>> GroupedQueryResult<E, G> {
-    pub fn create(query: GroupSelect<E>, alias_generator: AliasGenerator) -> Self {
+    pub fn create(query: GroupSelect<E>, alias_generator: AliasGenerator, root_alias: Alias) -> Self {
         GroupedQueryResult {
             query,
             alias_generator,
+            root_alias,
             _marker: Default::default(),
         }
     }
@@ -33,14 +35,20 @@ impl<E: EntityWithView, G: SuitForGroupByList<Entity=E>> GroupedQueryResult<E, G
             ConcatList<G, Fields>: SuitForGroupByList,
     {
         let GroupedQueryResult {
-            query,
+            mut query,
             alias_generator,
+            root_alias,
             ..
         } = self;
+
+        query.extend_group_by(Fields::idents(
+            root_alias.single_seg_ident()
+        ).into_iter().collect());
 
         GroupedQueryResult {
             query,
             alias_generator,
+            root_alias,
             _marker: Default::default(),
         }
     }
