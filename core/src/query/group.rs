@@ -25,11 +25,12 @@ impl<E: EntityWithView, G: SuitForGroupByList<Entity=E>> GroupedQueryResult<E, G
         }
     }
 
-    pub fn group_by<Fields: SuitForGroupByList<Entity=E> + ListConcat<E, G>>(
+    pub fn group_by<Fields: SuitForGroupByList<Entity=E>>(
         self,
-    ) -> GroupedQueryResult<E, ConcatList<Fields, G>>
+    ) -> GroupedQueryResult<E, ConcatList<G, Fields>>
         where
-            ConcatList<Fields, G>: SuitForGroupByList,
+            G: ListConcat<E, Fields>,
+            ConcatList<G, Fields>: SuitForGroupByList,
     {
         let GroupedQueryResult {
             query,
