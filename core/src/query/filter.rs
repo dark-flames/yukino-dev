@@ -1,6 +1,7 @@
-use crate::query::AliasGenerator;
-use crate::view::{EntityView, EntityWithView, ExprViewBox};
 use query_builder::{Alias, SelectFrom};
+
+use crate::query::{AliasGenerator, GroupBy, GroupedQueryResult, SuitForGroupByList};
+use crate::view::{EntityView, EntityWithView, ExprViewBox};
 
 pub struct QueryResultFilter<E: EntityWithView> {
     query: SelectFrom<E>,
@@ -31,5 +32,24 @@ impl<E: EntityWithView> Filter for QueryResultFilter<E> {
         });
 
         self.query.add_joins(visitor.joins());
+    }
+}
+
+impl<E: EntityWithView> GroupBy<E> for QueryResultFilter<E> {
+    fn group_by<Fields: SuitForGroupByList<Entity=E>>(self) -> GroupedQueryResult<E, Fields> {
+        let QueryResultFilter {
+            query,
+            alias_generator,
+            root_alias,
+        } = self;
+
+        GroupedQueryResult::create(
+            query.group_by(
+                Fields::idents(root_alias.single_seg_ident())
+                    .into_iter()
+                    .collect(),
+            ),
+            alias_generator,
+        )
     }
 }
