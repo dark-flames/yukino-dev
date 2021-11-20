@@ -50,7 +50,7 @@ impl<E: EntityWithView> GroupBy<E> for QueryResultFilter<E> {
                     .collect(),
             ),
             alias_generator,
-            root_alias
+            root_alias,
         )
     }
 }

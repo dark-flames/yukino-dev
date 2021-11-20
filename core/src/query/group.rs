@@ -18,7 +18,11 @@ pub trait GroupBy<E: EntityWithView> {
 }
 
 impl<E: EntityWithView, G: SuitForGroupByList<Entity=E>> GroupedQueryResult<E, G> {
-    pub fn create(query: GroupSelect<E>, alias_generator: AliasGenerator, root_alias: Alias) -> Self {
+    pub fn create(
+        query: GroupSelect<E>,
+        alias_generator: AliasGenerator,
+        root_alias: Alias,
+    ) -> Self {
         GroupedQueryResult {
             query,
             alias_generator,
@@ -41,9 +45,11 @@ impl<E: EntityWithView, G: SuitForGroupByList<Entity=E>> GroupedQueryResult<E, G
             ..
         } = self;
 
-        query.extend_group_by(Fields::idents(
-            root_alias.single_seg_ident()
-        ).into_iter().collect());
+        query.extend_group_by(
+            Fields::idents(root_alias.single_seg_ident())
+                .into_iter()
+                .collect(),
+        );
 
         GroupedQueryResult {
             query,

@@ -247,29 +247,6 @@ lazy_static! {
         yukino::DefinitionType::Normal,
         vec![
             (
-                "boolean".to_string(),
-                yukino::FieldDefinition::new(
-                    "boolean".to_string(),
-                    "bool".to_string(),
-                    false,
-                    yukino::DefinitionType::Normal,
-                    vec![(
-                        "boolean".to_string(),
-                        yukino::ColumnDefinition::new(
-                            "boolean".to_string(),
-                            yukino::DatabaseType::Bool,
-                            false,
-                            false
-                        )
-                    )]
-                    .into_iter()
-                    .collect(),
-                    vec!["boolean".to_string()],
-                    None,
-                    vec![]
-                )
-            ),
-            (
                 "long".to_string(),
                 yukino::FieldDefinition::new(
                     "long".to_string(),
@@ -288,52 +265,6 @@ lazy_static! {
                     .into_iter()
                     .collect(),
                     vec!["long".to_string()],
-                    None,
-                    vec![]
-                )
-            ),
-            (
-                "character".to_string(),
-                yukino::FieldDefinition::new(
-                    "character".to_string(),
-                    "char".to_string(),
-                    false,
-                    yukino::DefinitionType::Normal,
-                    vec![(
-                        "character".to_string(),
-                        yukino::ColumnDefinition::new(
-                            "character".to_string(),
-                            yukino::DatabaseType::Character,
-                            false,
-                            false
-                        )
-                    )]
-                    .into_iter()
-                    .collect(),
-                    vec!["character".to_string()],
-                    None,
-                    vec![]
-                )
-            ),
-            (
-                "id".to_string(),
-                yukino::FieldDefinition::new(
-                    "id".to_string(),
-                    "u32".to_string(),
-                    false,
-                    yukino::DefinitionType::Normal,
-                    vec![(
-                        "id".to_string(),
-                        yukino::ColumnDefinition::new(
-                            "id".to_string(),
-                            yukino::DatabaseType::UnsignedInteger,
-                            false,
-                            false
-                        )
-                    )]
-                    .into_iter()
-                    .collect(),
-                    vec!["id".to_string()],
                     None,
                     vec![]
                 )
@@ -362,24 +293,24 @@ lazy_static! {
                 )
             ),
             (
-                "float".to_string(),
+                "double".to_string(),
                 yukino::FieldDefinition::new(
-                    "float".to_string(),
-                    "f32".to_string(),
+                    "double".to_string(),
+                    "f64".to_string(),
                     false,
                     yukino::DefinitionType::Normal,
                     vec![(
-                        "float".to_string(),
+                        "double".to_string(),
                         yukino::ColumnDefinition::new(
-                            "float".to_string(),
-                            yukino::DatabaseType::Float,
+                            "double".to_string(),
+                            yukino::DatabaseType::Double,
                             false,
                             false
                         )
                     )]
                     .into_iter()
                     .collect(),
-                    vec!["float".to_string()],
+                    vec!["double".to_string()],
                     None,
                     vec![]
                 )
@@ -408,47 +339,24 @@ lazy_static! {
                 )
             ),
             (
-                "optional".to_string(),
+                "int".to_string(),
                 yukino::FieldDefinition::new(
-                    "optional".to_string(),
-                    "Option < u32 >".to_string(),
+                    "int".to_string(),
+                    "i32".to_string(),
                     false,
                     yukino::DefinitionType::Normal,
                     vec![(
-                        "optional".to_string(),
+                        "int".to_string(),
                         yukino::ColumnDefinition::new(
-                            "optional".to_string(),
-                            yukino::DatabaseType::UnsignedInteger,
-                            true,
-                            false
-                        )
-                    )]
-                    .into_iter()
-                    .collect(),
-                    vec!["optional".to_string()],
-                    None,
-                    vec![]
-                )
-            ),
-            (
-                "double".to_string(),
-                yukino::FieldDefinition::new(
-                    "double".to_string(),
-                    "f64".to_string(),
-                    false,
-                    yukino::DefinitionType::Normal,
-                    vec![(
-                        "double".to_string(),
-                        yukino::ColumnDefinition::new(
-                            "double".to_string(),
-                            yukino::DatabaseType::Double,
+                            "int".to_string(),
+                            yukino::DatabaseType::Integer,
                             false,
                             false
                         )
                     )]
                     .into_iter()
                     .collect(),
-                    vec!["double".to_string()],
+                    vec!["int".to_string()],
                     None,
                     vec![]
                 )
@@ -477,29 +385,6 @@ lazy_static! {
                 )
             ),
             (
-                "u_int".to_string(),
-                yukino::FieldDefinition::new(
-                    "u_int".to_string(),
-                    "u32".to_string(),
-                    false,
-                    yukino::DefinitionType::Normal,
-                    vec![(
-                        "u_int".to_string(),
-                        yukino::ColumnDefinition::new(
-                            "u_int".to_string(),
-                            yukino::DatabaseType::UnsignedInteger,
-                            false,
-                            false
-                        )
-                    )]
-                    .into_iter()
-                    .collect(),
-                    vec!["u_int".to_string()],
-                    None,
-                    vec![]
-                )
-            ),
-            (
                 "u_short".to_string(),
                 yukino::FieldDefinition::new(
                     "u_short".to_string(),
@@ -523,24 +408,139 @@ lazy_static! {
                 )
             ),
             (
-                "int".to_string(),
+                "boolean".to_string(),
                 yukino::FieldDefinition::new(
-                    "int".to_string(),
-                    "i32".to_string(),
+                    "boolean".to_string(),
+                    "bool".to_string(),
                     false,
                     yukino::DefinitionType::Normal,
                     vec![(
-                        "int".to_string(),
+                        "boolean".to_string(),
                         yukino::ColumnDefinition::new(
-                            "int".to_string(),
-                            yukino::DatabaseType::Integer,
+                            "boolean".to_string(),
+                            yukino::DatabaseType::Bool,
                             false,
                             false
                         )
                     )]
                     .into_iter()
                     .collect(),
-                    vec!["int".to_string()],
+                    vec!["boolean".to_string()],
+                    None,
+                    vec![]
+                )
+            ),
+            (
+                "optional".to_string(),
+                yukino::FieldDefinition::new(
+                    "optional".to_string(),
+                    "Option < u32 >".to_string(),
+                    false,
+                    yukino::DefinitionType::Normal,
+                    vec![(
+                        "optional".to_string(),
+                        yukino::ColumnDefinition::new(
+                            "optional".to_string(),
+                            yukino::DatabaseType::UnsignedInteger,
+                            true,
+                            false
+                        )
+                    )]
+                    .into_iter()
+                    .collect(),
+                    vec!["optional".to_string()],
+                    None,
+                    vec![]
+                )
+            ),
+            (
+                "float".to_string(),
+                yukino::FieldDefinition::new(
+                    "float".to_string(),
+                    "f32".to_string(),
+                    false,
+                    yukino::DefinitionType::Normal,
+                    vec![(
+                        "float".to_string(),
+                        yukino::ColumnDefinition::new(
+                            "float".to_string(),
+                            yukino::DatabaseType::Float,
+                            false,
+                            false
+                        )
+                    )]
+                    .into_iter()
+                    .collect(),
+                    vec!["float".to_string()],
+                    None,
+                    vec![]
+                )
+            ),
+            (
+                "u_int".to_string(),
+                yukino::FieldDefinition::new(
+                    "u_int".to_string(),
+                    "u32".to_string(),
+                    false,
+                    yukino::DefinitionType::Normal,
+                    vec![(
+                        "u_int".to_string(),
+                        yukino::ColumnDefinition::new(
+                            "u_int".to_string(),
+                            yukino::DatabaseType::UnsignedInteger,
+                            false,
+                            false
+                        )
+                    )]
+                    .into_iter()
+                    .collect(),
+                    vec!["u_int".to_string()],
+                    None,
+                    vec![]
+                )
+            ),
+            (
+                "id".to_string(),
+                yukino::FieldDefinition::new(
+                    "id".to_string(),
+                    "u32".to_string(),
+                    false,
+                    yukino::DefinitionType::Normal,
+                    vec![(
+                        "id".to_string(),
+                        yukino::ColumnDefinition::new(
+                            "id".to_string(),
+                            yukino::DatabaseType::UnsignedInteger,
+                            false,
+                            false
+                        )
+                    )]
+                    .into_iter()
+                    .collect(),
+                    vec!["id".to_string()],
+                    None,
+                    vec![]
+                )
+            ),
+            (
+                "character".to_string(),
+                yukino::FieldDefinition::new(
+                    "character".to_string(),
+                    "char".to_string(),
+                    false,
+                    yukino::DefinitionType::Normal,
+                    vec![(
+                        "character".to_string(),
+                        yukino::ColumnDefinition::new(
+                            "character".to_string(),
+                            yukino::DatabaseType::Character,
+                            false,
+                            false
+                        )
+                    )]
+                    .into_iter()
+                    .collect(),
+                    vec!["character".to_string()],
                     None,
                     vec![]
                 )
