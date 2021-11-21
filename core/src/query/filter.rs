@@ -1,7 +1,11 @@
+use generic_array::typenum::U1;
+
 use query_builder::{Alias, SelectFrom};
 
-use crate::query::{AliasGenerator, GroupBy, GroupedQueryResult, SuitForGroupByList};
-use crate::view::{EntityView, EntityWithView, ExprViewBox};
+use crate::query::{
+    AliasGenerator, Fold, FoldedQueryResult, GroupBy, GroupedQueryResult, SuitForGroupByList,
+};
+use crate::view::{AggregateView, EntityView, EntityWithView, ExprViewBox, Value};
 
 pub struct QueryResultFilter<E: EntityWithView> {
     query: SelectFrom<E>,
@@ -52,5 +56,15 @@ impl<E: EntityWithView> GroupBy<E> for QueryResultFilter<E> {
             alias_generator,
             root_alias,
         )
+    }
+}
+
+impl<E: EntityWithView> Fold<E, E::View> for QueryResultFilter<E> {
+    fn fold<R: Value<L=U1>, RV: AggregateView<R>, F: Fn(&E::View) -> RV>(
+        self,
+        f: F,
+    ) -> FoldedQueryResult<R, RV> {
+        let entity_view = E::View::pure(&self.root_alias);
+        FoldedQueryResult::create(Box::new(self.query), f(&entity_view))
     }
 }
