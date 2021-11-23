@@ -1,25 +1,28 @@
+use std::ops::{Add, Sub};
+
+use generic_array::{
+    GenericArray,
+    sequence::{Concat, Split},
+    typenum::Sum,
+};
+
+use query_builder::{DatabaseValue, Expr, ExprMutVisitor, ExprNode, ExprVisitor};
+
 use crate::converter::{Converter, ConverterRef, TupleConverter};
 use crate::err::{RuntimeResult, YukinoError};
 use crate::view::{ExprView, ExprViewBox, Value, ValueCount, ValueCountOf, View, ViewBox};
-use generic_array::{
-    sequence::{Concat, Split},
-    typenum::Sum,
-    GenericArray,
-};
-use query_builder::{DatabaseValue, Expr, ExprMutVisitor, ExprNode, ExprVisitor};
-use std::ops::{Add, Sub};
 
 pub struct TupleExprView<L: Value, R: Value>(pub ExprViewBox<L>, pub ExprViewBox<R>)
-where
-    ValueCountOf<L>: Add<ValueCountOf<R>>,
-    Sum<ValueCountOf<L>, ValueCountOf<R>>:
-        ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>;
+    where
+        ValueCountOf<L>: Add<ValueCountOf<R>>,
+        Sum<ValueCountOf<L>, ValueCountOf<R>>:
+        ValueCount + Sub<ValueCountOf<L>, Output=ValueCountOf<R>>;
 
 impl<L: Value, R: Value> ExprNode for TupleExprView<L, R>
-where
-    ValueCountOf<L>: Add<ValueCountOf<R>>,
-    Sum<ValueCountOf<L>, ValueCountOf<R>>:
-        ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
+    where
+        ValueCountOf<L>: Add<ValueCountOf<R>>,
+        Sum<ValueCountOf<L>, ValueCountOf<R>>:
+        ValueCount + Sub<ValueCountOf<L>, Output=ValueCountOf<R>>,
 {
     fn apply(&self, visitor: &mut dyn ExprVisitor) {
         self.0.apply(visitor);
@@ -94,5 +97,17 @@ where
             L::view_from_exprs(view_0),
             R::view_from_exprs(view_1),
         ))
+    }
+}
+
+impl<L: Value, R: Value> From<(ExprViewBox<L>, ExprViewBox<R>)> for TupleExprView<L, R>
+    where
+        (L, R): Value,
+        ValueCountOf<L>: Add<ValueCountOf<R>, Output=ValueCountOf<(L, R)>>,
+        ValueCountOf<(L, R)>: Sub<ValueCountOf<L>, Output=ValueCountOf<R>>,
+{
+    fn from(tuple: (ExprViewBox<L>, ExprViewBox<R>)) -> Self {
+        let (l, r) = tuple;
+        TupleExprView(l, r)
     }
 }

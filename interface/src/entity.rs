@@ -3,7 +3,6 @@ use crate::{EntityDefinition, FieldDefinition};
 pub trait FieldMarker {
     type Entity: YukinoEntity;
     type FieldType;
-    type SuitForGroupBy;
 
     fn field_name() -> &'static str;
 

@@ -1,18 +1,19 @@
 use heck::SnakeCase;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
+use syn::{Field as SynField, parse_str, Type};
 use syn::spanned::Spanned;
-use syn::{parse_str, Field as SynField, Type};
 
-use crate::err::CliResult;
+use interface::{ColumnDefinition, DefinitionType, FieldDefinition, IndexDefinition, IndexType};
+use interface::{DatabaseType, Field, FieldAttribute, IndexMethod};
+
 use crate::err::{ResolveError, YukinoError};
+use crate::err::CliResult;
 use crate::resolver::field::{
-    FieldPath, FieldResolveResult, FieldResolverCell, FieldResolverCellBox, FieldResolverSeed,
+    FieldPath, FieldResolverCell, FieldResolverCellBox, FieldResolveResult, FieldResolverSeed,
     FieldResolverSeedBox, ResolvedField,
 };
 use crate::resolver::path::{FileTypePathResolver, TypeMatchResult};
-use interface::{ColumnDefinition, DefinitionType, FieldDefinition, IndexDefinition, IndexType};
-use interface::{DatabaseType, Field, FieldAttribute, IndexMethod};
 
 pub struct BasicFieldResolverSeed();
 
@@ -143,7 +144,6 @@ impl FieldResolverCell for BasicFieldResolverCell {
             view: self.ty.view(&self.column),
             view_ty: self.ty.view_ty(self.optional),
             view_path: self.ty.view_path(self.optional),
-            suit_for_group_by: true,
             marker_name: format_ident!("{}", field_path.field_name.to_snake_case()),
             primary: self.primary,
             entities: vec![],

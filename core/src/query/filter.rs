@@ -4,10 +4,9 @@ use query_builder::{Alias, ExprNode, SelectFrom};
 
 use crate::query::{
     AliasGenerator, Fold, FoldedQueryResult, GroupBy, GroupedQueryResult, Map, QueryResultMap,
-    SuitForGroupByList,
 };
 use crate::view::{
-    AggregateView, EntityView, EntityWithView, ExprViewBox, Value, ValueCount, ViewBox,
+    AggregateView, EntityView, EntityWithView, ExprViewBox, GroupByView, Value, ValueCount, ViewBox,
 };
 
 pub struct QueryResultFilter<E: EntityWithView> {
@@ -16,19 +15,16 @@ pub struct QueryResultFilter<E: EntityWithView> {
     alias_generator: AliasGenerator,
 }
 
-pub trait Filter {
-    type View;
-
+pub trait Filter<View> {
     fn filter<F, R: Into<ExprViewBox<bool>>>(&mut self, f: F)
-    where
-        F: Fn(&Self::View) -> R;
+        where
+            F: Fn(&View) -> R;
 }
 
-impl<E: EntityWithView> Filter for QueryResultFilter<E> {
-    type View = E::View;
+impl<E: EntityWithView> Filter<E::View> for QueryResultFilter<E> {
     fn filter<F, R: Into<ExprViewBox<bool>>>(&mut self, f: F)
-    where
-        F: Fn(&Self::View) -> R,
+        where
+            F: Fn(&E::View) -> R,
     {
         let entity_view = E::View::pure(&self.root_alias);
         let mut view = f(&entity_view).into();
@@ -43,21 +39,28 @@ impl<E: EntityWithView> Filter for QueryResultFilter<E> {
 }
 
 impl<E: EntityWithView> GroupBy<E> for QueryResultFilter<E> {
-    fn group_by<Fields: SuitForGroupByList<Entity=E>>(self) -> GroupedQueryResult<E, Fields> {
-        let QueryResultFilter {
-            query,
-            alias_generator,
-            root_alias,
-        } = self;
+    fn group_by<
+        R: Value,
+        RView: GroupByView<R>,
+        IntoRView: Into<RView>,
+        F: Fn(&E::View) -> IntoRView,
+    >(
+        mut self,
+        f: F,
+    ) -> GroupedQueryResult<E, R, RView> {
+        let entity_view = E::View::pure(&self.root_alias);
+        let mut view = f(&entity_view).into();
+        let mut visitor = self.alias_generator.substitute_visitor();
+        view.apply_mut(&mut visitor);
+
+        self.query.add_joins(visitor.joins());
 
         GroupedQueryResult::create(
-            query.group_by(
-                Fields::idents(root_alias.single_seg_ident())
-                    .into_iter()
-                    .collect(),
-            ),
-            alias_generator,
-            root_alias,
+            self.query
+                .group_by(view.collect_expr().into_iter().collect()),
+            view,
+            self.alias_generator,
+            self.root_alias,
         )
     }
 }
@@ -72,7 +75,7 @@ impl<E: EntityWithView> Fold<E, E::View> for QueryResultFilter<E> {
         entity_view.apply_mut(&mut visitor);
 
         self.query.add_joins(visitor.joins());
-        FoldedQueryResult::create(Box::new(self.query), f(&entity_view))
+        FoldedQueryResult::create(Box::new(self.query), f(&entity_view), self.alias_generator)
     }
 }
 

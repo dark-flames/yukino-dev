@@ -1,14 +1,16 @@
-use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
-use interface::DefinitionType;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
+
+use interface::DefinitionType;
+
+use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
 
 pub struct FieldMakerPass();
 
 impl EntityResolvePass for FieldMakerPass {
     fn instance() -> Box<dyn EntityResolvePass>
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
         Box::new(FieldMakerPass())
     }
@@ -28,15 +30,6 @@ impl EntityResolvePass for FieldMakerPass {
                 let marker_name = &field.marker_name;
                 let field_name = &field.path.field_name;
                 let field_type = &field.ty;
-                let suit_for_group_by = if field.suit_for_group_by {
-                    quote! {
-                        yukino::query::True
-                    }
-                } else {
-                    quote! {
-                        yukino::query::False
-                    }
-                };
                 quote! {
                     #[allow(non_camel_case_types)]
                     pub struct #marker_name();
@@ -44,7 +37,6 @@ impl EntityResolvePass for FieldMakerPass {
                     impl FieldMarker for #marker_name {
                         type Entity = #entity_name;
                         type FieldType = #field_type;
-                        type SuitForGroupBy = #suit_for_group_by;
 
                         fn field_name() -> &'static str {
                             #field_name

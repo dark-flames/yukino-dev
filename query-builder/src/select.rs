@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use interface::YukinoEntity;
 
-use crate::{Alias, Expr, Ident, Join};
+use crate::{Alias, Expr, Join};
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum Order {
@@ -23,7 +23,7 @@ pub struct SelectFrom<E: YukinoEntity> {
 #[allow(dead_code)]
 pub struct GroupSelect<E: YukinoEntity> {
     base: SelectFrom<E>,
-    group_by: Vec<Ident>,
+    group_by: Vec<Expr>,
     having: Vec<Expr>,
 }
 
@@ -124,7 +124,7 @@ impl<E: YukinoEntity> SelectFrom<E> {
         self
     }
 
-    pub fn group_by(self, columns: Vec<Ident>) -> GroupSelect<E> {
+    pub fn group_by(self, columns: Vec<Expr>) -> GroupSelect<E> {
         GroupSelect {
             base: self,
             group_by: columns,
@@ -134,9 +134,6 @@ impl<E: YukinoEntity> SelectFrom<E> {
 }
 
 impl<E: YukinoEntity> GroupSelect<E> {
-    pub fn extend_group_by(&mut self, group_by: Vec<Ident>) {
-        self.group_by.extend(group_by);
-    }
     pub fn having(&mut self, conditions: Vec<Expr>) -> &mut Self {
         self.having.extend(conditions);
 

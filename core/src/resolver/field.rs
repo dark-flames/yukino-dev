@@ -1,14 +1,17 @@
-use crate::err::CliResult;
-use crate::err::{ResolveError, YukinoError};
-use crate::resolver::entity::ResolvedEntity;
-use crate::resolver::path::FileTypePathResolver;
-use interface::{EntityDefinition, FieldDefinition};
-use proc_macro2::{Ident, TokenStream};
 use std::cmp::Eq;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
-use syn::spanned::Spanned;
+
+use proc_macro2::{Ident, TokenStream};
 use syn::Field;
+use syn::spanned::Spanned;
+
+use interface::{EntityDefinition, FieldDefinition};
+
+use crate::err::{ResolveError, YukinoError};
+use crate::err::CliResult;
+use crate::resolver::entity::ResolvedEntity;
+use crate::resolver::path::FileTypePathResolver;
 
 pub type EntityHandler = Box<dyn FnOnce(&ResolvedEntity) -> FieldResolveResult>;
 pub type FieldHandler = Box<dyn FnOnce(&ResolvedField) -> FieldResolveResult>;
@@ -33,7 +36,6 @@ pub struct ResolvedField {
     pub view: TokenStream,
     pub view_ty: TokenStream,
     pub view_path: TokenStream,
-    pub suit_for_group_by: bool,
     pub marker_name: Ident,
     pub primary: bool,
     pub entities: Vec<EntityDefinition>,

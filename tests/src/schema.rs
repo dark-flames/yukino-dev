@@ -247,29 +247,6 @@ lazy_static! {
         yukino::DefinitionType::Normal,
         vec![
             (
-                "optional".to_string(),
-                yukino::FieldDefinition::new(
-                    "optional".to_string(),
-                    "Option < u32 >".to_string(),
-                    false,
-                    yukino::DefinitionType::Normal,
-                    vec![(
-                        "optional".to_string(),
-                        yukino::ColumnDefinition::new(
-                            "optional".to_string(),
-                            yukino::DatabaseType::UnsignedInteger,
-                            true,
-                            false
-                        )
-                    )]
-                    .into_iter()
-                    .collect(),
-                    vec!["optional".to_string()],
-                    None,
-                    vec![]
-                )
-            ),
-            (
                 "u_long".to_string(),
                 yukino::FieldDefinition::new(
                     "u_long".to_string(),
@@ -293,24 +270,47 @@ lazy_static! {
                 )
             ),
             (
-                "boolean".to_string(),
+                "short".to_string(),
                 yukino::FieldDefinition::new(
-                    "boolean".to_string(),
-                    "bool".to_string(),
+                    "short".to_string(),
+                    "i16".to_string(),
                     false,
                     yukino::DefinitionType::Normal,
                     vec![(
-                        "boolean".to_string(),
+                        "short".to_string(),
                         yukino::ColumnDefinition::new(
-                            "boolean".to_string(),
-                            yukino::DatabaseType::Bool,
+                            "short".to_string(),
+                            yukino::DatabaseType::SmallInteger,
                             false,
                             false
                         )
                     )]
                     .into_iter()
                     .collect(),
-                    vec!["boolean".to_string()],
+                    vec!["short".to_string()],
+                    None,
+                    vec![]
+                )
+            ),
+            (
+                "long".to_string(),
+                yukino::FieldDefinition::new(
+                    "long".to_string(),
+                    "i64".to_string(),
+                    false,
+                    yukino::DefinitionType::Normal,
+                    vec![(
+                        "long".to_string(),
+                        yukino::ColumnDefinition::new(
+                            "long".to_string(),
+                            yukino::DatabaseType::BigInteger,
+                            false,
+                            false
+                        )
+                    )]
+                    .into_iter()
+                    .collect(),
+                    vec!["long".to_string()],
                     None,
                     vec![]
                 )
@@ -339,24 +339,47 @@ lazy_static! {
                 )
             ),
             (
-                "string".to_string(),
+                "id".to_string(),
                 yukino::FieldDefinition::new(
-                    "string".to_string(),
-                    "String".to_string(),
+                    "id".to_string(),
+                    "u32".to_string(),
                     false,
                     yukino::DefinitionType::Normal,
                     vec![(
-                        "string".to_string(),
+                        "id".to_string(),
                         yukino::ColumnDefinition::new(
-                            "string".to_string(),
-                            yukino::DatabaseType::String,
+                            "id".to_string(),
+                            yukino::DatabaseType::UnsignedInteger,
                             false,
                             false
                         )
                     )]
                     .into_iter()
                     .collect(),
-                    vec!["string".to_string()],
+                    vec!["id".to_string()],
+                    None,
+                    vec![]
+                )
+            ),
+            (
+                "optional".to_string(),
+                yukino::FieldDefinition::new(
+                    "optional".to_string(),
+                    "Option < u32 >".to_string(),
+                    false,
+                    yukino::DefinitionType::Normal,
+                    vec![(
+                        "optional".to_string(),
+                        yukino::ColumnDefinition::new(
+                            "optional".to_string(),
+                            yukino::DatabaseType::UnsignedInteger,
+                            true,
+                            false
+                        )
+                    )]
+                    .into_iter()
+                    .collect(),
+                    vec!["optional".to_string()],
                     None,
                     vec![]
                 )
@@ -408,98 +431,6 @@ lazy_static! {
                 )
             ),
             (
-                "u_int".to_string(),
-                yukino::FieldDefinition::new(
-                    "u_int".to_string(),
-                    "u32".to_string(),
-                    false,
-                    yukino::DefinitionType::Normal,
-                    vec![(
-                        "u_int".to_string(),
-                        yukino::ColumnDefinition::new(
-                            "u_int".to_string(),
-                            yukino::DatabaseType::UnsignedInteger,
-                            false,
-                            false
-                        )
-                    )]
-                    .into_iter()
-                    .collect(),
-                    vec!["u_int".to_string()],
-                    None,
-                    vec![]
-                )
-            ),
-            (
-                "long".to_string(),
-                yukino::FieldDefinition::new(
-                    "long".to_string(),
-                    "i64".to_string(),
-                    false,
-                    yukino::DefinitionType::Normal,
-                    vec![(
-                        "long".to_string(),
-                        yukino::ColumnDefinition::new(
-                            "long".to_string(),
-                            yukino::DatabaseType::BigInteger,
-                            false,
-                            false
-                        )
-                    )]
-                    .into_iter()
-                    .collect(),
-                    vec!["long".to_string()],
-                    None,
-                    vec![]
-                )
-            ),
-            (
-                "id".to_string(),
-                yukino::FieldDefinition::new(
-                    "id".to_string(),
-                    "u32".to_string(),
-                    false,
-                    yukino::DefinitionType::Normal,
-                    vec![(
-                        "id".to_string(),
-                        yukino::ColumnDefinition::new(
-                            "id".to_string(),
-                            yukino::DatabaseType::UnsignedInteger,
-                            false,
-                            false
-                        )
-                    )]
-                    .into_iter()
-                    .collect(),
-                    vec!["id".to_string()],
-                    None,
-                    vec![]
-                )
-            ),
-            (
-                "short".to_string(),
-                yukino::FieldDefinition::new(
-                    "short".to_string(),
-                    "i16".to_string(),
-                    false,
-                    yukino::DefinitionType::Normal,
-                    vec![(
-                        "short".to_string(),
-                        yukino::ColumnDefinition::new(
-                            "short".to_string(),
-                            yukino::DatabaseType::SmallInteger,
-                            false,
-                            false
-                        )
-                    )]
-                    .into_iter()
-                    .collect(),
-                    vec!["short".to_string()],
-                    None,
-                    vec![]
-                )
-            ),
-            (
                 "float".to_string(),
                 yukino::FieldDefinition::new(
                     "float".to_string(),
@@ -523,6 +454,29 @@ lazy_static! {
                 )
             ),
             (
+                "u_int".to_string(),
+                yukino::FieldDefinition::new(
+                    "u_int".to_string(),
+                    "u32".to_string(),
+                    false,
+                    yukino::DefinitionType::Normal,
+                    vec![(
+                        "u_int".to_string(),
+                        yukino::ColumnDefinition::new(
+                            "u_int".to_string(),
+                            yukino::DatabaseType::UnsignedInteger,
+                            false,
+                            false
+                        )
+                    )]
+                    .into_iter()
+                    .collect(),
+                    vec!["u_int".to_string()],
+                    None,
+                    vec![]
+                )
+            ),
+            (
                 "int".to_string(),
                 yukino::FieldDefinition::new(
                     "int".to_string(),
@@ -541,6 +495,52 @@ lazy_static! {
                     .into_iter()
                     .collect(),
                     vec!["int".to_string()],
+                    None,
+                    vec![]
+                )
+            ),
+            (
+                "boolean".to_string(),
+                yukino::FieldDefinition::new(
+                    "boolean".to_string(),
+                    "bool".to_string(),
+                    false,
+                    yukino::DefinitionType::Normal,
+                    vec![(
+                        "boolean".to_string(),
+                        yukino::ColumnDefinition::new(
+                            "boolean".to_string(),
+                            yukino::DatabaseType::Bool,
+                            false,
+                            false
+                        )
+                    )]
+                    .into_iter()
+                    .collect(),
+                    vec!["boolean".to_string()],
+                    None,
+                    vec![]
+                )
+            ),
+            (
+                "string".to_string(),
+                yukino::FieldDefinition::new(
+                    "string".to_string(),
+                    "String".to_string(),
+                    false,
+                    yukino::DefinitionType::Normal,
+                    vec![(
+                        "string".to_string(),
+                        yukino::ColumnDefinition::new(
+                            "string".to_string(),
+                            yukino::DatabaseType::String,
+                            false,
+                            false
+                        )
+                    )]
+                    .into_iter()
+                    .collect(),
+                    vec!["string".to_string()],
                     None,
                     vec![]
                 )
@@ -693,7 +693,6 @@ pub mod basic {
     impl FieldMarker for boolean {
         type Entity = Basic;
         type FieldType = bool;
-        type SuitForGroupBy = yukino::query::True;
         fn field_name() -> &'static str {
             "boolean"
         }
@@ -709,7 +708,6 @@ pub mod basic {
     impl FieldMarker for character {
         type Entity = Basic;
         type FieldType = char;
-        type SuitForGroupBy = yukino::query::True;
         fn field_name() -> &'static str {
             "character"
         }
@@ -725,7 +723,6 @@ pub mod basic {
     impl FieldMarker for double {
         type Entity = Basic;
         type FieldType = f64;
-        type SuitForGroupBy = yukino::query::True;
         fn field_name() -> &'static str {
             "double"
         }
@@ -741,7 +738,6 @@ pub mod basic {
     impl FieldMarker for float {
         type Entity = Basic;
         type FieldType = f32;
-        type SuitForGroupBy = yukino::query::True;
         fn field_name() -> &'static str {
             "float"
         }
@@ -757,7 +753,6 @@ pub mod basic {
     impl FieldMarker for id {
         type Entity = Basic;
         type FieldType = u32;
-        type SuitForGroupBy = yukino::query::True;
         fn field_name() -> &'static str {
             "id"
         }
@@ -773,7 +768,6 @@ pub mod basic {
     impl FieldMarker for int {
         type Entity = Basic;
         type FieldType = i32;
-        type SuitForGroupBy = yukino::query::True;
         fn field_name() -> &'static str {
             "int"
         }
@@ -789,7 +783,6 @@ pub mod basic {
     impl FieldMarker for long {
         type Entity = Basic;
         type FieldType = i64;
-        type SuitForGroupBy = yukino::query::True;
         fn field_name() -> &'static str {
             "long"
         }
@@ -805,7 +798,6 @@ pub mod basic {
     impl FieldMarker for optional {
         type Entity = Basic;
         type FieldType = Option<u32>;
-        type SuitForGroupBy = yukino::query::True;
         fn field_name() -> &'static str {
             "optional"
         }
@@ -821,7 +813,6 @@ pub mod basic {
     impl FieldMarker for short {
         type Entity = Basic;
         type FieldType = i16;
-        type SuitForGroupBy = yukino::query::True;
         fn field_name() -> &'static str {
             "short"
         }
@@ -837,7 +828,6 @@ pub mod basic {
     impl FieldMarker for string {
         type Entity = Basic;
         type FieldType = String;
-        type SuitForGroupBy = yukino::query::True;
         fn field_name() -> &'static str {
             "string"
         }
@@ -853,7 +843,6 @@ pub mod basic {
     impl FieldMarker for u_int {
         type Entity = Basic;
         type FieldType = u32;
-        type SuitForGroupBy = yukino::query::True;
         fn field_name() -> &'static str {
             "u_int"
         }
@@ -869,7 +858,6 @@ pub mod basic {
     impl FieldMarker for u_long {
         type Entity = Basic;
         type FieldType = u64;
-        type SuitForGroupBy = yukino::query::True;
         fn field_name() -> &'static str {
             "u_long"
         }
@@ -885,7 +873,6 @@ pub mod basic {
     impl FieldMarker for u_short {
         type Entity = Basic;
         type FieldType = u16;
-        type SuitForGroupBy = yukino::query::True;
         fn field_name() -> &'static str {
             "u_short"
         }
