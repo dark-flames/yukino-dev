@@ -51,13 +51,7 @@ pub trait SelectSource: 'static {
     where
         Self: Sized,
     {
-        SelectQuery {
-            base: Box::new(self),
-            select: items,
-            order_by: vec![],
-            limit: None,
-            offset: 0,
-        }
+        SelectQuery::create(Box::new(self), items, vec![], None, 0)
     }
 
     fn order_by(self, items: Vec<OrderByItem>) -> SelectQuery
@@ -146,6 +140,21 @@ impl<E: YukinoEntity> SelectSource for SelectFrom<E> {}
 impl<E: YukinoEntity> SelectSource for GroupSelect<E> {}
 
 impl SelectQuery {
+    pub fn create(
+        base: Box<dyn SelectSource>,
+        select: Vec<SelectItem>,
+        order_by: Vec<OrderByItem>,
+        limit: Option<usize>,
+        offset: usize,
+    ) -> Self {
+        SelectQuery {
+            base,
+            select,
+            order_by,
+            limit,
+            offset,
+        }
+    }
     pub fn append_select(&mut self, items: Vec<SelectItem>) -> &mut Self {
         self.select.extend(items);
 

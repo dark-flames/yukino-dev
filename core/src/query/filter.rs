@@ -87,6 +87,6 @@ impl<E: EntityWithView> Map<E, E::View> for QueryResultFilter<E> {
         let entity_view = E::View::pure(&self.root_alias);
         let result_view = f(&entity_view).into();
 
-        QueryResultMap::create(Box::new(self.query), result_view)
+        QueryResultMap::create(Box::new(self.query), self.alias_generator, result_view)
     }
 }

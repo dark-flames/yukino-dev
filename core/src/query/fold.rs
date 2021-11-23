@@ -44,6 +44,6 @@ impl<V: Value<L=U1>, View: AggregateView<V>> Map<V, View> for FoldedQueryResult<
     ) -> QueryResultMap<R, RL> {
         let result_view = f(&self.view).into();
 
-        QueryResultMap::create(self.query, result_view)
+        QueryResultMap::create(self.query, self.alias_generator, result_view)
     }
 }

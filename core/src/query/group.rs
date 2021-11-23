@@ -66,6 +66,6 @@ for GroupedQueryResult<E, V, View>
         f: F,
     ) -> QueryResultMap<R, RL> {
         let result_view = f(&self.view).into();
-        QueryResultMap::create(Box::new(self.query), result_view)
+        QueryResultMap::create(Box::new(self.query), self.alias_generator, result_view)
     }
 }
