@@ -1,4 +1,6 @@
 # yukino-dev
+![](https://github.com/dark-flames/yukino-dev/actions/workflows/main.yml/badge.svg)
+[![](https://tokei.rs/b1/github/dark-flames/yukino-dev)](https://github.com/XAMPPRocky/tokei)
 
 A type-safe, high performance ORM framework
 
