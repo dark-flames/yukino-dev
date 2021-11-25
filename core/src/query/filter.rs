@@ -1,5 +1,6 @@
 use generic_array::typenum::U1;
 
+use interface::DefinitionManager;
 use query_builder::{Alias, ExprNode, SelectFrom};
 
 use crate::query::{
@@ -16,13 +17,13 @@ pub struct QueryResultFilter<E: EntityWithView> {
 }
 
 pub trait Filter<View> {
-    fn filter<F, R: Into<ExprViewBox<bool>>>(&mut self, f: F)
+    fn filter<F, R: Into<ExprViewBox<bool>>>(self, f: F) -> Self
     where
         F: Fn(&View) -> R;
 }
 
 impl<E: EntityWithView> Filter<E::View> for QueryResultFilter<E> {
-    fn filter<F, R: Into<ExprViewBox<bool>>>(&mut self, f: F)
+    fn filter<F, R: Into<ExprViewBox<bool>>>(mut self, f: F) -> Self
     where
         F: Fn(&E::View) -> R,
     {
@@ -35,6 +36,8 @@ impl<E: EntityWithView> Filter<E::View> for QueryResultFilter<E> {
         view.collect_expr().into_iter().for_each(|e| {
             self.query.and_where(e);
         });
+
+        self
     }
 }
 
@@ -88,5 +91,17 @@ impl<E: EntityWithView> Map<E, E::View> for QueryResultFilter<E> {
         let result_view = f(&entity_view).into();
 
         QueryResultMap::create(Box::new(self.query), self.alias_generator, result_view)
+    }
+}
+
+impl<E: EntityWithView> QueryResultFilter<E> {
+    pub fn create(manager: &'static DefinitionManager) -> Self {
+        let mut generator = AliasGenerator::create(manager);
+        let root_alias = generator.generate_root_alias::<E>();
+        QueryResultFilter {
+            query: SelectFrom::create(root_alias.clone()),
+            root_alias,
+            alias_generator: generator,
+        }
     }
 }

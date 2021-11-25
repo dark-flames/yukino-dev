@@ -46,7 +46,7 @@ impl<E: EntityWithView, V: Value, View: GroupByView<V>> GroupedQueryResult<E, V,
 impl<E: EntityWithView, V: Value, View: GroupByView<V>> Filter<View>
     for GroupedQueryResult<E, V, View>
 {
-    fn filter<F, R: Into<ExprViewBox<bool>>>(&mut self, f: F)
+    fn filter<F, R: Into<ExprViewBox<bool>>>(mut self, f: F) -> Self
     where
         F: Fn(&View) -> R,
     {
@@ -55,6 +55,8 @@ impl<E: EntityWithView, V: Value, View: GroupByView<V>> Filter<View>
         view.apply_mut(&mut visitor);
 
         self.query.having(view.collect_expr().into_iter().collect());
+
+        self
     }
 }
 

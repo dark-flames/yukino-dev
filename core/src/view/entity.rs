@@ -1,6 +1,8 @@
-use crate::view::{ExprView, Value};
 use interface::YukinoEntity;
 use query_builder::Alias;
+
+use crate::query::QueryResultFilter;
+use crate::view::{ExprView, Value};
 
 pub trait EntityView: ExprView<Self::Entity> {
     type Entity: EntityWithView;
@@ -12,4 +14,6 @@ pub trait EntityView: ExprView<Self::Entity> {
 
 pub trait EntityWithView: YukinoEntity + Value {
     type View: EntityView<Entity = Self>;
+
+    fn all() -> QueryResultFilter<Self>;
 }

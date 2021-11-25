@@ -104,6 +104,14 @@ impl Select {
 }
 
 impl<E: YukinoEntity> SelectFrom<E> {
+    pub fn create(root_alias: Alias) -> Self {
+        SelectFrom {
+            root_alias,
+            join: vec![],
+            where_clauses: vec![],
+            _marker: Default::default(),
+        }
+    }
     pub fn and_where(&mut self, expr: Expr) -> &mut Self {
         self.where_clauses.push(expr);
 

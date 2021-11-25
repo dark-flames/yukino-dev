@@ -1,4 +1,4 @@
-use query_builder::SelectSource;
+use query_builder::{SelectItem, SelectQuery, SelectSource};
 
 use crate::query::AliasGenerator;
 use crate::view::{ExprView, Value, ValueCount, ViewBox};
@@ -28,5 +28,27 @@ impl<R: 'static, RL: ValueCount> QueryResultMap<R, RL> {
             alias_generator,
             view,
         }
+    }
+
+    pub fn generate_query(mut self) -> SelectQuery {
+        let mut visitor = self.alias_generator.substitute_visitor();
+        self.view.apply_mut(&mut visitor);
+        SelectQuery::create(
+            self.query,
+            self.view
+                .collect_expr()
+                .into_iter()
+                .enumerate()
+                .map(|(i, e)| SelectItem {
+                    expr: e,
+                    alias: i.to_string(),
+                })
+                .collect(),
+            vec![],
+            None,
+            0,
+        )
+
+        //todo: order limit offset
     }
 }

@@ -1,7 +1,8 @@
-use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
 use heck::SnakeCase;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
+
+use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
 
 pub struct EntityImplementPass {
     definitions: Vec<TokenStream>,
@@ -20,7 +21,8 @@ impl EntityResolvePass for EntityImplementPass {
     fn get_dependencies(&self) -> Vec<TokenStream> {
         vec![quote! {
             use yukino::{YukinoEntity, EntityDefinition};
-            use yukino::view::{Value, View, EntityWithView, ValueCountOf };
+            use yukino::view::{Value, View, EntityWithView, ValueCountOf};
+            use yukino::query::{QueryResultFilter};
             use yukino::converter::ConverterRef;
             use yukino::lazy_static::lazy_static;
         }]
@@ -61,6 +63,10 @@ impl EntityResolvePass for EntityImplementPass {
 
             impl EntityWithView for #name {
                 type View = #view_name;
+
+                fn all() -> QueryResultFilter<Self> {
+                    QueryResultFilter::create(&*DEFINITION_MANAGER)
+                }
             }
 
             impl Value for #name {
