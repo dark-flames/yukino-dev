@@ -17,14 +17,14 @@ pub struct QueryResultFilter<E: EntityWithView> {
 
 pub trait Filter<View> {
     fn filter<F, R: Into<ExprViewBox<bool>>>(&mut self, f: F)
-        where
-            F: Fn(&View) -> R;
+    where
+        F: Fn(&View) -> R;
 }
 
 impl<E: EntityWithView> Filter<E::View> for QueryResultFilter<E> {
     fn filter<F, R: Into<ExprViewBox<bool>>>(&mut self, f: F)
-        where
-            F: Fn(&E::View) -> R,
+    where
+        F: Fn(&E::View) -> R,
     {
         let entity_view = E::View::pure(&self.root_alias);
         let mut view = f(&entity_view).into();
@@ -66,7 +66,7 @@ impl<E: EntityWithView> GroupBy<E> for QueryResultFilter<E> {
 }
 
 impl<E: EntityWithView> Fold<E, E::View> for QueryResultFilter<E> {
-    fn fold<R: Value<L=U1>, RV: AggregateView<R>, F: Fn(&E::View) -> RV>(
+    fn fold<R: Value<L = U1>, RV: AggregateView<R>, F: Fn(&E::View) -> RV>(
         mut self,
         f: F,
     ) -> FoldedQueryResult<R, RV> {

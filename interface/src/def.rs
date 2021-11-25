@@ -1,6 +1,9 @@
-use crate::{DatabaseType, IndexMethod};
-use iroha::ToTokens;
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
+
+use iroha::ToTokens;
+
+use crate::{DatabaseType, IndexMethod};
 
 #[derive(ToTokens, Clone)]
 #[Iroha(mod_path = "yukino")]
@@ -101,5 +104,15 @@ impl DefinitionManager {
 
     pub fn field(&self, id: &usize, field: &str) -> Option<&'static FieldDefinition> {
         self.definitions.get(id).and_then(|f| f.fields.get(field))
+    }
+}
+
+impl Display for JoinType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            JoinType::LeftJoin => write!(f, "LEFT JOIN"),
+            JoinType::RightJoin => write!(f, "RIGHT JOIN"),
+            JoinType::InnerJoin => write!(f, "INNER JOIN"),
+        }
     }
 }

@@ -44,11 +44,11 @@ impl<E: EntityWithView, V: Value, View: GroupByView<V>> GroupedQueryResult<E, V,
 }
 
 impl<E: EntityWithView, V: Value, View: GroupByView<V>> Filter<View>
-for GroupedQueryResult<E, V, View>
+    for GroupedQueryResult<E, V, View>
 {
     fn filter<F, R: Into<ExprViewBox<bool>>>(&mut self, f: F)
-        where
-            F: Fn(&View) -> R,
+    where
+        F: Fn(&View) -> R,
     {
         let mut view = f(&self.view).into();
         let mut visitor = self.alias_generator.substitute_visitor();
@@ -59,7 +59,7 @@ for GroupedQueryResult<E, V, View>
 }
 
 impl<E: EntityWithView, V: Value, View: GroupByView<V>> Map<V, View>
-for GroupedQueryResult<E, V, View>
+    for GroupedQueryResult<E, V, View>
 {
     fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(&View) -> RV>(
         self,

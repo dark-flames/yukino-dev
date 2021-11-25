@@ -1,5 +1,8 @@
-use crate::{Alias, AliasedTable, Expr};
-use interface::{FieldDefinition, JoinType};
+use std::fmt::{Display, Formatter};
+
+use interface::JoinType;
+
+use crate::{AliasedTable, Expr};
 
 pub struct Join {
     pub ty: JoinType,
@@ -7,11 +10,8 @@ pub struct Join {
     pub on: Expr,
 }
 
-pub trait IntoJoin {
-    fn generate_join(
-        &self,
-        alias: &Alias,
-        gen_alias: impl Fn(usize) -> Alias,
-        get_field: impl Fn(usize, &str) -> &'static FieldDefinition,
-    ) -> Option<Join>;
+impl Display for Join {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {} ON {}", self.ty, self.table, self.on)
+    }
 }

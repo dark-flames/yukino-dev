@@ -9,8 +9,8 @@ pub struct FieldMakerPass();
 
 impl EntityResolvePass for FieldMakerPass {
     fn instance() -> Box<dyn EntityResolvePass>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         Box::new(FieldMakerPass())
     }

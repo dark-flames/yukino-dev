@@ -8,7 +8,7 @@ use crate::query::{AliasGenerator, Map, QueryResultMap};
 use crate::view::{AggregateView, ExprView, Value, ValueCount, ViewBox};
 
 #[allow(dead_code)]
-pub struct FoldedQueryResult<V: Value<L=U1>, View: AggregateView<V>> {
+pub struct FoldedQueryResult<V: Value<L = U1>, View: AggregateView<V>> {
     query: Box<dyn SelectSource>,
     view: View,
     alias_generator: AliasGenerator,
@@ -16,13 +16,13 @@ pub struct FoldedQueryResult<V: Value<L=U1>, View: AggregateView<V>> {
 }
 
 pub trait Fold<T: Value, View: ExprView<T>> {
-    fn fold<R: Value<L=U1>, RV: AggregateView<R>, F: Fn(&View) -> RV>(
+    fn fold<R: Value<L = U1>, RV: AggregateView<R>, F: Fn(&View) -> RV>(
         self,
         f: F,
     ) -> FoldedQueryResult<R, RV>;
 }
 
-impl<V: Value<L=U1>, View: AggregateView<V>> FoldedQueryResult<V, View> {
+impl<V: Value<L = U1>, View: AggregateView<V>> FoldedQueryResult<V, View> {
     pub fn create(
         query: Box<dyn SelectSource>,
         view: View,
@@ -37,7 +37,7 @@ impl<V: Value<L=U1>, View: AggregateView<V>> FoldedQueryResult<V, View> {
     }
 }
 
-impl<V: Value<L=U1>, View: AggregateView<V>> Map<V, View> for FoldedQueryResult<V, View> {
+impl<V: Value<L = U1>, View: AggregateView<V>> Map<V, View> for FoldedQueryResult<V, View> {
     fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(&View) -> RV>(
         self,
         f: F,

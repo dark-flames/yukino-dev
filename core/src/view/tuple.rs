@@ -13,16 +13,16 @@ use crate::err::{RuntimeResult, YukinoError};
 use crate::view::{ExprView, ExprViewBox, Value, ValueCount, ValueCountOf, View, ViewBox};
 
 pub struct TupleExprView<L: Value, R: Value>(pub ExprViewBox<L>, pub ExprViewBox<R>)
-    where
-        ValueCountOf<L>: Add<ValueCountOf<R>>,
-        Sum<ValueCountOf<L>, ValueCountOf<R>>:
-        ValueCount + Sub<ValueCountOf<L>, Output=ValueCountOf<R>>;
+where
+    ValueCountOf<L>: Add<ValueCountOf<R>>,
+    Sum<ValueCountOf<L>, ValueCountOf<R>>:
+        ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>;
 
 impl<L: Value, R: Value> ExprNode for TupleExprView<L, R>
-    where
-        ValueCountOf<L>: Add<ValueCountOf<R>>,
-        Sum<ValueCountOf<L>, ValueCountOf<R>>:
-        ValueCount + Sub<ValueCountOf<L>, Output=ValueCountOf<R>>,
+where
+    ValueCountOf<L>: Add<ValueCountOf<R>>,
+    Sum<ValueCountOf<L>, ValueCountOf<R>>:
+        ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
 {
     fn apply(&self, visitor: &mut dyn ExprVisitor) {
         self.0.apply(visitor);
@@ -101,10 +101,10 @@ where
 }
 
 impl<L: Value, R: Value> From<(ExprViewBox<L>, ExprViewBox<R>)> for TupleExprView<L, R>
-    where
-        (L, R): Value,
-        ValueCountOf<L>: Add<ValueCountOf<R>, Output=ValueCountOf<(L, R)>>,
-        ValueCountOf<(L, R)>: Sub<ValueCountOf<L>, Output=ValueCountOf<R>>,
+where
+    (L, R): Value,
+    ValueCountOf<L>: Add<ValueCountOf<R>, Output = ValueCountOf<(L, R)>>,
+    ValueCountOf<(L, R)>: Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
 {
     fn from(tuple: (ExprViewBox<L>, ExprViewBox<R>)) -> Self {
         let (l, r) = tuple;

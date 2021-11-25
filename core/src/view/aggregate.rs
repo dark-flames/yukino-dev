@@ -10,20 +10,20 @@ use crate::err::{RuntimeResult, YukinoError};
 use crate::view::{ExprView, ExprViewBox, Value, ValueCountOf, View, ViewBox};
 
 #[derive(Clone)]
-pub struct AggregateViewItem<T: Value<L=U1>> {
+pub struct AggregateViewItem<T: Value<L = U1>> {
     function_call: FunctionCall,
     _marker: PhantomData<T>,
 }
 
 #[derive(Clone)]
-pub struct AggregateViewTuple<L: Value<L=U1>, R: Value<L=U1>>(
+pub struct AggregateViewTuple<L: Value<L = U1>, R: Value<L = U1>>(
     pub AggregateViewItem<L>,
     pub AggregateViewItem<R>,
 );
 
 pub trait AggregateView<T: Value>: ExprView<T> {}
 
-impl<T: Value<L=U1>> ExprNode for AggregateViewItem<T> {
+impl<T: Value<L = U1>> ExprNode for AggregateViewItem<T> {
     fn apply(&self, visitor: &mut dyn ExprVisitor) {
         self.function_call.apply(visitor);
     }
@@ -33,7 +33,7 @@ impl<T: Value<L=U1>> ExprNode for AggregateViewItem<T> {
     }
 }
 
-impl<T: Value<L=U1>> View<T, ValueCountOf<T>> for AggregateViewItem<T> {
+impl<T: Value<L = U1>> View<T, ValueCountOf<T>> for AggregateViewItem<T> {
     fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<T>> {
         arr![Expr; Expr::FunctionCall(self.function_call.clone())]
     }
@@ -47,10 +47,10 @@ impl<T: Value<L=U1>> View<T, ValueCountOf<T>> for AggregateViewItem<T> {
     }
 }
 
-impl<T: Value<L=U1>> ExprView<T> for AggregateViewItem<T> {
+impl<T: Value<L = U1>> ExprView<T> for AggregateViewItem<T> {
     fn from_exprs(_exprs: GenericArray<Expr, ValueCountOf<T>>) -> Self
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         unreachable!("AggregateView cannot be construct directly");
     }
@@ -60,7 +60,7 @@ impl<T: Value<L=U1>> ExprView<T> for AggregateViewItem<T> {
     }
 }
 
-impl<T: Value<L=U1>> AggregateViewItem<T> {
+impl<T: Value<L = U1>> AggregateViewItem<T> {
     pub fn from_function_call(f: FunctionCall) -> Self {
         AggregateViewItem {
             function_call: f,
@@ -69,9 +69,9 @@ impl<T: Value<L=U1>> AggregateViewItem<T> {
     }
 }
 
-impl<T: Value<L=U1>> AggregateView<T> for AggregateViewItem<T> {}
+impl<T: Value<L = U1>> AggregateView<T> for AggregateViewItem<T> {}
 
-impl<L: Value<L=U1>, R: Value<L=U1>> ExprNode for AggregateViewTuple<L, R> {
+impl<L: Value<L = U1>, R: Value<L = U1>> ExprNode for AggregateViewTuple<L, R> {
     fn apply(&self, visitor: &mut dyn ExprVisitor) {
         self.0.apply(visitor);
         self.1.apply(visitor);
@@ -83,7 +83,7 @@ impl<L: Value<L=U1>, R: Value<L=U1>> ExprNode for AggregateViewTuple<L, R> {
     }
 }
 
-impl<L: Value<L=U1>, R: Value<L=U1>> View<(L, R), U2> for AggregateViewTuple<L, R> {
+impl<L: Value<L = U1>, R: Value<L = U1>> View<(L, R), U2> for AggregateViewTuple<L, R> {
     fn collect_expr(&self) -> GenericArray<Expr, U2> {
         Concat::concat(self.0.collect_expr(), self.1.collect_expr())
     }
@@ -98,10 +98,10 @@ impl<L: Value<L=U1>, R: Value<L=U1>> View<(L, R), U2> for AggregateViewTuple<L, 
     }
 }
 
-impl<L: Value<L=U1>, R: Value<L=U1>> ExprView<(L, R)> for AggregateViewTuple<L, R> {
+impl<L: Value<L = U1>, R: Value<L = U1>> ExprView<(L, R)> for AggregateViewTuple<L, R> {
     fn from_exprs(_exprs: GenericArray<Expr, U2>) -> Self
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         unreachable!("AggregateView cannot be construct directly");
     }
@@ -111,4 +111,4 @@ impl<L: Value<L=U1>, R: Value<L=U1>> ExprView<(L, R)> for AggregateViewTuple<L, 
     }
 }
 
-impl<L: Value<L=U1>, R: Value<L=U1>> AggregateView<(L, R)> for AggregateViewTuple<L, R> {}
+impl<L: Value<L = U1>, R: Value<L = U1>> AggregateView<(L, R)> for AggregateViewTuple<L, R> {}

@@ -41,8 +41,8 @@ impl<T: Value> View<T, ValueCountOf<T>> for GroupByViewItem<T> {
 
 impl<T: Value> ExprView<T> for GroupByViewItem<T> {
     fn from_exprs(_exprs: GenericArray<Expr, ValueCountOf<T>>) -> Self
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         unreachable!("GroupByViewTuple cannot be construct directly");
     }
@@ -55,11 +55,12 @@ impl<T: Value> ExprView<T> for GroupByViewItem<T> {
 impl<T: Value> GroupByView<T> for GroupByViewItem<T> {}
 
 impl<L: Value, R: Value> GroupByView<(L, R)> for TupleExprView<L, R>
-    where
-        ValueCountOf<L>: Add<ValueCountOf<R>>,
-        Sum<ValueCountOf<L>, ValueCountOf<R>>:
-        ValueCount + Sub<ValueCountOf<L>, Output=ValueCountOf<R>>,
-{}
+where
+    ValueCountOf<L>: Add<ValueCountOf<R>>,
+    Sum<ValueCountOf<L>, ValueCountOf<R>>:
+        ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
+{
+}
 
 impl<T: Value> From<ExprViewBox<T>> for GroupByViewItem<T> {
     fn from(expr: ExprViewBox<T>) -> Self {

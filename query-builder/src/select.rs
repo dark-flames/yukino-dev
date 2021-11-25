@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use std::marker::PhantomData;
 
 use interface::YukinoEntity;
@@ -12,7 +13,6 @@ pub enum Order {
 
 pub struct Select;
 
-#[allow(dead_code)]
 pub struct SelectFrom<E: YukinoEntity> {
     root_alias: Alias,
     join: Vec<Join>,
@@ -20,14 +20,12 @@ pub struct SelectFrom<E: YukinoEntity> {
     _marker: PhantomData<E>,
 }
 
-#[allow(dead_code)]
 pub struct GroupSelect<E: YukinoEntity> {
     base: SelectFrom<E>,
     group_by: Vec<Expr>,
     having: Vec<Expr>,
 }
 
-#[allow(dead_code)]
 pub struct SelectQuery {
     base: Box<dyn SelectSource>,
     select: Vec<SelectItem>,
@@ -46,7 +44,7 @@ pub struct OrderByItem {
     pub order: Order,
 }
 
-pub trait SelectSource: 'static {
+pub trait SelectSource: Display + 'static {
     fn select(self, items: Vec<SelectItem>) -> SelectQuery
     where
         Self: Sized,
@@ -177,5 +175,117 @@ impl SelectQuery {
         self.offset = o;
 
         self
+    }
+}
+
+impl Display for Order {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Order::Asc => write!(f, "ASC"),
+            Order::Desc => write!(f, "DESC"),
+        }
+    }
+}
+
+impl Display for SelectItem {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} AS {}", self.expr, self.alias)
+    }
+}
+
+impl Display for OrderByItem {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {}", self.expr, self.order)
+    }
+}
+
+impl<E: YukinoEntity> Display for SelectFrom<E> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let join_clauses = self
+            .join
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(" ");
+        let where_clauses = if self.where_clauses.is_empty() {
+            "".to_string()
+        } else {
+            format!(
+                "WHERE {}",
+                self.where_clauses
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(" AND ")
+            )
+        };
+        write!(
+            f,
+            "FROM {} {} {}",
+            self.root_alias, join_clauses, where_clauses
+        )
+    }
+}
+
+impl<E: YukinoEntity> Display for GroupSelect<E> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let group_by_clauses = if self.group_by.is_empty() {
+            "".to_string()
+        } else {
+            format!(
+                "GROUP BY {}",
+                self.group_by
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
+        };
+
+        let having_clauses = if self.group_by.is_empty() {
+            "".to_string()
+        } else {
+            format!(
+                "HAVING {}",
+                self.having
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(" AND ")
+            )
+        };
+        write!(f, "{} {} {}", self.base, group_by_clauses, having_clauses)
+    }
+}
+
+impl Display for SelectQuery {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let select_items = self
+            .select
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(", ");
+        let order_by_clauses = if self.order_by.is_empty() {
+            "".to_string()
+        } else {
+            format!(
+                "ORDER BY {}",
+                self.order_by
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
+        };
+        let limit_clause = self
+            .limit
+            .map(|l| format!("LIMIT {}", l))
+            .unwrap_or_default();
+        write!(
+            f,
+            "SELECT {} {} {} {} OFFSET {}",
+            select_items, self.base, order_by_clauses, limit_clause, self.offset
+        )
     }
 }
