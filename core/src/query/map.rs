@@ -1,7 +1,7 @@
 use query_builder::{SelectItem, SelectQuery, SelectSource};
 
 use crate::query::AliasGenerator;
-use crate::view::{ExprView, Value, ValueCount, ViewBox};
+use crate::view::{ValueCount, ViewBox};
 
 #[allow(dead_code)]
 pub struct QueryResultMap<R: 'static, RL: ValueCount> {
@@ -10,8 +10,8 @@ pub struct QueryResultMap<R: 'static, RL: ValueCount> {
     view: ViewBox<R, RL>,
 }
 
-pub trait Map<V: Value, View: ExprView<V>> {
-    fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(&View) -> RV>(
+pub trait Map<View> {
+    fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(View) -> RV>(
         self,
         f: F,
     ) -> QueryResultMap<R, RL>;
