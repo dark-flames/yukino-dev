@@ -11,6 +11,7 @@ pub enum Order {
 pub struct Select;
 
 pub struct SelectFrom {
+    table: String,
     root_alias: Alias,
     join: Vec<Join>,
     where_clauses: Vec<Expr>,
@@ -89,18 +90,15 @@ pub trait SelectSource: Display + 'static {
 }
 
 impl Select {
-    pub fn from(alias: Alias) -> SelectFrom {
-        SelectFrom {
-            root_alias: alias,
-            join: vec![],
-            where_clauses: vec![],
-        }
+    pub fn from(table: String, alias: Alias) -> SelectFrom {
+        SelectFrom::create(table, alias)
     }
 }
 
 impl SelectFrom {
-    pub fn create(root_alias: Alias) -> Self {
+    pub fn create(table: String, root_alias: Alias) -> Self {
         SelectFrom {
+            table,
             root_alias,
             join: vec![],
             where_clauses: vec![],
@@ -223,8 +221,8 @@ impl Display for SelectFrom {
         };
         write!(
             f,
-            "FROM {} {} {}",
-            self.root_alias, join_clauses, where_clauses
+            "FROM {} {} {} {}",
+            self.table, self.root_alias, join_clauses, where_clauses
         )
     }
 }

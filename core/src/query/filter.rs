@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use interface::DefinitionManager;
-use query_builder::{Alias, SelectFrom};
+use query_builder::{Alias, Select, SelectFrom};
 
 use crate::query::{
     AliasGenerator, Fold, FoldQueryResult, FoldView, GroupBy, GroupedQueryResult, GroupView, Map,
@@ -58,7 +58,7 @@ impl<E: EntityWithView> QueryResultFilter<E> {
         let mut generator = AliasGenerator::create(manager);
         let root_alias = generator.generate_root_alias::<E>();
         QueryResultFilter {
-            query: SelectFrom::create(root_alias.clone()),
+            query: Select::from(E::definition().name.clone(), root_alias.clone()),
             root_alias,
             alias_generator: generator,
             _entity: Default::default(),
