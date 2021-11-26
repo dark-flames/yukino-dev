@@ -1,13 +1,16 @@
-use crate::err::RuntimeResult;
-use crate::view::{
-    ComputationView, ComputationViewBox, ExprView, ExprViewBox, SingleExprView, Value, ValueCount,
-    ValueCountOf, View, ViewBox,
-};
+use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
+
+use generic_array::{arr, GenericArray};
 use generic_array::sequence::{Concat, Split};
 use generic_array::typenum::operator_aliases::Sum;
-use generic_array::{arr, GenericArray};
+
 use query_builder::{DatabaseValue, Expr, ExprMutVisitor, ExprNode, ExprVisitor};
-use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
+
+use crate::err::RuntimeResult;
+use crate::view::{
+    ComputationView, ComputationViewBox, ExprView, ExprViewBoxWithTag, SingleExprView, TagList,
+    TagOfValueView, Value, ValueCount, ValueCountOf, View, ViewBox,
+};
 
 macro_rules! impl_ops {
     (
@@ -25,11 +28,12 @@ macro_rules! impl_ops {
             Value + $ops_trait<Rhs, Output = Self::Result>
         {
             type Result: Value;
+            type ResultTags: TagList;
 
-            fn $trait_method(
-                l: ExprViewBox<Self>,
-                r: ExprViewBox<Rhs>,
-            ) -> ExprViewBox<Self::Result>;
+            fn $trait_method<LTags: TagList, RTags: TagList>(
+                l: ExprViewBoxWithTag<Self, LTags>,
+                r: ExprViewBoxWithTag<Rhs, RTags>,
+            ) -> ExprViewBoxWithTag<Self::Result, Self::ResultTags>;
         }
 
         pub struct $computation_name<
@@ -110,25 +114,30 @@ macro_rules! impl_ops {
         }
 
         impl<
-            L: Value + $expr_trait<R, Result = O>,
+            L: Value + $expr_trait<R, Result = O, ResultTags = OTags>,
             R: Value,
             O: Value,
-        > $ops_trait<ExprViewBox<R>> for ExprViewBox<L>
+            LTags: TagList,
+            RTags: TagList,
+            OTags: TagList
+        > $ops_trait<ExprViewBoxWithTag<R, RTags>> for ExprViewBoxWithTag<L, LTags>
         {
-            type Output = ExprViewBox<O>;
+            type Output = ExprViewBoxWithTag<O, OTags>;
 
-            fn $ops_method(self, rhs: ExprViewBox<R>) -> Self::Output {
+            fn $ops_method(self, rhs: ExprViewBoxWithTag<R, RTags>) -> Self::Output {
                 L::$trait_method(self, rhs)
             }
         }
 
         impl<
-            L: Value + $expr_trait<R, Result = O>,
+            L: Value + $expr_trait<R, Result = O, ResultTags = OTags>,
             R: Value,
             O: Value,
-        > $ops_trait<R> for ExprViewBox<L>
+            LTags: TagList,
+            OTags: TagList
+        > $ops_trait<R> for ExprViewBoxWithTag<L, LTags>
         {
-            type Output = ExprViewBox<O>;
+            type Output = ExprViewBoxWithTag<O, OTags>;
 
             fn $ops_method(self, rhs: R) -> Self::Output {
                 L::$trait_method(self, rhs.view())
@@ -139,8 +148,9 @@ macro_rules! impl_ops {
             L: Value + $ops_trait<R, Output = O>,
             R: 'static,
             O: 'static,
-            RL: ValueCount
-        > $ops_trait<ComputationViewBox<R, RL>> for ExprViewBox<L>
+            RL: ValueCount,
+            LTags: TagList,
+        > $ops_trait<ComputationViewBox<R, RL>> for ExprViewBoxWithTag<L, LTags>
         where ValueCountOf<L>: Add<RL>,
             Sum<ValueCountOf<L>, RL>: ValueCount + Sub<ValueCountOf<L>, Output = RL>
         {
@@ -176,13 +186,14 @@ macro_rules! impl_ops {
             L: 'static + $ops_trait<R, Output = O>,
             R: Value,
             O: 'static,
-            LL: ValueCount + Add<ValueCountOf<R>>
-        > $ops_trait<ExprViewBox<R>> for ComputationViewBox<L, LL>
+            LL: ValueCount + Add<ValueCountOf<R>>,
+            RTags: TagList,
+        > $ops_trait<ExprViewBoxWithTag<R, RTags>> for ComputationViewBox<L, LL>
         where Sum<LL, ValueCountOf<R>>: ValueCount + Sub<LL, Output = ValueCountOf<R>>
         {
             type Output = ComputationViewBox<O, Sum<LL, ValueCountOf<R>>>;
 
-            fn $ops_method(self, rhs: ExprViewBox<R>) -> Self::Output {
+            fn $ops_method(self, rhs: ExprViewBoxWithTag<R, RTags>) -> Self::Output {
                 Box::new($computation_name {
                     l: self.view_clone(),
                     r: rhs.view_clone(),
@@ -213,15 +224,16 @@ macro_rules! impl_ops {
             ($ty: ty) => {
                 impl $expr_trait<$ty> for $ty {
                     type Result = $ty;
+                    type ResultTags = TagOfValueView<$ty>;
 
-                    fn $trait_method(
-                        l: ExprViewBox<Self>,
-                        r: ExprViewBox<$ty>,
-                    ) -> ExprViewBox<Self::Result> {
+                    fn $trait_method<LTags: TagList, RTags: TagList>(
+                        l: ExprViewBoxWithTag<Self, LTags>,
+                        r: ExprViewBoxWithTag<$ty, RTags>,
+                    ) -> ExprViewBoxWithTag<Self::Result, Self::ResultTags>{
                         let l_expr = l.collect_expr().into_iter().next().unwrap();
                         let r_expr = r.collect_expr().into_iter().next().unwrap();
                         let result = Expr::$expr_variant(Box::new(l_expr), Box::new(r_expr));
-                        Box::new(SingleExprView::from_exprs(arr![Expr; result]))
+                        SingleExprView::from_exprs(arr![Expr; result])
                     }
                 }
             }

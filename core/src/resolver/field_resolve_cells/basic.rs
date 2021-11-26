@@ -223,9 +223,9 @@ impl FieldType {
 
     pub fn view(&self, column: &str) -> TokenStream {
         quote! {
-            Box::new(SingleExprView::from_exprs(arr![Expr;
+            SingleExprView::from_exprs(arr![Expr;
                 alias.create_ident_expr(#column)
-            ]))
+            ])
         }
     }
 

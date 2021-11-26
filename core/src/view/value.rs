@@ -1,12 +1,15 @@
-use crate::converter::*;
-use crate::err::{RuntimeResult, YukinoError};
-use crate::view::{ExprView, ExprViewBox, View, ViewBox};
-use generic_array::typenum::bit::{B0, B1};
-use generic_array::typenum::{UInt, UTerm, U1};
-use generic_array::{arr, functional::FunctionalSequence, ArrayLength, GenericArray};
-use query_builder::{DatabaseValue, Expr, ExprMutVisitor, ExprNode, ExprVisitor};
 use std::fmt::Debug;
 use std::marker::PhantomData;
+
+use generic_array::{arr, ArrayLength, functional::FunctionalSequence, GenericArray};
+use generic_array::typenum::{U1, UInt, UTerm};
+use generic_array::typenum::bit::{B0, B1};
+
+use query_builder::{DatabaseValue, Expr, ExprMutVisitor, ExprNode, ExprVisitor};
+
+use crate::converter::*;
+use crate::err::{RuntimeResult, YukinoError};
+use crate::view::{EmptyTagList, ExprView, ExprViewBox, ExprViewBoxWithTag, View, ViewBox};
 
 pub type ValueCountOf<T> = <T as Value>::L;
 
@@ -20,6 +23,8 @@ impl<N: ValueCount> ValueCount for UInt<N, B1> {}
 
 pub trait Value: 'static + Clone + Debug {
     type L: ValueCount;
+    type ValueExprView: ExprView<Self>;
+
     fn converter() -> ConverterRef<Self>
     where
         Self: Sized;
@@ -31,9 +36,14 @@ pub trait Value: 'static + Clone + Debug {
         Self::view_from_exprs(Self::converter().serialize(self).unwrap().map(Expr::Lit))
     }
 
-    fn view_from_exprs(exprs: GenericArray<Expr, Self::L>) -> ExprViewBox<Self>
+    fn view_from_exprs(
+        exprs: GenericArray<Expr, Self::L>,
+    ) -> ExprViewBoxWithTag<Self, <Self::ValueExprView as ExprView<Self>>::Tags>
     where
-        Self: Sized;
+        Self: Sized,
+    {
+        Self::ValueExprView::from_exprs(exprs)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -70,17 +80,19 @@ impl<T: Value<L = U1>> View<T, U1> for SingleExprView<T> {
 }
 
 impl<T: Value<L = U1>> ExprView<T> for SingleExprView<T> {
-    fn from_exprs(exprs: GenericArray<Expr, U1>) -> Self
+    type Tags = EmptyTagList;
+
+    fn from_exprs(exprs: GenericArray<Expr, U1>) -> ExprViewBoxWithTag<T, Self::Tags>
     where
         Self: Sized,
     {
-        SingleExprView {
+        Box::new(SingleExprView {
             expr: exprs.into_iter().next().unwrap(),
             _ty: Default::default(),
-        }
+        })
     }
 
-    fn expr_clone(&self) -> ExprViewBox<T>
+    fn expr_clone(&self) -> ExprViewBoxWithTag<T, Self::Tags>
     where
         Self: Sized,
     {
@@ -92,18 +104,13 @@ macro_rules! impl_value {
     ($ty: ty, $converter: ty) => {
         impl Value for $ty {
             type L = U1;
+            type ValueExprView = SingleExprView<$ty>;
+
             fn converter() -> ConverterRef<Self>
             where
                 Self: Sized,
             {
                 <$converter>::instance()
-            }
-
-            fn view_from_exprs(exprs: GenericArray<Expr, Self::L>) -> ExprViewBox<Self>
-            where
-                Self: Sized,
-            {
-                Box::new(SingleExprView::from_exprs(exprs))
             }
         }
     };

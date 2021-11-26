@@ -1,13 +1,16 @@
-use crate::err::RuntimeResult;
-use crate::view::{
-    ComputationView, ComputationViewBox, ExprView, ExprViewBox, SingleExprView, Value, ValueCount,
-    ValueCountOf, View, ViewBox,
-};
+use std::ops::{Add, Sub};
+
+use generic_array::{arr, GenericArray};
 use generic_array::sequence::{Concat, Split};
 use generic_array::typenum::Sum;
-use generic_array::{arr, GenericArray};
+
 use query_builder::{DatabaseValue, Expr, ExprMutVisitor, ExprNode, ExprVisitor};
-use std::ops::{Add, Sub};
+
+use crate::err::RuntimeResult;
+use crate::view::{
+    ComputationView, ComputationViewBox, ExprView, ExprViewBox, ExprViewBoxWithTag, SingleExprView,
+    TagList, Value, ValueCount, ValueCountOf, View, ViewBox,
+};
 
 macro_rules! op_trait {
     (
@@ -44,11 +47,14 @@ macro_rules! impl_expr_for {
     ) => {
         $(
         impl $expr_op_trait for $ty {
-            fn $expr_op_method(l: ExprViewBox<Self>, r: ExprViewBox<Self>) -> ExprViewBox<bool> {
+            fn $expr_op_method<LTags: TagList, RTags: TagList>(
+                l: ExprViewBoxWithTag<Self, LTags>,
+                r: ExprViewBoxWithTag<$ty, RTags>
+            ) -> ExprViewBox<bool> {
                 let l_expr = l.collect_expr().into_iter().next().unwrap();
                 let r_expr = r.collect_expr().into_iter().next().unwrap();
                 let result = Expr::$expr_variant(Box::new(l_expr), Box::new(r_expr));
-                Box::new(SingleExprView::from_exprs(arr![Expr; result]))
+                SingleExprView::from_exprs(arr![Expr; result])
             }
         }
         )*
@@ -74,7 +80,10 @@ macro_rules! impl_bool_operator {
 
 
         pub trait $expr_op_trait<Rhs: Value = Self>: Value + $op_trait<Rhs> {
-            fn $expr_op_method(l: ExprViewBox<Self>, r: ExprViewBox<Rhs>) -> ExprViewBox<bool>;
+            fn $expr_op_method<LTags: TagList, RTags: TagList>(
+                l: ExprViewBoxWithTag<Self, LTags>,
+                r: ExprViewBoxWithTag<Rhs, RTags>
+            ) -> ExprViewBox<bool>;
         }
 
         pub struct $computation<
@@ -148,12 +157,17 @@ macro_rules! impl_bool_operator {
             }
         }
 
-        impl<L: Value + $expr_op_trait<R>, R: Value> $view_op_trait<ExprViewBox<R>>
-            for ExprViewBox<L>
+        impl<
+            L: Value + $expr_op_trait<R>,
+            R: Value,
+            LTags: TagList,
+            RTags: TagList
+        > $view_op_trait<ExprViewBoxWithTag<R, RTags>>
+            for ExprViewBoxWithTag<L, LTags>
         {
             type Output = ExprViewBox<bool>;
 
-            fn $view_op_method(self, rhs: ExprViewBox<R>) -> Self::Output {
+            fn $view_op_method(self, rhs: ExprViewBoxWithTag<R, RTags>) -> Self::Output {
                 L::$expr_op_method(self, rhs)
             }
         }
@@ -161,8 +175,9 @@ macro_rules! impl_bool_operator {
         impl<
             L: Value + $op_trait<R>,
             R: 'static,
-            RL: ValueCount
-        > $view_op_trait<ComputationViewBox<R, RL>> for ExprViewBox<L>
+            RL: ValueCount,
+            LTags: TagList,
+        > $view_op_trait<ComputationViewBox<R, RL>> for ExprViewBoxWithTag<L, LTags>
         where ValueCountOf<L>: Add<RL>,
                 Sum<ValueCountOf<L>, RL>: ValueCount + Sub<ValueCountOf<L>, Output=RL>
         {
@@ -176,7 +191,11 @@ macro_rules! impl_bool_operator {
             }
         }
 
-        impl<L: Value + $expr_op_trait<R>, R: Value> $view_op_trait<R> for ExprViewBox<L> {
+        impl<
+            L: Value + $expr_op_trait<R>,
+            R: Value,
+            LTags: TagList,
+        > $view_op_trait<R> for ExprViewBoxWithTag<L, LTags> {
             type Output = ExprViewBox<bool>;
 
             fn $view_op_method(self, rhs: R) -> Self::Output {
@@ -187,13 +206,14 @@ macro_rules! impl_bool_operator {
         impl<
             L: 'static + $op_trait<R>,
             R: Value,
-            LL: ValueCount + Add<ValueCountOf<R>>
-        > $view_op_trait<ExprViewBox<R>> for ComputationViewBox<L, LL>
+            LL: ValueCount + Add<ValueCountOf<R>>,
+            RTags: TagList,
+        > $view_op_trait<ExprViewBoxWithTag<R, RTags>> for ComputationViewBox<L, LL>
         where Sum<LL, ValueCountOf<R>>: ValueCount + Sub<LL, Output=ValueCountOf<R>>
         {
             type Output = ComputationViewBox<bool, Sum<LL, ValueCountOf<R>>>;
 
-            fn $view_op_method(self, rhs: ExprViewBox<R>) -> Self::Output {
+            fn $view_op_method(self, rhs: ExprViewBoxWithTag<R, RTags>) -> Self::Output {
                 Box::new($computation {
                     l: self.view_clone(),
                     r: rhs.view_clone(),

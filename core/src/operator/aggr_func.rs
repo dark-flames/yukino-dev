@@ -2,7 +2,9 @@ use generic_array::typenum::U1;
 
 use query_builder::{Function, FunctionCall};
 
-use crate::view::{AggregateViewItem, ExprViewBox, Value};
+use crate::view::{
+    AggregateViewItem, AggregateViewTag, ExprViewBoxWithTag, TagList, TagList1, Value,
+};
 
 macro_rules! impl_aggregate {
     (
@@ -16,13 +18,13 @@ macro_rules! impl_aggregate {
         pub trait $trait_name: Value {
             type Result: Value<L=U1>;
 
-            fn $trait_method(expr: ExprViewBox<Self>) -> AggregateViewItem<Self::Result>;
+            fn $trait_method<T: TagList>(expr: ExprViewBoxWithTag<Self, T>) -> AggregateViewItem<Self::Result>;
         }
 
-        pub fn $method_name<V: Value + $trait_name>(
-            v: ExprViewBox<V>,
-        ) -> AggregateViewItem<<V as $trait_name>::Result> {
-            V::$trait_method(v)
+        pub fn $method_name<V: Value + $trait_name, T: TagList>(
+            v: ExprViewBoxWithTag<V, T>,
+        ) -> ExprViewBoxWithTag<<V as $trait_name>::Result, TagList1<AggregateViewTag>> {
+            Box::new(V::$trait_method(v))
         }
 
         macro_rules! $macro_name {
@@ -30,7 +32,7 @@ macro_rules! impl_aggregate {
                 impl $trait_name for $ty {
                     type Result = $ty;
 
-                    fn $trait_method(expr: ExprViewBox<Self>) -> AggregateViewItem<Self::Result> {
+                    fn $trait_method<T: TagList>(expr: ExprViewBoxWithTag<Self, T>) -> AggregateViewItem<Self::Result> {
                         AggregateViewItem::from_function_call(FunctionCall {
                             func: Function::$variant,
                             params: vec![expr.collect_expr().into_iter().next().unwrap()]
@@ -104,7 +106,9 @@ impl_aggregate!(
 impl ExprsConcat for char {
     type Result = String;
 
-    fn exprs_concat(expr: ExprViewBox<Self>) -> AggregateViewItem<Self::Result> {
+    fn exprs_concat<T: TagList>(
+        expr: ExprViewBoxWithTag<Self, T>,
+    ) -> AggregateViewItem<Self::Result> {
         AggregateViewItem::from_function_call(FunctionCall {
             func: Function::Concat,
             params: vec![expr.collect_expr().into_iter().next().unwrap()],

@@ -1,14 +1,8 @@
-use generic_array::typenum::U1;
-
 use interface::DefinitionManager;
-use query_builder::{Alias, ExprNode, SelectFrom};
+use query_builder::{Alias, SelectFrom};
 
-use crate::query::{
-    AliasGenerator, Fold, FoldedQueryResult, GroupBy, GroupedQueryResult, Map, QueryResultMap,
-};
-use crate::view::{
-    AggregateView, EntityView, EntityWithView, ExprViewBox, GroupByView, Value, ValueCount, ViewBox,
-};
+use crate::query::{AliasGenerator, Map, QueryResultMap};
+use crate::view::{EntityView, EntityWithView, ExprViewBox, ValueCount, ViewBox};
 
 pub struct QueryResultFilter<E: EntityWithView> {
     query: SelectFrom<E>,
@@ -38,47 +32,6 @@ impl<E: EntityWithView> Filter<E::View> for QueryResultFilter<E> {
         });
 
         self
-    }
-}
-
-impl<E: EntityWithView> GroupBy<E> for QueryResultFilter<E> {
-    fn group_by<
-        R: Value,
-        RView: GroupByView<R>,
-        IntoRView: Into<RView>,
-        F: Fn(&E::View) -> IntoRView,
-    >(
-        mut self,
-        f: F,
-    ) -> GroupedQueryResult<E, R, RView> {
-        let entity_view = E::View::pure(&self.root_alias);
-        let mut view = f(&entity_view).into();
-        let mut visitor = self.alias_generator.substitute_visitor();
-        view.apply_mut(&mut visitor);
-
-        self.query.add_joins(visitor.joins());
-
-        GroupedQueryResult::create(
-            self.query
-                .group_by(view.collect_expr().into_iter().collect()),
-            view,
-            self.alias_generator,
-            self.root_alias,
-        )
-    }
-}
-
-impl<E: EntityWithView> Fold<E, E::View> for QueryResultFilter<E> {
-    fn fold<R: Value<L = U1>, RV: AggregateView<R>, F: Fn(&E::View) -> RV>(
-        mut self,
-        f: F,
-    ) -> FoldedQueryResult<R, RV> {
-        let mut entity_view = E::View::pure(&self.root_alias);
-        let mut visitor = self.alias_generator.substitute_visitor();
-        entity_view.apply_mut(&mut visitor);
-
-        self.query.add_joins(visitor.joins());
-        FoldedQueryResult::create(Box::new(self.query), f(&entity_view), self.alias_generator)
     }
 }
 

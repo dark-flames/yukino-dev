@@ -1,7 +1,9 @@
-use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
-use interface::DefinitionType;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
+
+use interface::DefinitionType;
+
+use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
 
 pub struct EntityViewPass();
 
@@ -15,7 +17,7 @@ impl EntityResolvePass for EntityViewPass {
 
     fn get_dependencies(&self) -> Vec<TokenStream> {
         vec![quote! {
-            use yukino::view::{SingleExprView, ViewBox, ExprViewBox, ExprView, EntityView};
+            use yukino::view::{SingleExprView, ViewBox, ExprViewBox, ExprViewBoxWithTag, ExprView, EntityView, EntityViewTag, TagList1};
             use yukino::query_builder::{Expr, Alias, DatabaseValue, ExprNode, ExprVisitor, ExprMutVisitor};
             use yukino::err::{RuntimeResult, YukinoError};
         }]
@@ -69,7 +71,7 @@ impl EntityResolvePass for EntityViewPass {
                     }
 
                     expr_branch.push(quote! {
-                        #field_name: Box::new(#view_path::from_exprs(#field_name))
+                        #field_name: #view_path::from_exprs(#field_name)
                     });
 
                     clone.push(quote! {
@@ -113,11 +115,11 @@ impl EntityResolvePass for EntityViewPass {
 
             impl ExprNode for #name {
                 fn apply(&self, visitor: &mut dyn ExprVisitor) {
-                    #(#apply_branches;)*;
+                    #(#apply_branches);*;
                 }
 
                 fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
-                    #(#apply_mut_branches;)*;
+                    #(#apply_mut_branches);*;
                 }
             }
 
@@ -138,19 +140,21 @@ impl EntityResolvePass for EntityViewPass {
             }
 
             impl ExprView<#entity_name> for #name {
+                type Tags = TagList1<EntityViewTag>;
 
-                fn from_exprs(exprs: GenericArray<Expr, ValueCountOf<#entity_name>>) -> Self
+                fn from_exprs(exprs: GenericArray<Expr, ValueCountOf<#entity_name>>)
+                -> ExprViewBoxWithTag<#entity_name, Self::Tags>
                 where
                     Self: Sized {
                     let rest = exprs;
                     #(#from_expr_tmp;)*
 
-                    #name {
+                    Box::new(#name {
                         #(#from_expr_branches),*
-                    }
+                    })
                 }
 
-                fn expr_clone(&self) -> ExprViewBox<#entity_name>
+                fn expr_clone(&self) -> ExprViewBoxWithTag<#entity_name, Self::Tags>
                 where
                     Self: Sized {
                     Box::new(#name {

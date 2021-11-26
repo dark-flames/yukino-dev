@@ -1,14 +1,17 @@
+use std::ops::{Add, Sub};
+
+use generic_array::{
+    GenericArray,
+    sequence::{Concat, Split},
+};
+
+use query_builder::{DatabaseValue, Expr, ExprMutVisitor, ExprNode, ExprVisitor};
+
 use crate::err::RuntimeResult;
 use crate::view::{
-    ComputationView, ComputationViewBox, ExprViewBox, TupleExprView, Value, ValueCount, View,
-    ViewBox,
+    ComputationView, ComputationViewBox, EmptyTagList, ExprViewBoxWithTag, TagList, TupleExprView,
+    Value, ValueCount, ValueCountOf, View, ViewBox,
 };
-use generic_array::{
-    sequence::{Concat, Split},
-    GenericArray,
-};
-use query_builder::{DatabaseValue, Expr, ExprMutVisitor, ExprNode, ExprVisitor};
-use std::ops::{Add, Sub};
 
 pub struct TupleComputationView<L, R, LL, RL>(ViewBox<L, LL>, ViewBox<R, RL>);
 
@@ -72,57 +75,67 @@ impl<
     }
 }
 
-impl<L: Value, R: Value> From<(ExprViewBox<L>, ExprViewBox<R>)> for ExprViewBox<(L, R)>
+impl<L: Value, R: Value, LTags: TagList, RTags: TagList>
+    From<(ExprViewBoxWithTag<L, LTags>, ExprViewBoxWithTag<R, RTags>)>
+    for ExprViewBoxWithTag<(L, R), EmptyTagList>
 where
     (L, R): Value,
-    <L as Value>::L: Add<<R as Value>::L, Output = <(L, R) as Value>::L>,
-    <(L, R) as Value>::L: Sub<<L as Value>::L, Output = <R as Value>::L>,
+    ValueCountOf<L>: Add<ValueCountOf<R>, Output = ValueCountOf<(L, R)>>,
+    ValueCountOf<(L, R)>: Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
 {
-    fn from(tuple: (ExprViewBox<L>, ExprViewBox<R>)) -> Self {
+    fn from(tuple: (ExprViewBoxWithTag<L, LTags>, ExprViewBoxWithTag<R, RTags>)) -> Self {
         let (l, r) = tuple;
         Box::new(TupleExprView(l, r))
     }
 }
 
-impl<L: Value, R: Value> From<(ExprViewBox<L>, R)> for ExprViewBox<(L, R)>
+impl<L: Value, R: Value, LTags: TagList> From<(ExprViewBoxWithTag<L, LTags>, R)>
+    for ExprViewBoxWithTag<(L, R), EmptyTagList>
 where
     (L, R): Value,
-    <L as Value>::L: Add<<R as Value>::L, Output = <(L, R) as Value>::L>,
-    <(L, R) as Value>::L: Sub<<L as Value>::L, Output = <R as Value>::L>,
+    ValueCountOf<L>: Add<ValueCountOf<R>, Output = ValueCountOf<(L, R)>>,
+    ValueCountOf<(L, R)>: Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
 {
-    fn from(tuple: (ExprViewBox<L>, R)) -> Self {
+    fn from(tuple: (ExprViewBoxWithTag<L, LTags>, R)) -> Self {
         let (l, r) = tuple;
         Box::new(TupleExprView(l, r.view()))
     }
 }
 
-impl<L: Value, R: 'static, RL: ValueCount, OL: ValueCount + Sub<<L as Value>::L, Output = RL>>
-    From<(ExprViewBox<L>, ComputationViewBox<R, RL>)> for ComputationViewBox<(L, R), OL>
+impl<
+        L: Value,
+        R: 'static,
+        RL: ValueCount,
+        OL: ValueCount + Sub<ValueCountOf<L>, Output = RL>,
+        LTags: TagList,
+    > From<(ExprViewBoxWithTag<L, LTags>, ComputationViewBox<R, RL>)>
+    for ComputationViewBox<(L, R), OL>
 where
-    <L as Value>::L: Add<RL, Output = OL>,
+    ValueCountOf<L>: Add<RL, Output = OL>,
 {
-    fn from(tuple: (ExprViewBox<L>, ComputationViewBox<R, RL>)) -> Self {
+    fn from(tuple: (ExprViewBoxWithTag<L, LTags>, ComputationViewBox<R, RL>)) -> Self {
         let (l, r) = tuple;
         Box::new(TupleComputationView(l.into(), r.into()))
     }
 }
 
-impl<L: Value, R: Value> From<(L, ExprViewBox<R>)> for ExprViewBox<(L, R)>
+impl<L: Value, R: Value, RTags: TagList> From<(L, ExprViewBoxWithTag<R, RTags>)>
+    for ExprViewBoxWithTag<(L, R), EmptyTagList>
 where
     (L, R): Value,
-    <L as Value>::L: Add<<R as Value>::L, Output = <(L, R) as Value>::L>,
-    <(L, R) as Value>::L: Sub<<L as Value>::L, Output = <R as Value>::L>,
+    ValueCountOf<L>: Add<ValueCountOf<R>, Output = ValueCountOf<(L, R)>>,
+    ValueCountOf<(L, R)>: Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
 {
-    fn from(tuple: (L, ExprViewBox<R>)) -> Self {
+    fn from(tuple: (L, ExprViewBoxWithTag<R, RTags>)) -> Self {
         let (l, r) = tuple;
         Box::new(TupleExprView(l.view(), r))
     }
 }
 
-impl<L: Value, R: 'static, RL: ValueCount, OL: ValueCount + Sub<<L as Value>::L, Output = RL>>
+impl<L: Value, R: 'static, RL: ValueCount, OL: ValueCount + Sub<ValueCountOf<L>, Output = RL>>
     From<(L, ComputationViewBox<R, RL>)> for ViewBox<(L, R), OL>
 where
-    <L as Value>::L: Add<RL, Output = OL>,
+    ValueCountOf<L>: Add<RL, Output = OL>,
 {
     fn from(tuple: (L, ComputationViewBox<R, RL>)) -> Self {
         let (l, r) = tuple;
@@ -133,11 +146,12 @@ where
 impl<
         L: 'static,
         R: Value,
-        LL: ValueCount + Add<<R as Value>::L, Output = OL>,
-        OL: ValueCount + Sub<LL, Output = <R as Value>::L>,
-    > From<(ComputationViewBox<L, LL>, ExprViewBox<R>)> for ViewBox<(L, R), OL>
+        LL: ValueCount + Add<ValueCountOf<R>, Output = OL>,
+        OL: ValueCount + Sub<LL, Output = ValueCountOf<R>>,
+        RTags: TagList,
+    > From<(ComputationViewBox<L, LL>, ExprViewBoxWithTag<R, RTags>)> for ViewBox<(L, R), OL>
 {
-    fn from(tuple: (ComputationViewBox<L, LL>, ExprViewBox<R>)) -> Self {
+    fn from(tuple: (ComputationViewBox<L, LL>, ExprViewBoxWithTag<R, RTags>)) -> Self {
         let (l, r) = tuple;
         Box::new(TupleComputationView(l.into(), r.into()))
     }
@@ -146,8 +160,8 @@ impl<
 impl<
         L: 'static,
         R: Value,
-        LL: ValueCount + Add<<R as Value>::L, Output = OL>,
-        OL: ValueCount + Sub<LL, Output = <R as Value>::L>,
+        LL: ValueCount + Add<ValueCountOf<R>, Output = OL>,
+        OL: ValueCount + Sub<LL, Output = ValueCountOf<R>>,
     > From<(ComputationViewBox<L, LL>, R)> for ViewBox<(L, R), OL>
 {
     fn from(tuple: (ComputationViewBox<L, LL>, R)) -> Self {
