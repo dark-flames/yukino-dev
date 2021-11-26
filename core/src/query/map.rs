@@ -3,11 +3,10 @@ use query_builder::{SelectItem, SelectQuery, SelectSource};
 use crate::query::AliasGenerator;
 use crate::view::{ValueCount, ViewBox};
 
-#[allow(dead_code)]
 pub struct QueryResultMap<R: 'static, RL: ValueCount> {
     query: Box<dyn SelectSource>,
-    alias_generator: AliasGenerator,
     view: ViewBox<R, RL>,
+    alias_generator: AliasGenerator,
 }
 
 pub trait Map<View> {
@@ -20,13 +19,13 @@ pub trait Map<View> {
 impl<R: 'static, RL: ValueCount> QueryResultMap<R, RL> {
     pub fn create(
         query: Box<dyn SelectSource>,
-        alias_generator: AliasGenerator,
         view: ViewBox<R, RL>,
+        alias_generator: AliasGenerator,
     ) -> Self {
         QueryResultMap {
             query,
-            alias_generator,
             view,
+            alias_generator,
         }
     }
 

@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
-use crate::{Expr, ExprMutVisitor, ExprNode, ExprVisitor};
+use crate::Expr;
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Ident {
@@ -61,15 +61,5 @@ impl Display for Alias {
 impl Display for AliasedTable {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         write!(f, "{} {}", self.table, self.alias)
-    }
-}
-
-impl ExprNode for Ident {
-    fn apply(&self, visitor: &mut dyn ExprVisitor) {
-        visitor.visit_ident(self)
-    }
-
-    fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
-        visitor.visit_ident(self)
     }
 }

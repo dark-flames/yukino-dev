@@ -4,9 +4,10 @@ use generic_array::{arr, GenericArray};
 use generic_array::sequence::{Concat, Split};
 use generic_array::typenum::Sum;
 
-use query_builder::{DatabaseValue, Expr, ExprMutVisitor, ExprNode, ExprVisitor};
+use query_builder::{DatabaseValue, Expr};
 
 use crate::err::RuntimeResult;
+use crate::query::{ExprMutVisitor, ExprNode, ExprVisitor};
 use crate::view::{
     ComputationView, ComputationViewBox, ExprView, ExprViewBox, ExprViewBoxWithTag, SingleExprView,
     TagList, Value, ValueCount, ValueCountOf, View, ViewBox,

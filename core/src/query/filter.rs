@@ -1,16 +1,19 @@
+use std::marker::PhantomData;
+
 use interface::DefinitionManager;
 use query_builder::{Alias, SelectFrom};
 
-use crate::query::{AliasGenerator, Fold, FoldQueryResult, FoldQueryResult2, Map, QueryResultMap};
-use crate::view::{
-    AggregateViewTag, EntityView, EntityWithView, ExprViewBox, ExprViewBoxWithTag, InList, TagList,
-    Value, ValueCount, ViewBox,
+use crate::query::{
+    AliasGenerator, Fold, FoldQueryResult, FoldView, GroupBy, GroupedQueryResult, GroupView, Map,
+    QueryResultMap,
 };
+use crate::view::{EntityView, EntityWithView, ExprViewBox, ValueCount, ViewBox};
 
 pub struct QueryResultFilter<E: EntityWithView> {
-    query: SelectFrom<E>,
+    query: SelectFrom,
     root_alias: Alias,
     alias_generator: AliasGenerator,
+    _entity: PhantomData<E>,
 }
 
 pub trait Filter<View> {
@@ -46,7 +49,7 @@ impl<E: EntityWithView> Map<E::View> for QueryResultFilter<E> {
         let entity_view = E::View::pure(&self.root_alias);
         let result_view = f(entity_view).into();
 
-        QueryResultMap::create(Box::new(self.query), self.alias_generator, result_view)
+        QueryResultMap::create(Box::new(self.query), result_view, self.alias_generator)
     }
 }
 
@@ -58,50 +61,31 @@ impl<E: EntityWithView> QueryResultFilter<E> {
             query: SelectFrom::create(root_alias.clone()),
             root_alias,
             alias_generator: generator,
+            _entity: Default::default(),
         }
     }
 }
 
 impl<E: EntityWithView> Fold<E::View> for QueryResultFilter<E> {
-    fn fold<R1: Value, R1Tags: TagList, F: Fn(E::View) -> ExprViewBoxWithTag<R1, R1Tags>>(
-        mut self,
-        f: F,
-    ) -> FoldQueryResult<R1, R1Tags>
-    where
-        AggregateViewTag: InList<R1Tags>,
-    {
-        let entity_view = E::View::pure(&self.root_alias);
+    fn fold<RV: FoldView, F: Fn(E::View) -> RV>(mut self, f: F) -> FoldQueryResult<RV> {
         let mut visitor = self.alias_generator.substitute_visitor();
-        let mut result = f(entity_view);
+        let mut result = f(E::View::pure(&self.root_alias));
         result.apply_mut(&mut visitor);
 
-        FoldQueryResult::create(Box::new(self.query), self.alias_generator, result)
+        FoldQueryResult::create(Box::new(self.query), result, self.alias_generator)
     }
+}
 
-    fn fold2<
-        T1: Value,
-        T1Tags: TagList,
-        T2: Value,
-        T2Tags: TagList,
-        F: Fn(
-            E::View,
-        ) -> (
-            ExprViewBoxWithTag<T1, T1Tags>,
-            ExprViewBoxWithTag<T2, T2Tags>,
-        ),
-    >(
-        mut self,
-        f: F,
-    ) -> FoldQueryResult2<T1, T1Tags, T2, T2Tags>
-    where
-        AggregateViewTag: InList<T1Tags> + InList<T2Tags>,
-    {
-        let entity_view = E::View::pure(&self.root_alias);
+impl<E: EntityWithView> GroupBy<E::View> for QueryResultFilter<E> {
+    fn group_by<RV: GroupView, F: Fn(E::View) -> RV>(mut self, f: F) -> GroupedQueryResult<RV> {
+        let mut result = f(E::View::pure(&self.root_alias));
         let mut visitor = self.alias_generator.substitute_visitor();
-        let mut result = f(entity_view);
-        result.0.apply_mut(&mut visitor);
-        result.1.apply_mut(&mut visitor);
+        result.apply_mut(&mut visitor);
 
-        FoldQueryResult2::create(Box::new(self.query), self.alias_generator, result)
+        GroupedQueryResult::create(
+            self.query.group_by(result.collect_expr_vec()),
+            result,
+            self.alias_generator,
+        )
     }
 }

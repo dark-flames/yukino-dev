@@ -1,8 +1,9 @@
 use generic_array::GenericArray;
 
-use query_builder::{DatabaseValue, Expr, ExprNode};
+use query_builder::{DatabaseValue, Expr};
 
 use crate::err::RuntimeResult;
+use crate::query::ExprNode;
 use crate::view::{TagList, TagOfValueView, Value, ValueCount, ValueCountOf};
 
 pub type ExprViewBox<T> = ExprViewBoxWithTag<T, TagOfValueView<T>>;

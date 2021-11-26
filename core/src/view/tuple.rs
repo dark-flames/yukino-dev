@@ -6,10 +6,11 @@ use generic_array::{
     typenum::Sum,
 };
 
-use query_builder::{DatabaseValue, Expr, ExprMutVisitor, ExprNode, ExprVisitor};
+use query_builder::{DatabaseValue, Expr};
 
 use crate::converter::{Converter, ConverterRef, TupleConverter};
 use crate::err::{RuntimeResult, YukinoError};
+use crate::query::{ExprMutVisitor, ExprNode, ExprVisitor};
 use crate::view::{
     EmptyTagList, ExprView, ExprViewBoxWithTag, TagList, TagOfValueView, Value, ValueCount,
     ValueCountOf, View, ViewBox,

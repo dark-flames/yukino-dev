@@ -1,5 +1,6 @@
-use crate::{Expr, ExprMutVisitor, ExprNode, ExprVisitor};
 use std::fmt::{Debug, Display, Formatter};
+
+use crate::Expr;
 
 #[derive(Clone, Debug)]
 pub enum Function {
@@ -38,17 +39,5 @@ impl Display for FunctionCall {
                 .collect::<Vec<_>>()
                 .join(", ")
         )
-    }
-}
-
-impl ExprNode for FunctionCall {
-    fn apply(&self, visitor: &mut dyn ExprVisitor) {
-        visitor.visit_function_call(self);
-        self.params.iter().for_each(|p| p.apply(visitor))
-    }
-
-    fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
-        visitor.visit_function_call(self);
-        self.params.iter_mut().for_each(|p| p.apply_mut(visitor))
     }
 }

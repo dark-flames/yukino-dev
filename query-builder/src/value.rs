@@ -1,9 +1,10 @@
-use crate::{ExprMutVisitor, ExprNode, ExprVisitor};
-use interface::DatabaseType;
-use serde_json::Value;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+
+use serde_json::Value;
 use time::{Date, PrimitiveDateTime, Time};
+
+use interface::DatabaseType;
 
 pub type Binary = Vec<u8>;
 
@@ -88,15 +89,5 @@ impl From<&DatabaseValue> for DatabaseType {
             DatabaseValue::Json(_) => DatabaseType::Json,
             DatabaseValue::Null(ty) => *ty,
         }
-    }
-}
-
-impl ExprNode for DatabaseValue {
-    fn apply(&self, visitor: &mut dyn ExprVisitor) {
-        visitor.visit_lit(self)
-    }
-
-    fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
-        visitor.visit_lit(self)
     }
 }

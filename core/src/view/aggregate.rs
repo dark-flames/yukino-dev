@@ -3,9 +3,10 @@ use std::marker::PhantomData;
 use generic_array::{arr, GenericArray};
 use generic_array::typenum::U1;
 
-use query_builder::{DatabaseValue, Expr, ExprMutVisitor, ExprNode, ExprVisitor, FunctionCall};
+use query_builder::{DatabaseValue, Expr, FunctionCall};
 
 use crate::err::{RuntimeResult, YukinoError};
+use crate::query::{ExprMutVisitor, ExprNode, ExprVisitor};
 use crate::view::{
     AggregateViewTag, ExprView, ExprViewBoxWithTag, TagList1, Value, ValueCountOf, View, ViewBox,
 };

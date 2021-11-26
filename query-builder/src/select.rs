@@ -1,7 +1,4 @@
 use std::fmt::{Display, Formatter};
-use std::marker::PhantomData;
-
-use interface::YukinoEntity;
 
 use crate::{Alias, Expr, Join};
 
@@ -13,15 +10,14 @@ pub enum Order {
 
 pub struct Select;
 
-pub struct SelectFrom<E: YukinoEntity> {
+pub struct SelectFrom {
     root_alias: Alias,
     join: Vec<Join>,
     where_clauses: Vec<Expr>,
-    _marker: PhantomData<E>,
 }
 
-pub struct GroupSelect<E: YukinoEntity> {
-    base: SelectFrom<E>,
+pub struct GroupSelect {
+    base: SelectFrom,
     group_by: Vec<Expr>,
     having: Vec<Expr>,
 }
@@ -93,23 +89,21 @@ pub trait SelectSource: Display + 'static {
 }
 
 impl Select {
-    pub fn from<E: YukinoEntity>(alias: Alias) -> SelectFrom<E> {
+    pub fn from(alias: Alias) -> SelectFrom {
         SelectFrom {
             root_alias: alias,
             join: vec![],
             where_clauses: vec![],
-            _marker: Default::default(),
         }
     }
 }
 
-impl<E: YukinoEntity> SelectFrom<E> {
+impl SelectFrom {
     pub fn create(root_alias: Alias) -> Self {
         SelectFrom {
             root_alias,
             join: vec![],
             where_clauses: vec![],
-            _marker: Default::default(),
         }
     }
     pub fn and_where(&mut self, expr: Expr) -> &mut Self {
@@ -124,7 +118,7 @@ impl<E: YukinoEntity> SelectFrom<E> {
         self
     }
 
-    pub fn group_by(self, columns: Vec<Expr>) -> GroupSelect<E> {
+    pub fn group_by(self, columns: Vec<Expr>) -> GroupSelect {
         GroupSelect {
             base: self,
             group_by: columns,
@@ -133,7 +127,7 @@ impl<E: YukinoEntity> SelectFrom<E> {
     }
 }
 
-impl<E: YukinoEntity> GroupSelect<E> {
+impl GroupSelect {
     pub fn having(&mut self, conditions: Vec<Expr>) -> &mut Self {
         self.having.extend(conditions);
 
@@ -141,9 +135,9 @@ impl<E: YukinoEntity> GroupSelect<E> {
     }
 }
 
-impl<E: YukinoEntity> SelectSource for SelectFrom<E> {}
+impl SelectSource for SelectFrom {}
 
-impl<E: YukinoEntity> SelectSource for GroupSelect<E> {}
+impl SelectSource for GroupSelect {}
 
 impl SelectQuery {
     pub fn create(
@@ -207,7 +201,7 @@ impl Display for OrderByItem {
     }
 }
 
-impl<E: YukinoEntity> Display for SelectFrom<E> {
+impl Display for SelectFrom {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let join_clauses = self
             .join
@@ -235,7 +229,7 @@ impl<E: YukinoEntity> Display for SelectFrom<E> {
     }
 }
 
-impl<E: YukinoEntity> Display for GroupSelect<E> {
+impl Display for GroupSelect {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let group_by_clauses = if self.group_by.is_empty() {
             "".to_string()

@@ -1,11 +1,15 @@
-use crate::view::EntityWithView;
-use interface::{AssociatedDefinition, DefinitionManager, FieldDefinition, JoinType};
-use query_builder::{Alias, AliasedTable, Expr, ExprMutVisitor, Ident, Join};
-use rand::rngs::ThreadRng;
-use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::iter::repeat;
+
+use rand::{distributions::Alphanumeric, Rng, thread_rng};
+use rand::rngs::ThreadRng;
+
+use interface::{AssociatedDefinition, DefinitionManager, FieldDefinition, JoinType};
+use query_builder::{Alias, AliasedTable, Expr, Ident, Join};
+
+use crate::query::ExprMutVisitor;
+use crate::view::EntityWithView;
 
 pub type AliasName = String;
 pub type TableName = String;

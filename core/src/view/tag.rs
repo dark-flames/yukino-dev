@@ -39,7 +39,11 @@ pub trait SetBit<const V: bool, O: Usize>: TagList {
 
 pub trait HasTag<T: Tag>: TagList {}
 
+pub trait NoTag<T: Tag>: TagList {}
+
 pub trait InList<L: TagList>: Tag {}
+
+pub trait NotInList<L: TagList>: Tag {}
 
 impl Usize for Zero {}
 
@@ -76,7 +80,10 @@ where
 
 impl<T: Tag, B: TagList> HasTag<T> for B where B: AssertBit<true, T::Offset> {}
 
+impl<T: Tag, B: TagList> NoTag<T> for B where B: AssertBit<false, T::Offset> {}
+
 impl<T: Tag, L: TagList + HasTag<T>> InList<L> for T {}
+impl<T: Tag, L: TagList + NoTag<T>> NotInList<L> for T {}
 
 macro_rules! create_tag {
     ($name: ident, $offset: ty) => {
