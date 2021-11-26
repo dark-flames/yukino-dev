@@ -6,23 +6,23 @@ use crate::view::{
 };
 
 #[allow(dead_code)]
-pub struct FoldQueryResult<T1: Value, T1Tag: TagList>
+pub struct FoldQueryResult<T1: Value, T1Tags: TagList>
 where
-    AggregateViewTag: InList<T1Tag>,
+    AggregateViewTag: InList<T1Tags>,
 {
     query: Box<dyn SelectSource>,
     alias_generator: AliasGenerator,
-    view: ExprViewBoxWithTag<T1, T1Tag>,
+    view: ExprViewBoxWithTag<T1, T1Tags>,
 }
 
-impl<T1: Value, T1Tag: TagList> FoldQueryResult<T1, T1Tag>
+impl<T1: Value, T1Tags: TagList> FoldQueryResult<T1, T1Tags>
 where
-    AggregateViewTag: InList<T1Tag>,
+    AggregateViewTag: InList<T1Tags>,
 {
     pub fn create(
         query: Box<dyn SelectSource>,
         alias_generator: AliasGenerator,
-        view: ExprViewBoxWithTag<T1, T1Tag>,
+        view: ExprViewBoxWithTag<T1, T1Tags>,
     ) -> Self {
         FoldQueryResult {
             query,
@@ -32,15 +32,15 @@ where
     }
 }
 
-impl<T1: Value, T1Tag: TagList> Map<ExprViewBoxWithTag<T1, T1Tag>> for FoldQueryResult<T1, T1Tag>
+impl<T1: Value, T1Tags: TagList> Map<ExprViewBoxWithTag<T1, T1Tags>> for FoldQueryResult<T1, T1Tags>
 where
-    AggregateViewTag: InList<T1Tag>,
+    AggregateViewTag: InList<T1Tags>,
 {
     fn map<
         R: 'static,
         RL: ValueCount,
         RV: Into<ViewBox<R, RL>>,
-        F: Fn(ExprViewBoxWithTag<T1, T1Tag>) -> RV,
+        F: Fn(ExprViewBoxWithTag<T1, T1Tags>) -> RV,
     >(
         mut self,
         f: F,
@@ -104,9 +104,9 @@ macro_rules! generate_fold_trait {
         $(fold_query_result!($name, $([$param, $tag]),*);)*
         pub trait Fold<View> {
             fn fold<
-                R1: Value, R1Tag: TagList,
-                F: Fn(View) -> ExprViewBoxWithTag<R1, R1Tag>
-            >(self, f: F) -> FoldQueryResult<R1, R1Tag> where AggregateViewTag: InList<R1Tag>;
+                R1: Value, R1Tags: TagList,
+                F: Fn(View) -> ExprViewBoxWithTag<R1, R1Tags>
+            >(self, f: F) -> FoldQueryResult<R1, R1Tags> where AggregateViewTag: InList<R1Tags>;
 
             $(
                 fn $method<
@@ -120,5 +120,5 @@ macro_rules! generate_fold_trait {
 }
 
 generate_fold_trait!(
-    {fold2, FoldQueryResult2, [T1, T1Tag], [T2, T2Tag]}
+    {fold2, FoldQueryResult2, [T1, T1Tags], [T2, T2Tags]}
 );

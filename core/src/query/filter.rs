@@ -63,12 +63,12 @@ impl<E: EntityWithView> QueryResultFilter<E> {
 }
 
 impl<E: EntityWithView> Fold<E::View> for QueryResultFilter<E> {
-    fn fold<R1: Value, R1Tag: TagList, F: Fn(E::View) -> ExprViewBoxWithTag<R1, R1Tag>>(
+    fn fold<R1: Value, R1Tags: TagList, F: Fn(E::View) -> ExprViewBoxWithTag<R1, R1Tags>>(
         mut self,
         f: F,
-    ) -> FoldQueryResult<R1, R1Tag>
+    ) -> FoldQueryResult<R1, R1Tags>
     where
-        AggregateViewTag: InList<R1Tag>,
+        AggregateViewTag: InList<R1Tags>,
     {
         let entity_view = E::View::pure(&self.root_alias);
         let mut visitor = self.alias_generator.substitute_visitor();
@@ -80,16 +80,21 @@ impl<E: EntityWithView> Fold<E::View> for QueryResultFilter<E> {
 
     fn fold2<
         T1: Value,
-        T1Tag: TagList,
+        T1Tags: TagList,
         T2: Value,
-        T2Tag: TagList,
-        F: Fn(E::View) -> (ExprViewBoxWithTag<T1, T1Tag>, ExprViewBoxWithTag<T2, T2Tag>),
+        T2Tags: TagList,
+        F: Fn(
+            E::View,
+        ) -> (
+            ExprViewBoxWithTag<T1, T1Tags>,
+            ExprViewBoxWithTag<T2, T2Tags>,
+        ),
     >(
         mut self,
         f: F,
-    ) -> FoldQueryResult2<T1, T1Tag, T2, T2Tag>
+    ) -> FoldQueryResult2<T1, T1Tags, T2, T2Tags>
     where
-        AggregateViewTag: InList<T1Tag> + InList<T2Tag>,
+        AggregateViewTag: InList<T1Tags> + InList<T2Tags>,
     {
         let entity_view = E::View::pure(&self.root_alias);
         let mut visitor = self.alias_generator.substitute_visitor();
