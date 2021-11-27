@@ -1,5 +1,6 @@
 use query_builder::{Expr, GroupSelect};
 
+use crate::operator::{AggregateHelper, AggregateHelperCreate};
 use crate::query::{
     AliasGenerator, ExprNode, Filter, Fold, FoldQueryResult, FoldView, Map, QueryResultMap,
 };
@@ -59,8 +60,11 @@ impl<View: GroupView> Filter<View> for GroupedQueryResult<View> {
 }
 
 impl<View: GroupView> Fold<View> for GroupedQueryResult<View> {
-    fn fold<RV: FoldView, F: Fn(View) -> RV>(mut self, f: F) -> FoldQueryResult<RV> {
-        let mut result = f(self.view);
+    fn fold<RV: FoldView, F: Fn(View, AggregateHelper) -> RV>(
+        mut self,
+        f: F,
+    ) -> FoldQueryResult<RV> {
+        let mut result = f(self.view, AggregateHelper::create());
         let mut visitor = self.alias_generator.substitute_visitor();
         result.apply_mut(&mut visitor);
 

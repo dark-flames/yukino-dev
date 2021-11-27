@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use generic_array::typenum::U1;
 
 use query_builder::{Function, FunctionCall};
@@ -5,6 +7,23 @@ use query_builder::{Function, FunctionCall};
 use crate::view::{
     AggregateViewItem, AggregateViewTag, ExprViewBoxWithTag, TagList, TagList1, Value,
 };
+
+pub struct AggregateHelper(PhantomData<u8>);
+
+pub(crate) trait AggregateHelperCreate {
+    fn create() -> Self
+    where
+        Self: Sized;
+}
+
+impl AggregateHelperCreate for AggregateHelper {
+    fn create() -> Self
+    where
+        Self: Sized,
+    {
+        AggregateHelper(PhantomData)
+    }
+}
 
 macro_rules! impl_aggregate {
     (
@@ -21,10 +40,13 @@ macro_rules! impl_aggregate {
             fn $trait_method<T: TagList>(expr: ExprViewBoxWithTag<Self, T>) -> AggregateViewItem<Self::Result>;
         }
 
-        pub fn $method_name<V: Value + $trait_name, T: TagList>(
-            v: ExprViewBoxWithTag<V, T>,
-        ) -> ExprViewBoxWithTag<<V as $trait_name>::Result, TagList1<AggregateViewTag>> {
-            Box::new(V::$trait_method(v))
+        impl AggregateHelper {
+            pub fn $method_name<V: Value + $trait_name, T: TagList>(
+                &self,
+                v: ExprViewBoxWithTag<V, T>,
+            ) -> ExprViewBoxWithTag<<V as $trait_name>::Result, TagList1<AggregateViewTag>> {
+                Box::new(V::$trait_method(v))
+            }
         }
 
         macro_rules! $macro_name {

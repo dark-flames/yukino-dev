@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use interface::DefinitionManager;
 use query_builder::{Alias, Select, SelectFrom};
 
+use crate::operator::{AggregateHelper, AggregateHelperCreate};
 use crate::query::{
     AliasGenerator, Fold, FoldQueryResult, FoldView, GroupBy, GroupedQueryResult, GroupView, Map,
     QueryResultMap,
@@ -67,9 +68,12 @@ impl<E: EntityWithView> QueryResultFilter<E> {
 }
 
 impl<E: EntityWithView> Fold<E::View> for QueryResultFilter<E> {
-    fn fold<RV: FoldView, F: Fn(E::View) -> RV>(mut self, f: F) -> FoldQueryResult<RV> {
+    fn fold<RV: FoldView, F: Fn(E::View, AggregateHelper) -> RV>(
+        mut self,
+        f: F,
+    ) -> FoldQueryResult<RV> {
         let mut visitor = self.alias_generator.substitute_visitor();
-        let mut result = f(E::View::pure(&self.root_alias));
+        let mut result = f(E::View::pure(&self.root_alias), AggregateHelper::create());
         result.apply_mut(&mut visitor);
 
         FoldQueryResult::create(Box::new(self.query), result, self.alias_generator)

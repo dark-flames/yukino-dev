@@ -1,5 +1,6 @@
 use query_builder::{Expr, SelectSource};
 
+use crate::operator::AggregateHelper;
 use crate::query::{AliasGenerator, ExprNode, Map, QueryResultMap};
 use crate::view::{
     AggregateViewTag, ExprViewBoxWithTag, InList, TagList, Value, ValueCount, ViewBox,
@@ -43,7 +44,7 @@ impl<View: FoldView> Map<View> for FoldQueryResult<View> {
 }
 
 pub trait Fold<View> {
-    fn fold<RV: FoldView, F: Fn(View) -> RV>(self, f: F) -> FoldQueryResult<RV>;
+    fn fold<RV: FoldView, F: Fn(View, AggregateHelper) -> RV>(self, f: F) -> FoldQueryResult<RV>;
 }
 
 impl<T1: Value, T1Tag: TagList> FoldView for ExprViewBoxWithTag<T1, T1Tag>
