@@ -2,7 +2,8 @@ use query_builder::{Expr, GroupSelect};
 
 use crate::operator::{AggregateHelper, AggregateHelperCreate};
 use crate::query::{
-    AliasGenerator, ExprNode, Filter, Fold, FoldQueryResult, FoldView, Map, QueryResultMap,
+    AliasGenerator, ExprNode, Filter, Fold, FoldQueryResult, FoldView, Map, MultiRows,
+    QueryResultMap,
 };
 use crate::view::{
     EntityViewTag, ExprViewBox, ExprViewBoxWithTag, NotInList, TagList, Value, ValueCount, ViewBox,
@@ -33,6 +34,7 @@ impl<View: GroupView> GroupedQueryResult<View> {
 }
 
 impl<View: GroupView> Map<View> for GroupedQueryResult<View> {
+    type ResultType = MultiRows;
     fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(View) -> RV>(
         mut self,
         f: F,

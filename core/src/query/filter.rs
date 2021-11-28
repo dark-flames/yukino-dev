@@ -6,7 +6,7 @@ use query_builder::{Alias, Select, SelectFrom};
 use crate::operator::{AggregateHelper, AggregateHelperCreate};
 use crate::query::{
     AliasGenerator, Fold, FoldQueryResult, FoldView, GroupBy, GroupedQueryResult, GroupView, Map,
-    QueryResultMap,
+    MultiRows, QueryResultMap,
 };
 use crate::view::{EntityView, EntityWithView, ExprViewBox, ValueCount, ViewBox};
 
@@ -43,6 +43,7 @@ impl<E: EntityWithView> Filter<E::View> for QueryResultFilter<E> {
 }
 
 impl<E: EntityWithView> Map<E::View> for QueryResultFilter<E> {
+    type ResultType = MultiRows;
     fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(E::View) -> RV>(
         self,
         f: F,

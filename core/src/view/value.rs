@@ -10,7 +10,9 @@ use query_builder::{DatabaseValue, Expr};
 use crate::converter::*;
 use crate::err::{RuntimeResult, YukinoError};
 use crate::query::{ExprMutVisitor, ExprNode, ExprVisitor};
-use crate::view::{EmptyTagList, ExprView, ExprViewBox, ExprViewBoxWithTag, View, ViewBox};
+use crate::view::{
+    ExprView, ExprViewBox, ExprViewBoxWithTag, OrdViewTag, TagList1, View, ViewBox,
+};
 
 pub type ValueCountOf<T> = <T as Value>::L;
 
@@ -81,7 +83,7 @@ impl<T: Value<L = U1>> View<T, U1> for SingleExprView<T> {
 }
 
 impl<T: Value<L = U1>> ExprView<T> for SingleExprView<T> {
-    type Tags = EmptyTagList;
+    type Tags = TagList1<OrdViewTag>;
 
     fn from_exprs(exprs: GenericArray<Expr, U1>) -> ExprViewBoxWithTag<T, Self::Tags>
     where

@@ -3,6 +3,9 @@ use query_builder::{SelectItem, SelectQuery, SelectSource};
 use crate::query::AliasGenerator;
 use crate::view::{ValueCount, ViewBox};
 
+pub struct SingleRow;
+pub struct MultiRows;
+
 pub struct QueryResultMap<R: 'static, RL: ValueCount> {
     query: Box<dyn SelectSource>,
     view: ViewBox<R, RL>,
@@ -10,6 +13,7 @@ pub struct QueryResultMap<R: 'static, RL: ValueCount> {
 }
 
 pub trait Map<View> {
+    type ResultType;
     fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(View) -> RV>(
         self,
         f: F,

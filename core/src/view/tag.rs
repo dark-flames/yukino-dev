@@ -4,8 +4,10 @@ use crate::view::{ExprView, Value};
 
 pub type U0 = Zero;
 pub type U1 = Suc<U0>;
-pub type EmptyTagList = TagListSegment<TagListSegment<Terminal, false>, false>;
-pub type SetFlag<B, F> = <B as SetBit<true, <F as Tag>::Offset>>::Result;
+pub type U2 = Suc<U1>;
+pub type EmptyTagList =
+    TagListSegment<TagListSegment<TagListSegment<Terminal, false>, false>, false>;
+pub type SetFlag<B, F> = <B as SetBit<<F as Tag>::Offset, true>>::Result;
 pub type TagList1<T1> = SetFlag<EmptyTagList, T1>;
 pub type TagList2<T1, T2> = SetFlag<TagList1<T1>, T2>;
 pub type TagList3<T1, T2, T3> = SetFlag<TagList2<T1, T2>, T3>;
@@ -31,9 +33,9 @@ pub trait Tag {
     type Offset: Usize;
 }
 
-pub trait AssertBit<const V: bool, O: Usize>: TagList {}
+pub trait AssertBit<O: Usize, const V: bool>: TagList {}
 
-pub trait SetBit<const V: bool, O: Usize>: TagList {
+pub trait SetBit<O: Usize, const V: bool>: TagList {
     type Result: TagList;
 }
 
@@ -57,30 +59,30 @@ impl TagList for Terminal {}
 
 impl<U: TagList, const B: bool> TagList for TagListSegment<U, B> {}
 
-impl<U: TagList, const B: bool> AssertBit<B, U0> for TagListSegment<U, B> {}
+impl<U: TagList, const B: bool> AssertBit<U0, B> for TagListSegment<U, B> {}
 
-impl<U: TagList, O: NonZero + Usize, const V: bool, const H: bool> AssertBit<V, O>
+impl<U: TagList, O: NonZero + Usize, const V: bool, const H: bool> AssertBit<O, V>
     for TagListSegment<U, H>
 where
-    U: AssertBit<V, O::Prev>,
+    U: AssertBit<O::Prev, V>,
 {
 }
 
-impl<U: TagList, const V: bool, const H: bool> SetBit<V, U0> for TagListSegment<U, H> {
+impl<U: TagList, const V: bool, const H: bool> SetBit<U0, V> for TagListSegment<U, H> {
     type Result = TagListSegment<U, V>;
 }
 
-impl<U: TagList, O: NonZero + Usize, const V: bool, const H: bool> SetBit<V, O>
+impl<U: TagList, O: NonZero + Usize, const V: bool, const H: bool> SetBit<O, V>
     for TagListSegment<U, H>
 where
-    U: SetBit<V, O::Prev>,
+    U: SetBit<O::Prev, V>,
 {
-    type Result = TagListSegment<<U as SetBit<V, O::Prev>>::Result, H>;
+    type Result = TagListSegment<<U as SetBit<O::Prev, V>>::Result, H>;
 }
 
-impl<T: Tag, B: TagList> HasTag<T> for B where B: AssertBit<true, T::Offset> {}
+impl<T: Tag, B: TagList> HasTag<T> for B where B: AssertBit<T::Offset, true> {}
 
-impl<T: Tag, B: TagList> NoTag<T> for B where B: AssertBit<false, T::Offset> {}
+impl<T: Tag, B: TagList> NoTag<T> for B where B: AssertBit<T::Offset, false> {}
 
 impl<T: Tag, L: TagList + HasTag<T>> InList<L> for T {}
 impl<T: Tag, L: TagList + NoTag<T>> NotInList<L> for T {}
@@ -95,5 +97,6 @@ macro_rules! create_tag {
     };
 }
 
-create_tag!(EntityViewTag, U0);
-create_tag!(AggregateViewTag, U1);
+create_tag!(OrdViewTag, U0);
+create_tag!(EntityViewTag, U1);
+create_tag!(AggregateViewTag, U2);

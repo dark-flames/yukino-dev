@@ -1,7 +1,7 @@
 use query_builder::{Expr, SelectSource};
 
 use crate::operator::AggregateHelper;
-use crate::query::{AliasGenerator, ExprNode, Map, QueryResultMap};
+use crate::query::{AliasGenerator, ExprNode, Map, QueryResultMap, SingleRow};
 use crate::view::{
     AggregateViewTag, ExprViewBoxWithTag, InList, TagList, Value, ValueCount, ViewBox,
 };
@@ -31,6 +31,7 @@ impl<View: FoldView> FoldQueryResult<View> {
 }
 
 impl<View: FoldView> Map<View> for FoldQueryResult<View> {
+    type ResultType = SingleRow;
     fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(View) -> RV>(
         mut self,
         f: F,
@@ -47,19 +48,22 @@ pub trait Fold<View> {
     fn fold<RV: FoldView, F: Fn(View, AggregateHelper) -> RV>(self, f: F) -> FoldQueryResult<RV>;
 }
 
-impl<T1: Value, T1Tag: TagList> FoldView for ExprViewBoxWithTag<T1, T1Tag>
+impl<T1: Value, T1Tags: TagList> FoldView for ExprViewBoxWithTag<T1, T1Tags>
 where
-    AggregateViewTag: InList<T1Tag>,
+    AggregateViewTag: InList<T1Tags>,
 {
     fn collect_fold_expr_vec(&self) -> Vec<Expr> {
         self.collect_expr().into_iter().collect()
     }
 }
 
-impl<T1: Value, T1Tag: TagList, T2: Value, T2Tag: TagList> FoldView
-    for (ExprViewBoxWithTag<T1, T1Tag>, ExprViewBoxWithTag<T2, T2Tag>)
+impl<T1: Value, T1Tags: TagList, T2: Value, T2Tags: TagList> FoldView
+    for (
+        ExprViewBoxWithTag<T1, T1Tags>,
+        ExprViewBoxWithTag<T2, T2Tags>,
+    )
 where
-    AggregateViewTag: InList<T1Tag> + InList<T2Tag>,
+    AggregateViewTag: InList<T1Tags> + InList<T2Tags>,
 {
     fn collect_fold_expr_vec(&self) -> Vec<Expr> {
         self.0

@@ -29,12 +29,12 @@ macro_rules! impl_ops {
             Value + $ops_trait<Rhs, Output = Self::Result>
         {
             type Result: Value;
-            type ResultTags: TagList;
+            type ResultTags<LTags: TagList, RTags: TagList>: TagList;
 
             fn $trait_method<LTags: TagList, RTags: TagList>(
                 l: ExprViewBoxWithTag<Self, LTags>,
                 r: ExprViewBoxWithTag<Rhs, RTags>,
-            ) -> ExprViewBoxWithTag<Self::Result, Self::ResultTags>;
+            ) -> ExprViewBoxWithTag<Self::Result, Self::ResultTags<LTags, RTags>>;
         }
 
         pub struct $computation_name<
@@ -115,7 +115,7 @@ macro_rules! impl_ops {
         }
 
         impl<
-            L: Value + $expr_trait<R, Result = O, ResultTags = OTags>,
+            L: Value + $expr_trait<R, Result = O, ResultTags<LTags, RTags> = OTags>,
             R: Value,
             O: Value,
             LTags: TagList,
@@ -131,7 +131,7 @@ macro_rules! impl_ops {
         }
 
         impl<
-            L: Value + $expr_trait<R, Result = O, ResultTags = OTags>,
+            L: Value + $expr_trait<R, Result = O, ResultTags<LTags, TagOfValueView<R>> = OTags>,
             R: Value,
             O: Value,
             LTags: TagList,
@@ -225,12 +225,12 @@ macro_rules! impl_ops {
             ($ty: ty) => {
                 impl $expr_trait<$ty> for $ty {
                     type Result = $ty;
-                    type ResultTags = TagOfValueView<$ty>;
+                    type ResultTags<LTags: TagList, RTags: TagList> = TagOfValueView<$ty>;
 
                     fn $trait_method<LTags: TagList, RTags: TagList>(
                         l: ExprViewBoxWithTag<Self, LTags>,
                         r: ExprViewBoxWithTag<$ty, RTags>,
-                    ) -> ExprViewBoxWithTag<Self::Result, Self::ResultTags>{
+                    ) -> ExprViewBoxWithTag<Self::Result, Self::ResultTags<LTags, RTags>>{
                         let l_expr = l.collect_expr().into_iter().next().unwrap();
                         let r_expr = r.collect_expr().into_iter().next().unwrap();
                         let result = Expr::$expr_variant(Box::new(l_expr), Box::new(r_expr));
