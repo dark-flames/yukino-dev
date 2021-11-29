@@ -19,11 +19,11 @@ pub trait Sort<View> {
 
 impl<T: Value, TTags: TagList> ExprNode for SortItem<T, TTags> {
     fn apply(&self, visitor: &mut dyn ExprVisitor) {
-        self.expr.apply(visitor)
+        self.expr.apply(visitor);
     }
 
     fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
-        self.expr.apply_mut(visitor)
+        self.expr.apply_mut(visitor);
     }
 }
 
@@ -39,6 +39,34 @@ where
                 expr,
                 order: self.order,
             })
+            .collect()
+    }
+}
+
+impl<T1: Value, T1Tags: TagList, T2: Value, T2Tags: TagList> ExprNode
+    for (SortItem<T1, T1Tags>, SortItem<T2, T2Tags>)
+{
+    fn apply(&self, visitor: &mut dyn ExprVisitor) {
+        self.0.apply(visitor);
+        self.1.apply(visitor);
+    }
+
+    fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
+        self.0.apply_mut(visitor);
+        self.1.apply_mut(visitor);
+    }
+}
+
+impl<T1: Value, T1Tags: TagList, T2: Value, T2Tags: TagList> SortResult
+    for (SortItem<T1, T1Tags>, SortItem<T2, T2Tags>)
+where
+    OrdViewTag: InList<T1Tags> + InList<T2Tags>,
+{
+    fn order_by_items(&self) -> Vec<OrderByItem> {
+        self.0
+            .order_by_items()
+            .into_iter()
+            .chain(self.1.order_by_items().into_iter())
             .collect()
     }
 }
