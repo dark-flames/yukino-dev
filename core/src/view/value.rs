@@ -10,9 +10,7 @@ use query_builder::{DatabaseValue, Expr};
 use crate::converter::*;
 use crate::err::{RuntimeResult, YukinoError};
 use crate::query::{ExprMutVisitor, ExprNode, ExprVisitor};
-use crate::view::{
-    ExprView, ExprViewBox, ExprViewBoxWithTag, OrdViewTag, TagList1, View, ViewBox,
-};
+use crate::view::{ExprView, ExprViewBox, ExprViewBoxWithTag, OrdViewTag, TagList1, View, ViewBox};
 
 pub type ValueCountOf<T> = <T as Value>::L;
 
