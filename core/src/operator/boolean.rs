@@ -1,17 +1,8 @@
-use std::ops::{Add, Sub};
+use generic_array::arr;
 
-use generic_array::{arr, GenericArray};
-use generic_array::sequence::{Concat, Split};
-use generic_array::typenum::Sum;
+use query_builder::Expr;
 
-use query_builder::{DatabaseValue, Expr};
-
-use crate::err::RuntimeResult;
-use crate::query::{ExprMutVisitor, ExprNode, ExprVisitor};
-use crate::view::{
-    ComputationView, ComputationViewBox, ExprView, ExprViewBox, ExprViewBoxWithTag, SingleExprView,
-    TagList, Value, ValueCount, ValueCountOf, View, ViewBox,
-};
+use crate::view::{ExprView, ExprViewBox, ExprViewBoxWithTag, SingleExprView, TagList, Value};
 
 macro_rules! op_trait {
     (
@@ -70,7 +61,6 @@ macro_rules! impl_bool_operator {
         $view_op_method: ident,
         $expr_op_trait: ident,
         $expr_op_method: ident,
-        $computation: ident,
         $expr_variant: ident,
         [$($ty: ty),*]
     ) => {
@@ -87,77 +77,6 @@ macro_rules! impl_bool_operator {
             ) -> ExprViewBox<bool>;
         }
 
-        pub struct $computation<
-            L: 'static + $op_trait<R>,
-            R: 'static,
-            LL: ValueCount,
-            RL: ValueCount,
-        > {
-            l: ViewBox<L, LL>,
-            r: ViewBox<R, RL>,
-        }
-
-        impl<
-            L: 'static + $op_trait<R>,
-            R: 'static,
-            LL: ValueCount + Add<RL>,
-            RL: ValueCount
-        > ExprNode for $computation<L, R, LL, RL>
-        where Sum<LL, RL>: ValueCount + Sub<LL, Output = RL>
-        {
-            fn apply(&self, visitor: &mut dyn ExprVisitor) {
-                self.l.apply(visitor);
-                self.r.apply(visitor);
-            }
-
-            fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
-                self.l.apply_mut(visitor);
-                self.r.apply_mut(visitor);
-            }
-        }
-
-        impl<
-            L: 'static + $op_trait<R>,
-            R: 'static,
-            LL: ValueCount + Add<RL>,
-            RL: ValueCount,
-        > View<bool, Sum<LL, RL>> for $computation<L, R, LL, RL>
-        where Sum<LL, RL>: ValueCount + Sub<LL, Output = RL>
-        {
-            fn collect_expr(&self) -> GenericArray<Expr, Sum<LL, RL>> {
-                Concat::concat(self.l.collect_expr(), self.r.collect_expr())
-            }
-
-            fn eval(&self, v: &GenericArray<DatabaseValue, Sum<LL, RL>>) -> RuntimeResult<bool> {
-                let (l, r) = Split::<_, LL>::split(v);
-                let r_result = self.r.eval(r)?;
-                Ok(self.l.eval(l)?.$op_trait_method(&r_result))
-            }
-
-            fn view_clone(&self) -> ViewBox<bool, Sum<LL, RL>> {
-                Box::new($computation {
-                    l: self.l.view_clone(),
-                    r: self.r.view_clone(),
-                })
-            }
-        }
-
-        impl<
-            L: 'static + $op_trait<R>,
-            R: 'static,
-            LL: ValueCount + Add<RL>,
-            RL: ValueCount,
-        > ComputationView<bool,  Sum<LL, RL>> for $computation<L, R, LL, RL>
-        where Sum<LL, RL>: ValueCount + Sub<LL, Output = RL>
-        {
-            fn computation_clone(&self) -> ComputationViewBox<bool,  Sum<LL, RL>> {
-                Box::new($computation {
-                    l: self.l.view_clone(),
-                    r: self.r.view_clone(),
-                })
-            }
-        }
-
         impl<
             L: Value + $expr_op_trait<R>,
             R: Value,
@@ -172,26 +91,6 @@ macro_rules! impl_bool_operator {
                 L::$expr_op_method(self, rhs)
             }
         }
-
-        impl<
-            L: Value + $op_trait<R>,
-            R: 'static,
-            RL: ValueCount,
-            LTags: TagList,
-        > $view_op_trait<ComputationViewBox<R, RL>> for ExprViewBoxWithTag<L, LTags>
-        where ValueCountOf<L>: Add<RL>,
-                Sum<ValueCountOf<L>, RL>: ValueCount + Sub<ValueCountOf<L>, Output=RL>
-        {
-            type Output = ComputationViewBox<bool, Sum<ValueCountOf<L>, RL>>;
-
-            fn $view_op_method(self, rhs: ComputationViewBox<R, RL>) -> Self::Output {
-                Box::new($computation {
-                    l: self.view_clone(),
-                    r: rhs.view_clone(),
-                })
-            }
-        }
-
         impl<
             L: Value + $expr_op_trait<R>,
             R: Value,
@@ -201,24 +100,6 @@ macro_rules! impl_bool_operator {
 
             fn $view_op_method(self, rhs: R) -> Self::Output {
                 L::$expr_op_method(self, rhs.view())
-            }
-        }
-
-        impl<
-            L: 'static + $op_trait<R>,
-            R: Value,
-            LL: ValueCount + Add<ValueCountOf<R>>,
-            RTags: TagList,
-        > $view_op_trait<ExprViewBoxWithTag<R, RTags>> for ComputationViewBox<L, LL>
-        where Sum<LL, ValueCountOf<R>>: ValueCount + Sub<LL, Output=ValueCountOf<R>>
-        {
-            type Output = ComputationViewBox<bool, Sum<LL, ValueCountOf<R>>>;
-
-            fn $view_op_method(self, rhs: ExprViewBoxWithTag<R, RTags>) -> Self::Output {
-                Box::new($computation {
-                    l: self.view_clone(),
-                    r: rhs.view_clone(),
-                })
             }
         }
 
@@ -257,19 +138,19 @@ impl_op_for!(>=, Bte, bte, [bool, u16, i16, u32, i32, u64, i64, f32, f64, char, 
 impl_op_for!(<, Lt, lt, [bool, u16, i16, u32, i32, u64, i64, f32, f64, char, String]);
 impl_op_for!(<=, Lte, lte, [bool, u16, i16, u32, i32, u64, i64, f32, f64, char, String]);
 
-impl_bool_operator!(&, And, and, ViewAnd, view_and, ExprAnd, expr_and, AndView, And, [bool]);
-impl_bool_operator!(|, Or, or, ViewOr, view_or, ExprOr, expr_or, OrView, Or, [bool]);
-impl_bool_operator!(==, PartialEq, eq, ViewEq, view_eq, ExprEq, expr_eq, EqView, Eq,
+impl_bool_operator!(&, And, and, ViewAnd, view_and, ExprAnd, expr_and, And, [bool]);
+impl_bool_operator!(|, Or, or, ViewOr, view_or, ExprOr, expr_or, Or, [bool]);
+impl_bool_operator!(==, PartialEq, eq, ViewEq, view_eq, ExprEq, expr_eq, Eq,
     [bool, u16, i16, u32, i32, u64, i64, f32, f64, char, String]);
-impl_bool_operator!(!=, PartialEq, ne, ViewNeq, view_neq, ExprNeq, expr_neq, NeqView, Neq,
+impl_bool_operator!(!=, PartialEq, ne, ViewNeq, view_neq, ExprNeq, expr_neq, Neq,
     [bool, u16, i16, u32, i32, u64, i64, f32, f64, char, String]);
-impl_bool_operator!(>, Bt, bt, ViewBt, view_bt, ExprBt, expr_bt, BtView, Bt,
+impl_bool_operator!(>, Bt, bt, ViewBt, view_bt, ExprBt, expr_bt, Bt,
     [u16, i16, u32, i32, u64, i64, f32, f64, char, String]);
-impl_bool_operator!(>=, Bte, bte, ViewBte, view_bte, ExprBte, expr_bte, BteView, Bte,
+impl_bool_operator!(>=, Bte, bte, ViewBte, view_bte, ExprBte, expr_bte, Bte,
     [u16, i16, u32, i32, u64, i64, f32, f64, char, String]);
-impl_bool_operator!(<, Lt, lt, ViewLt, view_lt, ExprLt, expr_lt, LtView, Lt,
+impl_bool_operator!(<, Lt, lt, ViewLt, view_lt, ExprLt, expr_lt, Lt,
     [u16, i16, u32, i32, u64, i64, f32, f64, char, String]);
-impl_bool_operator!(<=, Lte, lte, ViewLte, view_lte, ExprLte, expr_lte, LteView, Lte,
+impl_bool_operator!(<=, Lte, lte, ViewLte, view_lte, ExprLte, expr_lte, Lte,
     [u16, i16, u32, i32, u64, i64, f32, f64, char, String]);
 
 generate_macro!(and, ViewAnd, view_and);

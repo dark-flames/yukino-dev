@@ -10,7 +10,7 @@ use query_builder::{DatabaseValue, Expr};
 use crate::converter::*;
 use crate::err::{RuntimeResult, YukinoError};
 use crate::query::{ExprMutVisitor, ExprNode, ExprVisitor};
-use crate::view::{ExprView, ExprViewBox, ExprViewBoxWithTag, OrdViewTag, TagList1, View, ViewBox};
+use crate::view::{ExprView, ExprViewBox, ExprViewBoxWithTag, OrdViewTag, TagList1};
 
 pub type ValueCountOf<T> = <T as Value>::L;
 
@@ -66,20 +66,6 @@ impl<T: Value<L = U1>> ExprNode for SingleExprView<T> {
     }
 }
 
-impl<T: Value<L = U1>> View<T, U1> for SingleExprView<T> {
-    fn collect_expr(&self) -> GenericArray<Expr, U1> {
-        arr![Expr; self.expr.clone()]
-    }
-
-    fn eval(&self, v: &GenericArray<DatabaseValue, U1>) -> RuntimeResult<T> {
-        (*T::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
-    }
-
-    fn view_clone(&self) -> ViewBox<T, U1> {
-        Box::new(Clone::clone(self))
-    }
-}
-
 impl<T: Value<L = U1>> ExprView<T> for SingleExprView<T> {
     type Tags = TagList1<OrdViewTag>;
 
@@ -98,6 +84,14 @@ impl<T: Value<L = U1>> ExprView<T> for SingleExprView<T> {
         Self: Sized,
     {
         Box::new(Clone::clone(self))
+    }
+
+    fn collect_expr(&self) -> GenericArray<Expr, U1> {
+        arr![Expr; self.expr.clone()]
+    }
+
+    fn eval(&self, v: &GenericArray<DatabaseValue, U1>) -> RuntimeResult<T> {
+        (*T::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
     }
 }
 

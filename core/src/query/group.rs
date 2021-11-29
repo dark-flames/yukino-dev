@@ -12,15 +12,13 @@ use crate::query::{
 };
 use crate::view::{
     EmptyTagList, EntityView, EntityViewTag, EntityWithView, ExprViewBox, ExprViewBoxWithTag,
-    NotInList, TagList, Value, ValueCount, ValueCountOf, ViewBox,
+    NotInList, TagList, Value, ValueCount, ValueCountOf,
 };
 
 pub trait GroupResult: Clone + ExprNode {
     type Value: Value;
     type Tags: TagList;
     fn collect_expr_vec(&self) -> Vec<Expr>;
-
-    fn view_box(self) -> ViewBox<Self::Value, ValueCountOf<Self::Value>>;
 
     fn expr_box(self) -> ExprViewBoxWithTag<Self::Value, Self::Tags>;
 }
@@ -74,14 +72,14 @@ impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Map2<View,
 {
     type ResultType = MultiRows;
     fn map<
-        R: 'static,
-        RL: ValueCount,
-        RV: Into<ViewBox<R, RL>>,
+        R: Value,
+        RTags: TagList,
+        RV: Into<ExprViewBoxWithTag<R, RTags>>,
         F: Fn(View, AggregateView) -> RV,
     >(
         mut self,
         f: F,
-    ) -> QueryResultMap<R, RL, Self::ResultType> {
+    ) -> QueryResultMap<R, RTags, Self::ResultType> {
         let mut result = f(self.view, self.aggregate).into();
         let mut visitor = self.alias_generator.substitute_visitor();
         result.apply_mut(&mut visitor);
@@ -91,10 +89,10 @@ impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Map2<View,
 
 impl<View: GroupResult, E: EntityWithView> Map<View> for GroupedQueryResult<View, (), E> {
     type ResultType = MultiRows;
-    fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(View) -> RV>(
+    fn map<R: Value, RTags: TagList, RV: Into<ExprViewBoxWithTag<R, RTags>>, F: Fn(View) -> RV>(
         mut self,
         f: F,
-    ) -> QueryResultMap<R, RL, Self::ResultType> {
+    ) -> QueryResultMap<R, RTags, Self::ResultType> {
         let mut result = f(self.view).into();
         let mut visitor = self.alias_generator.substitute_visitor();
         result.apply_mut(&mut visitor);
@@ -215,13 +213,12 @@ impl<View: GroupResult, E: EntityWithView> Sort<View> for GroupedQueryResult<Vie
     }
 }
 
-impl<View: GroupResult, E: EntityWithView>
-    ExecutableSelectQuery<View::Value, ValueCountOf<View::Value>>
+impl<View: GroupResult, E: EntityWithView> ExecutableSelectQuery<View::Value, View::Tags>
     for GroupedQueryResult<View, (), E>
 {
     type ResultType = MultiRows;
 
-    fn generate_query(self) -> (SelectQuery, ViewBox<View::Value, ValueCountOf<View::Value>>) {
+    fn generate_query(self) -> (SelectQuery, ExprViewBoxWithTag<View::Value, View::Tags>) {
         (
             SelectQuery::create(
                 Box::new(self.query),
@@ -231,18 +228,14 @@ impl<View: GroupResult, E: EntityWithView>
                 None,
                 0,
             ),
-            self.view.view_box(),
+            self.view.expr_box(),
         )
     }
 }
-
 type ValueTuple<V1, V2> = (<V1 as GroupResult>::Value, <V2 as FoldResult>::Value);
-type GroupViewBox<V1, V2> = ViewBox<ValueTuple<V1, V2>, ValueCountOf<ValueTuple<V1, V2>>>;
 impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView>
-    ExecutableSelectQuery<
-        ValueTuple<View, AggregateView>,
-        ValueCountOf<ValueTuple<View, AggregateView>>,
-    > for GroupedQueryResult<View, AggregateView, E>
+    ExecutableSelectQuery<ValueTuple<View, AggregateView>, EmptyTagList>
+    for GroupedQueryResult<View, AggregateView, E>
 where
     ValueCountOf<View::Value>: Add<ValueCountOf<AggregateView::Value>>,
     Sum<ValueCountOf<View::Value>, ValueCountOf<AggregateView::Value>>:
@@ -250,7 +243,12 @@ where
 {
     type ResultType = MultiRows;
 
-    fn generate_query(self) -> (SelectQuery, GroupViewBox<View, AggregateView>) {
+    fn generate_query(
+        self,
+    ) -> (
+        SelectQuery,
+        ExprViewBoxWithTag<ValueTuple<View, AggregateView>, EmptyTagList>,
+    ) {
         (
             SelectQuery::create(
                 Box::new(self.query),
@@ -264,12 +262,7 @@ where
                 None,
                 0,
             ),
-            {
-                let expr_box: ExprViewBoxWithTag<ValueTuple<View, AggregateView>, EmptyTagList> =
-                    (self.view.expr_box(), self.aggregate.expr_box()).into();
-
-                expr_box.into()
-            },
+            (self.view.expr_box(), self.aggregate.expr_box()).into(),
         )
     }
 }
@@ -302,14 +295,14 @@ impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Map2<View,
     type ResultType = MultiRows;
 
     fn map<
-        R: 'static,
-        RL: ValueCount,
-        RV: Into<ViewBox<R, RL>>,
+        R: Value,
+        RTags: TagList,
+        RV: Into<ExprViewBoxWithTag<R, RTags>>,
         F: Fn(View, AggregateView) -> RV,
     >(
         mut self,
         f: F,
-    ) -> QueryResultMap<R, RL, Self::ResultType> {
+    ) -> QueryResultMap<R, RTags, Self::ResultType> {
         let mut result = f(self.nested.view, self.nested.aggregate).into();
         let mut visitor = self.nested.alias_generator.substitute_visitor();
         result.apply_mut(&mut visitor);
@@ -325,10 +318,10 @@ impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Map2<View,
 impl<View: GroupResult, E: EntityWithView> Map<View> for SortedGroupedQueryResult<View, (), E> {
     type ResultType = MultiRows;
 
-    fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(View) -> RV>(
+    fn map<R: Value, RTags: TagList, RV: Into<ExprViewBoxWithTag<R, RTags>>, F: Fn(View) -> RV>(
         mut self,
         f: F,
-    ) -> QueryResultMap<R, RL, Self::ResultType> {
+    ) -> QueryResultMap<R, RTags, Self::ResultType> {
         let mut result = f(self.nested.view).into();
         let mut visitor = self.nested.alias_generator.substitute_visitor();
         result.apply_mut(&mut visitor);
@@ -341,13 +334,12 @@ impl<View: GroupResult, E: EntityWithView> Map<View> for SortedGroupedQueryResul
     }
 }
 
-impl<View: GroupResult, E: EntityWithView>
-    ExecutableSelectQuery<View::Value, ValueCountOf<View::Value>>
+impl<View: GroupResult, E: EntityWithView> ExecutableSelectQuery<View::Value, View::Tags>
     for SortedGroupedQueryResult<View, (), E>
 {
     type ResultType = MultiRows;
 
-    fn generate_query(self) -> (SelectQuery, ViewBox<View::Value, ValueCountOf<View::Value>>) {
+    fn generate_query(self) -> (SelectQuery, ExprViewBoxWithTag<View::Value, View::Tags>) {
         (
             SelectQuery::create(
                 Box::new(self.nested.query),
@@ -358,16 +350,14 @@ impl<View: GroupResult, E: EntityWithView>
                 None,
                 0,
             ),
-            self.nested.view.view_box(),
+            self.nested.view.expr_box(),
         )
     }
 }
 
 impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView>
-    ExecutableSelectQuery<
-        ValueTuple<View, AggregateView>,
-        ValueCountOf<ValueTuple<View, AggregateView>>,
-    > for SortedGroupedQueryResult<View, AggregateView, E>
+    ExecutableSelectQuery<ValueTuple<View, AggregateView>, EmptyTagList>
+    for SortedGroupedQueryResult<View, AggregateView, E>
 where
     ValueCountOf<View::Value>: Add<ValueCountOf<AggregateView::Value>>,
     Sum<ValueCountOf<View::Value>, ValueCountOf<AggregateView::Value>>:
@@ -375,7 +365,12 @@ where
 {
     type ResultType = MultiRows;
 
-    fn generate_query(self) -> (SelectQuery, GroupViewBox<View, AggregateView>) {
+    fn generate_query(
+        self,
+    ) -> (
+        SelectQuery,
+        ExprViewBoxWithTag<ValueTuple<View, AggregateView>, EmptyTagList>,
+    ) {
         (
             SelectQuery::create(
                 Box::new(self.nested.query),
@@ -390,15 +385,11 @@ where
                 None,
                 0,
             ),
-            {
-                let expr_box: ExprViewBoxWithTag<ValueTuple<View, AggregateView>, EmptyTagList> = (
-                    self.nested.view.expr_box(),
-                    self.nested.aggregate.expr_box(),
-                )
-                    .into();
-
-                expr_box.into()
-            },
+            (
+                self.nested.view.expr_box(),
+                self.nested.aggregate.expr_box(),
+            )
+                .into(),
         )
     }
 }
@@ -430,10 +421,6 @@ where
         self.collect_expr().into_iter().collect()
     }
 
-    fn view_box(self) -> ViewBox<Self::Value, ValueCountOf<Self::Value>> {
-        self.into()
-    }
-
     fn expr_box(self) -> ExprViewBoxWithTag<Self::Value, Self::Tags> {
         self
     }
@@ -456,10 +443,6 @@ where
             .into_iter()
             .chain(self.1.collect_expr())
             .collect()
-    }
-
-    fn view_box(self) -> ViewBox<Self::Value, ValueCountOf<Self::Value>> {
-        self.expr_box().into()
     }
 
     fn expr_box(self) -> ExprViewBoxWithTag<Self::Value, Self::Tags> {

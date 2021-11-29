@@ -9,7 +9,8 @@ use crate::query::{
     GroupedQueryResult, GroupResult, Map, MultiRows, QueryResultMap, Sort, SortHelper, SortResult,
 };
 use crate::view::{
-    EntityView, EntityWithView, ExprViewBox, ValueCount, ValueCountOf, View, ViewBox,
+    EntityView, EntityWithView, ExprView, ExprViewBox, ExprViewBoxWithTag, TagList, TagsOfEntity,
+    Value,
 };
 
 pub struct QueryResultFilter<E: EntityWithView> {
@@ -56,10 +57,15 @@ impl<E: EntityWithView> Filter<E::View> for QueryResultFilter<E> {
 
 impl<E: EntityWithView> Map<E::View> for QueryResultFilter<E> {
     type ResultType = MultiRows;
-    fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(E::View) -> RV>(
+    fn map<
+        R: Value,
+        RTags: TagList,
+        RV: Into<ExprViewBoxWithTag<R, RTags>>,
+        F: Fn(E::View) -> RV,
+    >(
         mut self,
         f: F,
-    ) -> QueryResultMap<R, RL, Self::ResultType> {
+    ) -> QueryResultMap<R, RTags, Self::ResultType> {
         let entity_view = E::View::pure(&self.root_alias);
         let mut result_view = f(entity_view).into();
         let mut visitor = self.alias_generator.substitute_visitor();
@@ -123,10 +129,10 @@ impl<E: EntityWithView> Sort<E::View> for QueryResultFilter<E> {
     }
 }
 
-impl<E: EntityWithView> ExecutableSelectQuery<E, ValueCountOf<E>> for QueryResultFilter<E> {
+impl<E: EntityWithView> ExecutableSelectQuery<E, TagsOfEntity<E>> for QueryResultFilter<E> {
     type ResultType = MultiRows;
 
-    fn generate_query(mut self) -> (SelectQuery, ViewBox<E, ValueCountOf<E>>) {
+    fn generate_query(mut self) -> (SelectQuery, ExprViewBoxWithTag<E, TagsOfEntity<E>>) {
         let mut view = E::View::pure(&self.root_alias);
         let mut visitor = self.alias_generator.substitute_visitor();
         view.apply_mut(&mut visitor);
@@ -140,7 +146,7 @@ impl<E: EntityWithView> ExecutableSelectQuery<E, ValueCountOf<E>> for QueryResul
                 None,
                 0,
             ),
-            view.view_clone(),
+            Box::new(view),
         )
     }
 }
@@ -161,10 +167,15 @@ impl<E: EntityWithView> QueryResultFilter<E> {
 impl<E: EntityWithView> Map<E::View> for SortedQueryResultFilter<E> {
     type ResultType = MultiRows;
 
-    fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(E::View) -> RV>(
+    fn map<
+        R: Value,
+        TTags: TagList,
+        RV: Into<ExprViewBoxWithTag<R, TTags>>,
+        F: Fn(E::View) -> RV,
+    >(
         mut self,
         f: F,
-    ) -> QueryResultMap<R, RL, Self::ResultType> {
+    ) -> QueryResultMap<R, TTags, Self::ResultType> {
         let entity_view = E::View::pure(&self.nested.root_alias);
         let mut result_view = f(entity_view).into();
         let mut visitor = self.nested.alias_generator.substitute_visitor();
@@ -180,10 +191,10 @@ impl<E: EntityWithView> Map<E::View> for SortedQueryResultFilter<E> {
     }
 }
 
-impl<E: EntityWithView> ExecutableSelectQuery<E, ValueCountOf<E>> for SortedQueryResultFilter<E> {
+impl<E: EntityWithView> ExecutableSelectQuery<E, TagsOfEntity<E>> for SortedQueryResultFilter<E> {
     type ResultType = MultiRows;
 
-    fn generate_query(mut self) -> (SelectQuery, ViewBox<E, ValueCountOf<E>>) {
+    fn generate_query(mut self) -> (SelectQuery, ExprViewBoxWithTag<E, TagsOfEntity<E>>) {
         let mut view = E::View::pure(&self.nested.root_alias);
         let mut visitor = self.nested.alias_generator.substitute_visitor();
         view.apply_mut(&mut visitor);
@@ -198,7 +209,7 @@ impl<E: EntityWithView> ExecutableSelectQuery<E, ValueCountOf<E>> for SortedQuer
                 None,
                 0,
             ),
-            view.view_clone(),
+            Box::new(view),
         )
     }
 }

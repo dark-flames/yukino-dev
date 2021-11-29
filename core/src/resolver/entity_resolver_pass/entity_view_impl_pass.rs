@@ -17,7 +17,7 @@ impl EntityResolvePass for EntityViewPass {
 
     fn get_dependencies(&self) -> Vec<TokenStream> {
         vec![quote! {
-            use yukino::view::{SingleExprView, ViewBox, ExprViewBox, ExprViewBoxWithTag, ExprView, EntityView, EntityViewTag, TagList1};
+            use yukino::view::{SingleExprView, ExprViewBox, ExprViewBoxWithTag, ExprView, EntityView, EntityViewTag, TagList1};
             use yukino::query_builder::{Expr, Alias, DatabaseValue};
             use yukino::query::{ExprNode, ExprVisitor, ExprMutVisitor};
             use yukino::err::{RuntimeResult, YukinoError};
@@ -124,22 +124,6 @@ impl EntityResolvePass for EntityViewPass {
                 }
             }
 
-            impl View<#entity_name, ValueCountOf<#entity_name>> for #name {
-                fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<#entity_name>> {
-                    #(#collect_tmp;)*
-
-                    #collect_rst
-                }
-
-                fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<#entity_name>>) -> RuntimeResult<#entity_name> {
-                    (*#entity_name::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
-                }
-
-                fn view_clone(&self) -> ViewBox<#entity_name, ValueCountOf<#entity_name>> {
-                    Box::new(self.clone())
-                }
-            }
-
             impl ExprView<#entity_name> for #name {
                 type Tags = TagList1<EntityViewTag>;
 
@@ -161,6 +145,16 @@ impl EntityResolvePass for EntityViewPass {
                     Box::new(#name {
                         #(#clone_branches),*
                     })
+                }
+
+                fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<#entity_name>> {
+                    #(#collect_tmp;)*
+
+                    #collect_rst
+                }
+
+                fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<#entity_name>>) -> RuntimeResult<#entity_name> {
+                    (*#entity_name::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
                 }
             }
 

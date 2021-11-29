@@ -9,15 +9,13 @@ use crate::query::{AliasGenerator, ExecutableSelectQuery, ExprNode, Map, QueryRe
 use crate::query::exec::SingleRow;
 use crate::view::{
     AggregateViewTag, EmptyTagList, ExprViewBoxWithTag, InList, TagList, Value, ValueCount,
-    ValueCountOf, ViewBox,
+    ValueCountOf,
 };
 
 pub trait FoldResult: ExprNode + Clone {
     type Value: Value;
     type Tags: TagList;
     fn collect_fold_expr_vec(&self) -> Vec<Expr>;
-
-    fn view_box(self) -> ViewBox<Self::Value, ValueCountOf<Self::Value>>;
 
     fn expr_box(self) -> ExprViewBoxWithTag<Self::Value, Self::Tags>;
 }
@@ -44,10 +42,11 @@ impl<View: FoldResult> FoldQueryResult<View> {
 
 impl<View: FoldResult> Map<View> for FoldQueryResult<View> {
     type ResultType = SingleRow;
-    fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(View) -> RV>(
+
+    fn map<R: Value, RTags: TagList, RV: Into<ExprViewBoxWithTag<R, RTags>>, F: Fn(View) -> RV>(
         mut self,
         f: F,
-    ) -> QueryResultMap<R, RL, Self::ResultType> {
+    ) -> QueryResultMap<R, RTags, Self::ResultType> {
         let mut result = f(self.view).into();
         let mut visitor = self.alias_generator.substitute_visitor();
         result.apply_mut(&mut visitor);
@@ -56,12 +55,10 @@ impl<View: FoldResult> Map<View> for FoldQueryResult<View> {
     }
 }
 
-impl<View: FoldResult> ExecutableSelectQuery<View::Value, ValueCountOf<View::Value>>
-    for FoldQueryResult<View>
-{
+impl<View: FoldResult> ExecutableSelectQuery<View::Value, View::Tags> for FoldQueryResult<View> {
     type ResultType = SingleRow;
 
-    fn generate_query(self) -> (SelectQuery, ViewBox<View::Value, ValueCountOf<View::Value>>) {
+    fn generate_query(self) -> (SelectQuery, ExprViewBoxWithTag<View::Value, View::Tags>) {
         (
             SelectQuery::create(
                 self.query,
@@ -71,7 +68,7 @@ impl<View: FoldResult> ExecutableSelectQuery<View::Value, ValueCountOf<View::Val
                 None,
                 0,
             ),
-            self.view.view_box(),
+            self.view.expr_box(),
         )
     }
 }
@@ -96,10 +93,6 @@ where
 
     fn collect_fold_expr_vec(&self) -> Vec<Expr> {
         self.collect_expr().into_iter().collect()
-    }
-
-    fn view_box(self) -> ViewBox<Self::Value, ValueCountOf<Self::Value>> {
-        self.into()
     }
 
     fn expr_box(self) -> ExprViewBoxWithTag<Self::Value, Self::Tags> {
@@ -127,10 +120,6 @@ where
             .into_iter()
             .chain(self.1.collect_expr())
             .collect()
-    }
-
-    fn view_box(self) -> ViewBox<Self::Value, ValueCountOf<Self::Value>> {
-        self.expr_box().into()
     }
 
     fn expr_box(self) -> ExprViewBoxWithTag<Self::Value, EmptyTagList> {

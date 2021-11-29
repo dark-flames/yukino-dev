@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::view::{ExprView, Value};
+use crate::view::{EntityWithView, ExprView, Value};
 
 pub type U0 = Zero;
 pub type U1 = Suc<U0>;
@@ -12,6 +12,7 @@ pub type TagList1<T1> = SetFlag<EmptyTagList, T1>;
 pub type TagList2<T1, T2> = SetFlag<TagList1<T1>, T2>;
 pub type TagList3<T1, T2, T3> = SetFlag<TagList2<T1, T2>, T3>;
 pub type TagOfValueView<T> = <<T as Value>::ValueExprView as ExprView<T>>::Tags;
+pub type TagsOfEntity<E> = <<E as EntityWithView>::View as ExprView<E>>::Tags;
 
 pub struct Terminal;
 

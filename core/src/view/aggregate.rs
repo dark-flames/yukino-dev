@@ -7,9 +7,7 @@ use query_builder::{DatabaseValue, Expr, FunctionCall};
 
 use crate::err::{RuntimeResult, YukinoError};
 use crate::query::{ExprMutVisitor, ExprNode, ExprVisitor};
-use crate::view::{
-    AggregateViewTag, ExprView, ExprViewBoxWithTag, TagList1, Value, ValueCountOf, View, ViewBox,
-};
+use crate::view::{AggregateViewTag, ExprView, ExprViewBoxWithTag, TagList1, Value, ValueCountOf};
 
 #[derive(Clone)]
 pub struct AggregateViewItem<T: Value<L = U1>> {
@@ -27,20 +25,6 @@ impl<T: Value<L = U1>> ExprNode for AggregateViewItem<T> {
     }
 }
 
-impl<T: Value<L = U1>> View<T, ValueCountOf<T>> for AggregateViewItem<T> {
-    fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<T>> {
-        arr![Expr; Expr::FunctionCall(self.function_call.clone())]
-    }
-
-    fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<T>>) -> RuntimeResult<T> {
-        (*T::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
-    }
-
-    fn view_clone(&self) -> ViewBox<T, ValueCountOf<T>> {
-        Box::new(self.clone())
-    }
-}
-
 impl<T: Value<L = U1>> ExprView<T> for AggregateViewItem<T> {
     type Tags = TagList1<AggregateViewTag>;
 
@@ -53,6 +37,14 @@ impl<T: Value<L = U1>> ExprView<T> for AggregateViewItem<T> {
 
     fn expr_clone(&self) -> ExprViewBoxWithTag<T, Self::Tags> {
         Box::new(self.clone())
+    }
+
+    fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<T>> {
+        arr![Expr; Expr::FunctionCall(self.function_call.clone())]
+    }
+
+    fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<T>>) -> RuntimeResult<T> {
+        (*T::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
     }
 }
 

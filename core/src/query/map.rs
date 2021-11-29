@@ -3,37 +3,42 @@ use std::marker::PhantomData;
 use query_builder::{OrderByItem, SelectQuery, SelectSource};
 
 use crate::query::{AliasGenerator, ExecutableSelectQuery, ExecuteResultType};
-use crate::view::{ValueCount, ViewBox};
+use crate::view::{ExprViewBoxWithTag, TagList, Value};
 
-pub struct QueryResultMap<R: 'static, RL: ValueCount, ResultType: ExecuteResultType> {
+pub struct QueryResultMap<R: Value, RTags: TagList, ResultType: ExecuteResultType> {
     query: Box<dyn SelectSource>,
     order_by_items: Vec<OrderByItem>,
-    view: ViewBox<R, RL>,
+    view: ExprViewBoxWithTag<R, RTags>,
     alias_generator: AliasGenerator,
     _result_ty: PhantomData<ResultType>,
 }
 
 pub trait Map<View> {
     type ResultType: ExecuteResultType;
-    fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(View) -> RV>(
+    fn map<R: Value, RTags: TagList, RV: Into<ExprViewBoxWithTag<R, RTags>>, F: Fn(View) -> RV>(
         self,
         f: F,
-    ) -> QueryResultMap<R, RL, Self::ResultType>;
+    ) -> QueryResultMap<R, RTags, Self::ResultType>;
 }
 
 pub trait Map2<View1, View2> {
     type ResultType: ExecuteResultType;
-    fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(View1, View2) -> RV>(
+    fn map<
+        R: Value,
+        RTags: TagList,
+        RV: Into<ExprViewBoxWithTag<R, RTags>>,
+        F: Fn(View1, View2) -> RV,
+    >(
         self,
         f: F,
-    ) -> QueryResultMap<R, RL, Self::ResultType>;
+    ) -> QueryResultMap<R, RTags, Self::ResultType>;
 }
 
-impl<R: 'static, RL: ValueCount, ResultType: ExecuteResultType> QueryResultMap<R, RL, ResultType> {
+impl<R: Value, RTags: TagList, ResultType: ExecuteResultType> QueryResultMap<R, RTags, ResultType> {
     pub fn create(
         query: Box<dyn SelectSource>,
         order_by_items: Vec<OrderByItem>,
-        view: ViewBox<R, RL>,
+        view: ExprViewBoxWithTag<R, RTags>,
         alias_generator: AliasGenerator,
     ) -> Self {
         QueryResultMap {
@@ -46,13 +51,13 @@ impl<R: 'static, RL: ValueCount, ResultType: ExecuteResultType> QueryResultMap<R
     }
 }
 
-impl<R: 'static, RL: ValueCount, ResultType: ExecuteResultType> ExecutableSelectQuery<R, RL>
-    for QueryResultMap<R, RL, ResultType>
+impl<R: Value, RTags: TagList, ResultType: ExecuteResultType> ExecutableSelectQuery<R, RTags>
+    for QueryResultMap<R, RTags, ResultType>
 {
     type ResultType = ResultType;
 
-    fn generate_query(self) -> (SelectQuery, ViewBox<R, RL>) {
-        let view = self.view.view_clone();
+    fn generate_query(self) -> (SelectQuery, ExprViewBoxWithTag<R, RTags>) {
+        let view = self.view.expr_clone();
         (
             SelectQuery::create(
                 self.query,

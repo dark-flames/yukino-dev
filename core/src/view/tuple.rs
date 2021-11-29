@@ -13,7 +13,7 @@ use crate::err::{RuntimeResult, YukinoError};
 use crate::query::{ExprMutVisitor, ExprNode, ExprVisitor};
 use crate::view::{
     EmptyTagList, ExprView, ExprViewBoxWithTag, TagList, TagOfValueView, Value, ValueCount,
-    ValueCountOf, View, ViewBox,
+    ValueCountOf,
 };
 
 pub struct TupleExprView<L: Value, R: Value, LTags: TagList, RTags: TagList>(
@@ -43,26 +43,6 @@ where
     }
 }
 
-impl<L: Value, R: Value, LTags: TagList, RTags: TagList> View<(L, R), ValueCountOf<(L, R)>>
-    for TupleExprView<L, R, LTags, RTags>
-where
-    ValueCountOf<L>: Add<ValueCountOf<R>>,
-    Sum<ValueCountOf<L>, ValueCountOf<R>>:
-        ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
-{
-    fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<(L, R)>> {
-        Concat::concat(self.0.collect_expr(), self.1.collect_expr())
-    }
-
-    fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<(L, R)>>) -> RuntimeResult<(L, R)> {
-        (*<(L, R)>::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
-    }
-
-    fn view_clone(&self) -> ViewBox<(L, R), ValueCountOf<(L, R)>> {
-        Box::new(TupleExprView(self.0.expr_clone(), self.1.expr_clone()))
-    }
-}
-
 impl<L: Value, R: Value, LTags: TagList, RTags: TagList> ExprView<(L, R)>
     for TupleExprView<L, R, LTags, RTags>
 where
@@ -87,6 +67,14 @@ where
 
     fn expr_clone(&self) -> ExprViewBoxWithTag<(L, R), Self::Tags> {
         Box::new(TupleExprView(self.0.expr_clone(), self.1.expr_clone()))
+    }
+
+    fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<(L, R)>> {
+        Concat::concat(self.0.collect_expr(), self.1.collect_expr())
+    }
+
+    fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<(L, R)>>) -> RuntimeResult<(L, R)> {
+        (*<(L, R)>::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
     }
 }
 

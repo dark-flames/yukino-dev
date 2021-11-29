@@ -21,7 +21,7 @@ impl EntityResolvePass for EntityImplementPass {
     fn get_dependencies(&self) -> Vec<TokenStream> {
         vec![quote! {
             use yukino::{YukinoEntity, EntityDefinition};
-            use yukino::view::{Value, View, EntityWithView, ValueCountOf};
+            use yukino::view::{Value, EntityWithView, ValueCountOf};
             use yukino::query::{QueryResultFilter};
             use yukino::converter::ConverterRef;
             use yukino::lazy_static::lazy_static;
