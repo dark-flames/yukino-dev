@@ -8,13 +8,15 @@ pub struct SortItem<T: Value, TTags: TagList> {
     order: Order,
 }
 
+pub struct SortHelper;
+
 pub trait SortResult: ExprNode {
     fn order_by_items(&self) -> Vec<OrderByItem>;
 }
 
 pub trait Sort<View> {
     type Result;
-    fn sort<R: SortResult, F: Fn(View) -> R>(self, f: F) -> Self::Result;
+    fn sort<R: SortResult, F: Fn(View, SortHelper) -> R>(self, f: F) -> Self::Result;
 }
 
 impl<T: Value, TTags: TagList> ExprNode for SortItem<T, TTags> {
@@ -68,5 +70,43 @@ where
             .into_iter()
             .chain(self.1.order_by_items().into_iter())
             .collect()
+    }
+}
+
+impl SortHelper {
+    pub(crate) fn create() -> Self {
+        SortHelper
+    }
+
+    fn create_item<T: Value, TTags: TagList>(
+        &self,
+        view: impl Into<ExprViewBoxWithTag<T, TTags>>,
+        order: Order,
+    ) -> SortItem<T, TTags>
+    where
+        OrdViewTag: InList<TTags>,
+    {
+        let expr = view.into();
+        SortItem { expr, order }
+    }
+
+    pub fn asc<T: Value, TTags: TagList>(
+        &self,
+        view: impl Into<ExprViewBoxWithTag<T, TTags>>,
+    ) -> SortItem<T, TTags>
+    where
+        OrdViewTag: InList<TTags>,
+    {
+        self.create_item(view, Order::Asc)
+    }
+
+    pub fn desc<T: Value, TTags: TagList>(
+        &self,
+        view: impl Into<ExprViewBoxWithTag<T, TTags>>,
+    ) -> SortItem<T, TTags>
+    where
+        OrdViewTag: InList<TTags>,
+    {
+        self.create_item(view, Order::Desc)
     }
 }

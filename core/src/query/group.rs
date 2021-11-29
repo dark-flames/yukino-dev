@@ -1,9 +1,9 @@
-use query_builder::{Expr, GroupSelect};
+use query_builder::{Expr, GroupSelect, OrderByItem};
 
 use crate::operator::{AggregateHelper, AggregateHelperCreate};
 use crate::query::{
     AliasGenerator, ExprNode, Filter, Fold, FoldQueryResult, FoldView, Map, MultiRows,
-    QueryResultMap,
+    QueryResultMap, Sort, SortHelper, SortResult,
 };
 use crate::view::{
     EntityViewTag, ExprViewBox, ExprViewBoxWithTag, NotInList, TagList, Value, ValueCount, ViewBox,
@@ -21,6 +21,11 @@ pub struct GroupedQueryResult<View: GroupView> {
     query: GroupSelect,
     view: View,
     alias_generator: AliasGenerator,
+}
+
+pub struct SortedGroupedQueryResult<View: GroupView> {
+    nested: GroupedQueryResult<View>,
+    order_by: Vec<OrderByItem>,
 }
 
 impl<View: GroupView> GroupedQueryResult<View> {
@@ -42,7 +47,7 @@ impl<View: GroupView> Map<View> for GroupedQueryResult<View> {
         let mut result = f(self.view).into();
         let mut visitor = self.alias_generator.substitute_visitor();
         result.apply_mut(&mut visitor);
-        QueryResultMap::create(Box::new(self.query), result, self.alias_generator)
+        QueryResultMap::create(Box::new(self.query), vec![], result, self.alias_generator)
     }
 }
 
@@ -74,6 +79,21 @@ impl<View: GroupView> Fold<View> for GroupedQueryResult<View> {
     }
 }
 
+impl<View: GroupView> Sort<View> for GroupedQueryResult<View> {
+    type Result = SortedGroupedQueryResult<View>;
+
+    fn sort<R: SortResult, F: Fn(View, SortHelper) -> R>(mut self, f: F) -> Self::Result {
+        let mut result = f(self.view.clone(), SortHelper::create());
+        let mut visitor = self.alias_generator.substitute_visitor();
+        result.apply_mut(&mut visitor);
+
+        SortedGroupedQueryResult {
+            nested: self,
+            order_by: result.order_by_items(),
+        }
+    }
+}
+
 impl<T1: Value, T1Tag: TagList> GroupView for ExprViewBoxWithTag<T1, T1Tag>
 where
     EntityViewTag: NotInList<T1Tag>,
@@ -94,5 +114,24 @@ where
             .into_iter()
             .chain(self.1.collect_expr())
             .collect()
+    }
+}
+
+impl<View: GroupView> Map<View> for SortedGroupedQueryResult<View> {
+    type ResultType = MultiRows;
+
+    fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(View) -> RV>(
+        mut self,
+        f: F,
+    ) -> QueryResultMap<R, RL> {
+        let mut result = f(self.nested.view).into();
+        let mut visitor = self.nested.alias_generator.substitute_visitor();
+        result.apply_mut(&mut visitor);
+        QueryResultMap::create(
+            Box::new(self.nested.query),
+            self.order_by,
+            result,
+            self.nested.alias_generator,
+        )
     }
 }

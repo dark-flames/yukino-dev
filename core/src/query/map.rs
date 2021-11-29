@@ -1,4 +1,4 @@
-use query_builder::{SelectItem, SelectQuery, SelectSource};
+use query_builder::{OrderByItem, SelectItem, SelectQuery, SelectSource};
 
 use crate::query::AliasGenerator;
 use crate::view::{ValueCount, ViewBox};
@@ -8,6 +8,7 @@ pub struct MultiRows;
 
 pub struct QueryResultMap<R: 'static, RL: ValueCount> {
     query: Box<dyn SelectSource>,
+    order_by_items: Vec<OrderByItem>,
     view: ViewBox<R, RL>,
     alias_generator: AliasGenerator,
 }
@@ -23,11 +24,13 @@ pub trait Map<View> {
 impl<R: 'static, RL: ValueCount> QueryResultMap<R, RL> {
     pub fn create(
         query: Box<dyn SelectSource>,
+        order_by_items: Vec<OrderByItem>,
         view: ViewBox<R, RL>,
         alias_generator: AliasGenerator,
     ) -> Self {
         QueryResultMap {
             query,
+            order_by_items,
             view,
             alias_generator,
         }
@@ -47,11 +50,10 @@ impl<R: 'static, RL: ValueCount> QueryResultMap<R, RL> {
                     alias: i.to_string(),
                 })
                 .collect(),
-            vec![],
+            self.order_by_items,
             None,
             0,
         )
-
         //todo: order limit offset
     }
 }
