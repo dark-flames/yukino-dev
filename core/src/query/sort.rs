@@ -19,6 +19,11 @@ pub trait Sort<View> {
     fn sort<R: SortResult, F: Fn(View, SortHelper) -> R>(self, f: F) -> Self::Result;
 }
 
+pub trait Sort2<View1, View2> {
+    type Result;
+    fn sort<R: SortResult, F: Fn(View1, View2, SortHelper) -> R>(self, f: F) -> Self::Result;
+}
+
 impl<T: Value, TTags: TagList> ExprNode for SortItem<T, TTags> {
     fn apply(&self, visitor: &mut dyn ExprVisitor) {
         self.expr.apply(visitor);

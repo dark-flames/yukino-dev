@@ -80,6 +80,13 @@ pub trait Fold<View> {
     fn fold<RV: FoldResult, F: Fn(View, AggregateHelper) -> RV>(self, f: F) -> FoldQueryResult<RV>;
 }
 
+pub trait Fold2<View1, View2> {
+    fn fold<RV: FoldResult, F: Fn(View1, View2, AggregateHelper) -> RV>(
+        self,
+        f: F,
+    ) -> FoldQueryResult<RV>;
+}
+
 impl<T1: Value, T1Tags: TagList> FoldResult for ExprViewBoxWithTag<T1, T1Tags>
 where
     AggregateViewTag: InList<T1Tags>,

@@ -30,6 +30,12 @@ pub trait Filter<View> {
         F: Fn(View) -> R;
 }
 
+pub trait Filter2<View1, View2> {
+    fn filter<F, R: Into<ExprViewBox<bool>>>(self, f: F) -> Self
+    where
+        F: Fn(View1, View2) -> R;
+}
+
 impl<E: EntityWithView> Filter<E::View> for QueryResultFilter<E> {
     fn filter<F, R: Into<ExprViewBox<bool>>>(mut self, f: F) -> Self
     where

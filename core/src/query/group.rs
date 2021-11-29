@@ -7,8 +7,8 @@ use query_builder::{Alias, Expr, GroupSelect, OrderByItem, SelectQuery};
 
 use crate::operator::{AggregateHelper, AggregateHelperCreate};
 use crate::query::{
-    AliasGenerator, ExecutableSelectQuery, ExprNode, Filter, Fold, FoldQueryResult, FoldResult,
-    Map, Map2, MultiRows, QueryResultMap, Sort, SortHelper, SortResult,
+    AliasGenerator, ExecutableSelectQuery, ExprNode, Filter, Filter2, Fold, Fold2, FoldQueryResult,
+    FoldResult, Map, Map2, MultiRows, QueryResultMap, Sort, Sort2, SortHelper, SortResult,
 };
 use crate::view::{
     EmptyTagList, EntityView, EntityViewTag, EntityWithView, ExprViewBox, ExprViewBoxWithTag,
@@ -102,14 +102,14 @@ impl<View: GroupResult, E: EntityWithView> Map<View> for GroupedQueryResult<View
     }
 }
 
-impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Filter<(View, AggregateView)>
+impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Filter2<View, AggregateView>
     for GroupedQueryResult<View, AggregateView, E>
 {
     fn filter<F, R: Into<ExprViewBox<bool>>>(mut self, f: F) -> Self
     where
-        F: Fn((View, AggregateView)) -> R,
+        F: Fn(View, AggregateView) -> R,
     {
-        let mut result = f((self.view.clone(), self.aggregate.clone())).into();
+        let mut result = f(self.view.clone(), self.aggregate.clone()).into();
         let mut visitor = self.alias_generator.substitute_visitor();
         result.apply_mut(&mut visitor);
         self.query
@@ -148,14 +148,14 @@ impl<View: GroupResult, E: EntityWithView> Filter<View> for GroupedQueryResult<V
     }
 }
 
-impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Fold<(View, AggregateView)>
+impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Fold2<View, AggregateView>
     for GroupedQueryResult<View, AggregateView, E>
 {
-    fn fold<RV: FoldResult, F: Fn((View, AggregateView), AggregateHelper) -> RV>(
+    fn fold<RV: FoldResult, F: Fn(View, AggregateView, AggregateHelper) -> RV>(
         mut self,
         f: F,
     ) -> FoldQueryResult<RV> {
-        let mut result = f((self.view, self.aggregate), AggregateHelper::create());
+        let mut result = f(self.view, self.aggregate, AggregateHelper::create());
         let mut visitor = self.alias_generator.substitute_visitor();
         result.apply_mut(&mut visitor);
 
@@ -176,17 +176,18 @@ impl<View: GroupResult, E: EntityWithView> Fold<View> for GroupedQueryResult<Vie
     }
 }
 
-impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Sort<(View, AggregateView)>
+impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Sort2<View, AggregateView>
     for GroupedQueryResult<View, AggregateView, E>
 {
     type Result = SortedGroupedQueryResult<View, AggregateView, E>;
 
-    fn sort<R: SortResult, F: Fn((View, AggregateView), SortHelper) -> R>(
+    fn sort<R: SortResult, F: Fn(View, AggregateView, SortHelper) -> R>(
         mut self,
         f: F,
     ) -> Self::Result {
         let mut result = f(
-            (self.view.clone(), self.aggregate.clone()),
+            self.view.clone(),
+            self.aggregate.clone(),
             SortHelper::create(),
         );
         let mut visitor = self.alias_generator.substitute_visitor();
