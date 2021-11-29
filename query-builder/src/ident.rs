@@ -1,6 +1,6 @@
-use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::fmt::{Display, Formatter, Result as FmtResult, Write};
 
-use crate::Expr;
+use crate::{Expr, QueryBuildState, ToSql};
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Ident {
@@ -61,5 +61,17 @@ impl Display for Alias {
 impl Display for AliasedTable {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         write!(f, "{} {}", self.table, self.alias)
+    }
+}
+
+impl ToSql for Ident {
+    fn to_sql(&self, state: &mut QueryBuildState) -> FmtResult {
+        write!(state, "{}", self.seg.join("."))
+    }
+}
+
+impl ToSql for AliasedTable {
+    fn to_sql(&self, state: &mut QueryBuildState) -> FmtResult {
+        write!(state, "{} {}", self.table, self.alias)
     }
 }

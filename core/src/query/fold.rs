@@ -12,20 +12,20 @@ use crate::view::{
     ValueCountOf, ViewBox,
 };
 
-pub trait FoldView: ExprNode {
+pub trait FoldResult: ExprNode {
     type Value: Value;
     fn collect_fold_expr_vec(&self) -> Vec<Expr>;
 
     fn view_box(self) -> ViewBox<Self::Value, ValueCountOf<Self::Value>>;
 }
 
-pub struct FoldQueryResult<View: FoldView> {
+pub struct FoldQueryResult<View: FoldResult> {
     query: Box<dyn SelectSource>,
     view: View,
     alias_generator: AliasGenerator,
 }
 
-impl<View: FoldView> FoldQueryResult<View> {
+impl<View: FoldResult> FoldQueryResult<View> {
     pub fn create(
         query: Box<dyn SelectSource>,
         view: View,
@@ -39,7 +39,7 @@ impl<View: FoldView> FoldQueryResult<View> {
     }
 }
 
-impl<View: FoldView> Map<View> for FoldQueryResult<View> {
+impl<View: FoldResult> Map<View> for FoldQueryResult<View> {
     type ResultType = SingleRow;
     fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(View) -> RV>(
         mut self,
@@ -53,7 +53,7 @@ impl<View: FoldView> Map<View> for FoldQueryResult<View> {
     }
 }
 
-impl<View: FoldView> ExecutableSelectQuery<View::Value, ValueCountOf<View::Value>>
+impl<View: FoldResult> ExecutableSelectQuery<View::Value, ValueCountOf<View::Value>>
     for FoldQueryResult<View>
 {
     type ResultType = SingleRow;
@@ -74,10 +74,10 @@ impl<View: FoldView> ExecutableSelectQuery<View::Value, ValueCountOf<View::Value
 }
 
 pub trait Fold<View> {
-    fn fold<RV: FoldView, F: Fn(View, AggregateHelper) -> RV>(self, f: F) -> FoldQueryResult<RV>;
+    fn fold<RV: FoldResult, F: Fn(View, AggregateHelper) -> RV>(self, f: F) -> FoldQueryResult<RV>;
 }
 
-impl<T1: Value, T1Tags: TagList> FoldView for ExprViewBoxWithTag<T1, T1Tags>
+impl<T1: Value, T1Tags: TagList> FoldResult for ExprViewBoxWithTag<T1, T1Tags>
 where
     AggregateViewTag: InList<T1Tags>,
 {
@@ -92,7 +92,7 @@ where
     }
 }
 
-impl<T1: Value, T1Tags: TagList, T2: Value, T2Tags: TagList> FoldView
+impl<T1: Value, T1Tags: TagList, T2: Value, T2Tags: TagList> FoldResult
     for (
         ExprViewBoxWithTag<T1, T1Tags>,
         ExprViewBoxWithTag<T2, T2Tags>,

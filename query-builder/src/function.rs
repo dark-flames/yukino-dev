@@ -1,6 +1,7 @@
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Debug, Display, Formatter, Write};
 
-use crate::Expr;
+use crate::{Expr, QueryBuildState, ToSql};
+use crate::drivers::func_name;
 
 #[derive(Clone, Debug)]
 pub enum Function {
@@ -39,5 +40,11 @@ impl Display for FunctionCall {
                 .collect::<Vec<_>>()
                 .join(", ")
         )
+    }
+}
+
+impl ToSql for Function {
+    fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
+        write!(state, "{}", func_name(self))
     }
 }

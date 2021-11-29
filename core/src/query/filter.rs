@@ -5,8 +5,8 @@ use query_builder::{Alias, OrderByItem, Select, SelectFrom, SelectQuery};
 
 use crate::operator::{AggregateHelper, AggregateHelperCreate};
 use crate::query::{
-    AliasGenerator, ExecutableSelectQuery, ExprNode, Fold, FoldQueryResult, FoldView, GroupBy,
-    GroupedQueryResult, GroupView, Map, MultiRows, QueryResultMap, Sort, SortHelper, SortResult,
+    AliasGenerator, ExecutableSelectQuery, ExprNode, Fold, FoldQueryResult, FoldResult, GroupBy,
+    GroupedQueryResult, GroupResult, Map, MultiRows, QueryResultMap, Sort, SortHelper, SortResult,
 };
 use crate::view::{
     EntityView, EntityWithView, ExprViewBox, ValueCount, ValueCountOf, View, ViewBox,
@@ -70,7 +70,7 @@ impl<E: EntityWithView> Map<E::View> for QueryResultFilter<E> {
 }
 
 impl<E: EntityWithView> Fold<E::View> for QueryResultFilter<E> {
-    fn fold<RV: FoldView, F: Fn(E::View, AggregateHelper) -> RV>(
+    fn fold<RV: FoldResult, F: Fn(E::View, AggregateHelper) -> RV>(
         mut self,
         f: F,
     ) -> FoldQueryResult<RV> {
@@ -83,7 +83,7 @@ impl<E: EntityWithView> Fold<E::View> for QueryResultFilter<E> {
 }
 
 impl<E: EntityWithView> GroupBy<E::View> for QueryResultFilter<E> {
-    fn group_by<RV: GroupView, F: Fn(E::View) -> RV>(mut self, f: F) -> GroupedQueryResult<RV> {
+    fn group_by<RV: GroupResult, F: Fn(E::View) -> RV>(mut self, f: F) -> GroupedQueryResult<RV> {
         let mut result = f(E::View::pure(&self.root_alias));
         let mut visitor = self.alias_generator.substitute_visitor();
         result.apply_mut(&mut visitor);

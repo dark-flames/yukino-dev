@@ -17,7 +17,7 @@ serde_json = { version = "1.0", optional = true }
 [features]
 default = ["mysql", "json", "data-time"]
 mysql = []
-postgre-sql = []
+pgsql = []
 sqlite = []
 json = ["serde_json", "serde"]
 data-time = ["time"]
