@@ -25,9 +25,9 @@ pub struct Meeting {
 // main.rs 
 fn meeting_length(id: u32) -> QueryResult<u64> {
     Meeting::all()
-        .filter(|m| cmp!(m.id == id))
+        .filter(|m| eq!(m.id, id))
         .first()
-        .map(|m, _| m.end_time - m.start_time)
+        .map(|m| m.end_time - m.start_time)
         .exec()
 }
 ```
