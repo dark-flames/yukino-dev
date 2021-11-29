@@ -43,11 +43,11 @@ impl<View: GroupView> Map<View> for GroupedQueryResult<View> {
     fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(View) -> RV>(
         mut self,
         f: F,
-    ) -> QueryResultMap<R, RL> {
+    ) -> QueryResultMap<R, RL, Self::ResultType> {
         let mut result = f(self.view).into();
         let mut visitor = self.alias_generator.substitute_visitor();
         result.apply_mut(&mut visitor);
-        QueryResultMap::create(Box::new(self.query), vec![], result, self.alias_generator)
+        QueryResultMap::create(Box::new(self.query), vec![], result)
     }
 }
 
@@ -123,15 +123,10 @@ impl<View: GroupView> Map<View> for SortedGroupedQueryResult<View> {
     fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(View) -> RV>(
         mut self,
         f: F,
-    ) -> QueryResultMap<R, RL> {
+    ) -> QueryResultMap<R, RL, Self::ResultType> {
         let mut result = f(self.nested.view).into();
         let mut visitor = self.nested.alias_generator.substitute_visitor();
         result.apply_mut(&mut visitor);
-        QueryResultMap::create(
-            Box::new(self.nested.query),
-            self.order_by,
-            result,
-            self.nested.alias_generator,
-        )
+        QueryResultMap::create(Box::new(self.nested.query), self.order_by, result)
     }
 }

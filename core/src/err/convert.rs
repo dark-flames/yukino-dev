@@ -1,4 +1,3 @@
-use crate::err::query::ErrorOnExpr;
 use thiserror::Error;
 
 use crate::err::YukinoError;
@@ -7,10 +6,6 @@ use crate::err::YukinoError;
 pub enum ConvertError {
     #[error("UnexpectedValueType: The type of input is unexpected")]
     UnexpectedValueType,
-    #[error("UnexpectedValueCount: The input value count is unexpected")]
-    UnexpectedValueCount,
 }
 
 impl YukinoError for ConvertError {}
-
-impl ErrorOnExpr for ConvertError {}

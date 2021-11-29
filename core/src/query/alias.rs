@@ -6,7 +6,7 @@ use rand::{distributions::Alphanumeric, Rng, thread_rng};
 use rand::rngs::ThreadRng;
 
 use interface::{AssociatedDefinition, DefinitionManager, FieldDefinition, JoinType};
-use query_builder::{Alias, AliasedTable, Expr, Ident, Join};
+use query_builder::{Alias, AliasedTable, Expr, Ident, Join, SelectItem};
 
 use crate::query::ExprMutVisitor;
 use crate::view::EntityWithView;
@@ -78,6 +78,17 @@ impl AliasGenerator {
 
             (Ident { seg }, joins)
         }
+    }
+
+    pub fn generate_select_list(&self, exprs: Vec<Expr>) -> Vec<SelectItem> {
+        exprs
+            .into_iter()
+            .enumerate()
+            .map(|(index, expr)| SelectItem {
+                expr,
+                alias: format!("result_{}", index),
+            })
+            .collect()
     }
 
     fn generate_alias(&mut self, entity_id: usize) -> Alias {
