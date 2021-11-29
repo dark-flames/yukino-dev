@@ -80,7 +80,7 @@ impl AliasGenerator {
         }
     }
 
-    pub fn generate_select_list(&self, exprs: Vec<Expr>) -> Vec<SelectItem> {
+    pub fn generate_select_list(&self, exprs: impl IntoIterator<Item = Expr>) -> Vec<SelectItem> {
         exprs
             .into_iter()
             .enumerate()

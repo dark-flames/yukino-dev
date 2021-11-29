@@ -49,7 +49,7 @@ impl<View: FoldView> Map<View> for FoldQueryResult<View> {
         let mut visitor = self.alias_generator.substitute_visitor();
         result.apply_mut(&mut visitor);
 
-        QueryResultMap::create(self.query, vec![], result)
+        QueryResultMap::create(self.query, vec![], result, self.alias_generator)
     }
 }
 

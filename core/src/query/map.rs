@@ -1,14 +1,15 @@
 use std::marker::PhantomData;
 
-use query_builder::{OrderByItem, SelectItem, SelectQuery, SelectSource};
+use query_builder::{OrderByItem, SelectQuery, SelectSource};
 
-use crate::query::{ExecutableSelectQuery, ExecuteResultType};
+use crate::query::{AliasGenerator, ExecutableSelectQuery, ExecuteResultType};
 use crate::view::{ValueCount, ViewBox};
 
 pub struct QueryResultMap<R: 'static, RL: ValueCount, ResultType: ExecuteResultType> {
     query: Box<dyn SelectSource>,
     order_by_items: Vec<OrderByItem>,
     view: ViewBox<R, RL>,
+    alias_generator: AliasGenerator,
     _result_ty: PhantomData<ResultType>,
 }
 
@@ -25,11 +26,13 @@ impl<R: 'static, RL: ValueCount, ResultType: ExecuteResultType> QueryResultMap<R
         query: Box<dyn SelectSource>,
         order_by_items: Vec<OrderByItem>,
         view: ViewBox<R, RL>,
+        alias_generator: AliasGenerator,
     ) -> Self {
         QueryResultMap {
             query,
             order_by_items,
             view,
+            alias_generator,
             _result_ty: Default::default(),
         }
     }
@@ -45,15 +48,8 @@ impl<R: 'static, RL: ValueCount, ResultType: ExecuteResultType> ExecutableSelect
         (
             SelectQuery::create(
                 self.query,
-                self.view
-                    .collect_expr()
-                    .into_iter()
-                    .enumerate()
-                    .map(|(i, e)| SelectItem {
-                        expr: e,
-                        alias: i.to_string(),
-                    })
-                    .collect(),
+                self.alias_generator
+                    .generate_select_list(self.view.collect_expr()),
                 self.order_by_items,
                 None,
                 0,

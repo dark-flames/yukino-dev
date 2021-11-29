@@ -33,7 +33,6 @@ fn test_group() {
         .group_by(|b| (b.int, b.short))
         .filter(|(a, _)| eq!(a, 910))
         .fold(|(a, b), helper| (helper.average(a), helper.average(b)))
-        .map(|(a, _)| a)
         .generate_query()
         .0;
 
@@ -45,7 +44,6 @@ fn test_order_by() {
     let query = Basic::all()
         .filter(|b| lt!(b.int, 114514))
         .sort(|b, helper| helper.asc(b.int))
-        .map(|b| b.int + 114514)
         .generate_query()
         .0;
 
@@ -54,6 +52,20 @@ fn test_order_by() {
 
 #[test]
 fn test_group_order_by() {
+    let query = Basic::all()
+        .filter(|b| lt!(b.int, 114514))
+        .filter(|b| bt!(b.int, 1919))
+        .group_by(|b| (b.int, b.short))
+        .filter(|(a, _)| eq!(a, 910))
+        .sort(|(a, b), helper| (helper.asc(a), helper.desc(b)))
+        .generate_query()
+        .0;
+
+    println!("{}", query);
+}
+
+#[test]
+fn test_map() {
     let query = Basic::all()
         .filter(|b| lt!(b.int, 114514))
         .filter(|b| bt!(b.int, 1919))

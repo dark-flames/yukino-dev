@@ -1,16 +1,24 @@
-use query_builder::{Expr, GroupSelect, OrderByItem};
+use std::ops::{Add, Sub};
+
+use generic_array::typenum::Sum;
+
+use query_builder::{Expr, GroupSelect, OrderByItem, SelectQuery};
 
 use crate::operator::{AggregateHelper, AggregateHelperCreate};
 use crate::query::{
-    AliasGenerator, ExprNode, Filter, Fold, FoldQueryResult, FoldView, Map, MultiRows,
-    QueryResultMap, Sort, SortHelper, SortResult,
+    AliasGenerator, ExecutableSelectQuery, ExprNode, Filter, Fold, FoldQueryResult, FoldView, Map,
+    MultiRows, QueryResultMap, Sort, SortHelper, SortResult,
 };
 use crate::view::{
-    EntityViewTag, ExprViewBox, ExprViewBoxWithTag, NotInList, TagList, Value, ValueCount, ViewBox,
+    EmptyTagList, EntityViewTag, ExprViewBox, ExprViewBoxWithTag, NotInList, TagList, Value,
+    ValueCount, ValueCountOf, ViewBox,
 };
 
 pub trait GroupView: Clone + ExprNode {
+    type Value: Value;
     fn collect_expr_vec(&self) -> Vec<Expr>;
+
+    fn view_box(self) -> ViewBox<Self::Value, ValueCountOf<Self::Value>>;
 }
 
 pub trait GroupBy<View> {
@@ -47,7 +55,7 @@ impl<View: GroupView> Map<View> for GroupedQueryResult<View> {
         let mut result = f(self.view).into();
         let mut visitor = self.alias_generator.substitute_visitor();
         result.apply_mut(&mut visitor);
-        QueryResultMap::create(Box::new(self.query), vec![], result)
+        QueryResultMap::create(Box::new(self.query), vec![], result, self.alias_generator)
     }
 }
 
@@ -94,26 +102,38 @@ impl<View: GroupView> Sort<View> for GroupedQueryResult<View> {
     }
 }
 
+impl<View: GroupView> ExecutableSelectQuery<View::Value, ValueCountOf<View::Value>>
+    for GroupedQueryResult<View>
+{
+    type ResultType = MultiRows;
+
+    fn generate_query(self) -> (SelectQuery, ViewBox<View::Value, ValueCountOf<View::Value>>) {
+        (
+            SelectQuery::create(
+                Box::new(self.query),
+                self.alias_generator
+                    .generate_select_list(self.view.collect_expr_vec()),
+                vec![],
+                None,
+                0,
+            ),
+            self.view.view_box(),
+        )
+    }
+}
+
 impl<T1: Value, T1Tag: TagList> GroupView for ExprViewBoxWithTag<T1, T1Tag>
 where
     EntityViewTag: NotInList<T1Tag>,
 {
+    type Value = T1;
+
     fn collect_expr_vec(&self) -> Vec<Expr> {
         self.collect_expr().into_iter().collect()
     }
-}
 
-impl<T1: Value, T1Tag: TagList, T2: Value, T2Tag: TagList> GroupView
-    for (ExprViewBoxWithTag<T1, T1Tag>, ExprViewBoxWithTag<T2, T2Tag>)
-where
-    EntityViewTag: NotInList<T1Tag> + NotInList<T2Tag>,
-{
-    fn collect_expr_vec(&self) -> Vec<Expr> {
-        self.0
-            .collect_expr()
-            .into_iter()
-            .chain(self.1.collect_expr())
-            .collect()
+    fn view_box(self) -> ViewBox<Self::Value, ValueCountOf<Self::Value>> {
+        self.into()
     }
 }
 
@@ -127,6 +147,57 @@ impl<View: GroupView> Map<View> for SortedGroupedQueryResult<View> {
         let mut result = f(self.nested.view).into();
         let mut visitor = self.nested.alias_generator.substitute_visitor();
         result.apply_mut(&mut visitor);
-        QueryResultMap::create(Box::new(self.nested.query), self.order_by, result)
+        QueryResultMap::create(
+            Box::new(self.nested.query),
+            self.order_by,
+            result,
+            self.nested.alias_generator,
+        )
+    }
+}
+
+impl<View: GroupView> ExecutableSelectQuery<View::Value, ValueCountOf<View::Value>>
+    for SortedGroupedQueryResult<View>
+{
+    type ResultType = MultiRows;
+
+    fn generate_query(self) -> (SelectQuery, ViewBox<View::Value, ValueCountOf<View::Value>>) {
+        (
+            SelectQuery::create(
+                Box::new(self.nested.query),
+                self.nested
+                    .alias_generator
+                    .generate_select_list(self.nested.view.collect_expr_vec()),
+                self.order_by,
+                None,
+                0,
+            ),
+            self.nested.view.view_box(),
+        )
+    }
+}
+
+impl<T1: Value, T1Tag: TagList, T2: Value, T2Tag: TagList> GroupView
+    for (ExprViewBoxWithTag<T1, T1Tag>, ExprViewBoxWithTag<T2, T2Tag>)
+where
+    EntityViewTag: NotInList<T1Tag> + NotInList<T2Tag>,
+    ValueCountOf<T1>: Add<ValueCountOf<T2>>,
+    Sum<ValueCountOf<T1>, ValueCountOf<T2>>:
+        ValueCount + Sub<ValueCountOf<T1>, Output = ValueCountOf<T2>>,
+{
+    type Value = (T1, T2);
+
+    fn collect_expr_vec(&self) -> Vec<Expr> {
+        self.0
+            .collect_expr()
+            .into_iter()
+            .chain(self.1.collect_expr())
+            .collect()
+    }
+
+    fn view_box(self) -> ViewBox<Self::Value, ValueCountOf<Self::Value>> {
+        let expr: ExprViewBoxWithTag<Self::Value, EmptyTagList> = self.into();
+
+        expr.into()
     }
 }

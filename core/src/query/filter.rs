@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use interface::DefinitionManager;
-use query_builder::{Alias, OrderByItem, Select, SelectFrom, SelectItem, SelectQuery};
+use query_builder::{Alias, OrderByItem, Select, SelectFrom, SelectQuery};
 
 use crate::operator::{AggregateHelper, AggregateHelperCreate};
 use crate::query::{
@@ -60,7 +60,12 @@ impl<E: EntityWithView> Map<E::View> for QueryResultFilter<E> {
         result_view.apply_mut(&mut visitor);
 
         self.query.add_joins(visitor.joins());
-        QueryResultMap::create(Box::new(self.query), vec![], result_view)
+        QueryResultMap::create(
+            Box::new(self.query),
+            vec![],
+            result_view,
+            self.alias_generator,
+        )
     }
 }
 
@@ -119,14 +124,8 @@ impl<E: EntityWithView> ExecutableSelectQuery<E, ValueCountOf<E>> for QueryResul
         (
             SelectQuery::create(
                 Box::new(self.query),
-                view.collect_expr()
-                    .into_iter()
-                    .enumerate()
-                    .map(|(i, e)| SelectItem {
-                        expr: e,
-                        alias: i.to_string(),
-                    })
-                    .collect(),
+                self.alias_generator
+                    .generate_select_list(view.collect_expr().into_iter()),
                 vec![],
                 None,
                 0,
@@ -162,7 +161,12 @@ impl<E: EntityWithView> Map<E::View> for SortedQueryResultFilter<E> {
         result_view.apply_mut(&mut visitor);
 
         self.nested.query.add_joins(visitor.joins());
-        QueryResultMap::create(Box::new(self.nested.query), self.order_by, result_view)
+        QueryResultMap::create(
+            Box::new(self.nested.query),
+            self.order_by,
+            result_view,
+            self.nested.alias_generator,
+        )
     }
 }
 
@@ -177,14 +181,9 @@ impl<E: EntityWithView> ExecutableSelectQuery<E, ValueCountOf<E>> for SortedQuer
         (
             SelectQuery::create(
                 Box::new(self.nested.query),
-                view.collect_expr()
-                    .into_iter()
-                    .enumerate()
-                    .map(|(i, e)| SelectItem {
-                        expr: e,
-                        alias: i.to_string(),
-                    })
-                    .collect(),
+                self.nested
+                    .alias_generator
+                    .generate_select_list(view.collect_expr()),
                 vec![],
                 None,
                 0,
