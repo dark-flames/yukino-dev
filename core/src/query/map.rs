@@ -21,6 +21,14 @@ pub trait Map<View> {
     ) -> QueryResultMap<R, RL, Self::ResultType>;
 }
 
+pub trait Map2<View1, View2> {
+    type ResultType: ExecuteResultType;
+    fn map<R: 'static, RL: ValueCount, RV: Into<ViewBox<R, RL>>, F: Fn(View1, View2) -> RV>(
+        self,
+        f: F,
+    ) -> QueryResultMap<R, RL, Self::ResultType>;
+}
+
 impl<R: 'static, RL: ValueCount, ResultType: ExecuteResultType> QueryResultMap<R, RL, ResultType> {
     pub fn create(
         query: Box<dyn SelectSource>,

@@ -3,4 +3,3 @@ pub use mysql::*;
 
 #[cfg(feature = "mysql")]
 mod mysql;
-

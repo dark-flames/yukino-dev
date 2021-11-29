@@ -82,8 +82,11 @@ impl<E: EntityWithView> Fold<E::View> for QueryResultFilter<E> {
     }
 }
 
-impl<E: EntityWithView> GroupBy<E::View> for QueryResultFilter<E> {
-    fn group_by<RV: GroupResult, F: Fn(E::View) -> RV>(mut self, f: F) -> GroupedQueryResult<RV> {
+impl<E: EntityWithView> GroupBy<E, E::View> for QueryResultFilter<E> {
+    fn group_by<RV: GroupResult, F: Fn(E::View) -> RV>(
+        mut self,
+        f: F,
+    ) -> GroupedQueryResult<RV, (), E> {
         let mut result = f(E::View::pure(&self.root_alias));
         let mut visitor = self.alias_generator.substitute_visitor();
         result.apply_mut(&mut visitor);
@@ -92,6 +95,7 @@ impl<E: EntityWithView> GroupBy<E::View> for QueryResultFilter<E> {
             self.query.group_by(result.collect_expr_vec()),
             result,
             self.alias_generator,
+            self.root_alias,
         )
     }
 }

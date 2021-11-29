@@ -12,11 +12,14 @@ use crate::view::{
     ValueCountOf, ViewBox,
 };
 
-pub trait FoldResult: ExprNode {
+pub trait FoldResult: ExprNode + Clone {
     type Value: Value;
+    type Tags: TagList;
     fn collect_fold_expr_vec(&self) -> Vec<Expr>;
 
     fn view_box(self) -> ViewBox<Self::Value, ValueCountOf<Self::Value>>;
+
+    fn expr_box(self) -> ExprViewBoxWithTag<Self::Value, Self::Tags>;
 }
 
 pub struct FoldQueryResult<View: FoldResult> {
@@ -82,6 +85,7 @@ where
     AggregateViewTag: InList<T1Tags>,
 {
     type Value = T1;
+    type Tags = T1Tags;
 
     fn collect_fold_expr_vec(&self) -> Vec<Expr> {
         self.collect_expr().into_iter().collect()
@@ -89,6 +93,10 @@ where
 
     fn view_box(self) -> ViewBox<Self::Value, ValueCountOf<Self::Value>> {
         self.into()
+    }
+
+    fn expr_box(self) -> ExprViewBoxWithTag<Self::Value, Self::Tags> {
+        self
     }
 }
 
@@ -104,6 +112,7 @@ where
         ValueCount + Sub<ValueCountOf<T1>, Output = ValueCountOf<T2>>,
 {
     type Value = (T1, T2);
+    type Tags = EmptyTagList;
 
     fn collect_fold_expr_vec(&self) -> Vec<Expr> {
         self.0
@@ -114,8 +123,10 @@ where
     }
 
     fn view_box(self) -> ViewBox<Self::Value, ValueCountOf<Self::Value>> {
-        let expr_view: ExprViewBoxWithTag<Self::Value, EmptyTagList> = self.into();
+        self.expr_box().into()
+    }
 
-        expr_view.into()
+    fn expr_box(self) -> ExprViewBoxWithTag<Self::Value, EmptyTagList> {
+        self.into()
     }
 }

@@ -1,5 +1,5 @@
 use yukino::{bt, eq, lt};
-use yukino::query::{ExecutableSelectQuery, Filter, Fold, GroupBy, Map, Sort};
+use yukino::query::{ExecutableSelectQuery, Filter, Fold, GroupBy, GroupFold, Map, Map2, Sort};
 use yukino::view::EntityWithView;
 use yukino_tests::schema::*;
 
@@ -73,6 +73,20 @@ fn test_map() {
         .filter(|(a, _)| eq!(a, 910))
         .sort(|(a, b), helper| (helper.asc(a), helper.desc(b)))
         .map(|(a, _)| a)
+        .generate_query()
+        .0;
+
+    println!("{}", query);
+}
+
+#[test]
+fn test_group_fold_map() {
+    let query = Basic::all()
+        .filter(|b| lt!(b.int, 114514))
+        .filter(|b| bt!(b.int, 1919))
+        .group_by(|b| (b.int, b.short))
+        .fold_group(|b, helper| helper.average(b.long))
+        .map(|(_, _), c| c)
         .generate_query()
         .0;
 
