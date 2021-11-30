@@ -10,7 +10,7 @@ use query_builder::{DatabaseValue, Expr};
 
 use crate::converter::{Converter, ConverterRef, TupleConverter};
 use crate::err::{RuntimeResult, YukinoError};
-use crate::query::{ExprMutVisitor, ExprNode, ExprVisitor};
+use crate::query_result::{ExprMutVisitor, ExprNode, ExprVisitor};
 use crate::view::{
     EmptyTagList, ExprView, ExprViewBoxWithTag, TagList, TagOfValueView, Value, ValueCount,
     ValueCountOf,
@@ -67,6 +67,13 @@ where
 
     fn expr_clone(&self) -> ExprViewBoxWithTag<(L, R), Self::Tags> {
         Box::new(TupleExprView(self.0.expr_clone(), self.1.expr_clone()))
+    }
+
+    fn clone_expr_view(&self) -> Self
+    where
+        Self: Sized,
+    {
+        TupleExprView(self.0.expr_clone(), self.1.expr_clone())
     }
 
     fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<(L, R)>> {

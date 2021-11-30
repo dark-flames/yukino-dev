@@ -22,7 +22,7 @@ impl EntityResolvePass for EntityImplementPass {
         vec![quote! {
             use yukino::{YukinoEntity, EntityDefinition};
             use yukino::view::{Value, EntityWithView, ValueCountOf};
-            use yukino::query::{QueryResultFilter};
+            use yukino::query_result::QueryResultFilter;
             use yukino::converter::ConverterRef;
             use yukino::lazy_static::lazy_static;
         }]

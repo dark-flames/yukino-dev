@@ -9,7 +9,7 @@ use query_builder::{DatabaseValue, Expr};
 
 use crate::converter::*;
 use crate::err::{RuntimeResult, YukinoError};
-use crate::query::{ExprMutVisitor, ExprNode, ExprVisitor};
+use crate::query_result::{ExprMutVisitor, ExprNode, ExprVisitor};
 use crate::view::{ExprView, ExprViewBox, ExprViewBoxWithTag, OrdViewTag, TagList1};
 
 pub type ValueCountOf<T> = <T as Value>::L;
@@ -84,6 +84,13 @@ impl<T: Value<L = U1>> ExprView<T> for SingleExprView<T> {
         Self: Sized,
     {
         Box::new(Clone::clone(self))
+    }
+
+    fn clone_expr_view(&self) -> Self
+    where
+        Self: Sized,
+    {
+        Clone::clone(self)
     }
 
     fn collect_expr(&self) -> GenericArray<Expr, U1> {

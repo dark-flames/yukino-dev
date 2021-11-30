@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
-use crate::{DatabaseValue, FunctionCall, Ident};
+use crate::{DatabaseValue, FunctionCall, Ident, SelectQuery};
 
 pub type ExprBox = Box<Expr>;
 
@@ -9,6 +9,7 @@ pub enum Expr {
     Ident(Ident),
     Lit(DatabaseValue),
     FunctionCall(FunctionCall),
+    Subquery(SelectQuery),
     BitInverse(ExprBox),
     BitXor(ExprBox, ExprBox),
     Mul(ExprBox, ExprBox),
@@ -37,6 +38,7 @@ impl Display for Expr {
             Expr::Ident(i) => i.fmt(f),
             Expr::Lit(l) => l.fmt(f),
             Expr::FunctionCall(c) => c.fmt(f),
+            Expr::Subquery(q) => q.fmt(f),
             Expr::BitInverse(e) => write!(f, "~{}", e),
             Expr::BitXor(l, r) => write!(f, "{} ^ {}", l, r),
             Expr::Mul(l, r) => write!(f, "{} * {}", l, r),

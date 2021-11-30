@@ -19,7 +19,7 @@ impl EntityResolvePass for EntityViewPass {
         vec![quote! {
             use yukino::view::{SingleExprView, ExprViewBox, ExprViewBoxWithTag, ExprView, EntityView, EntityViewTag, TagList1};
             use yukino::query_builder::{Expr, Alias, DatabaseValue};
-            use yukino::query::{ExprNode, ExprVisitor, ExprMutVisitor};
+            use yukino::query_result::{ExprNode, ExprVisitor, ExprMutVisitor};
             use yukino::err::{RuntimeResult, YukinoError};
         }]
     }
@@ -138,6 +138,11 @@ impl EntityResolvePass for EntityViewPass {
                         #(#from_expr_branches),*
                     })
                 }
+
+                fn clone_expr_view(&self) -> Self where Self: Sized {
+                    Clone::clone(self)
+                }
+
 
                 fn expr_clone(&self) -> ExprViewBoxWithTag<#entity_name, Self::Tags>
                 where

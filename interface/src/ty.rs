@@ -1,7 +1,8 @@
-use iroha::ToTokens;
 use std::fmt::{Display, Formatter};
 
-#[derive(Copy, Clone, ToTokens, Debug, Eq, PartialEq, Hash)]
+use iroha::ToTokens;
+
+#[derive(Clone, ToTokens, Debug, Eq, PartialEq, Hash)]
 #[Iroha(mod_path = "yukino")]
 pub enum DatabaseType {
     Bool,
@@ -22,6 +23,7 @@ pub enum DatabaseType {
     DateTime,
     Character,
     String,
+    Array(Box<DatabaseType>),
     #[cfg(any(feature = "json"))]
     Json,
 }

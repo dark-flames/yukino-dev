@@ -1,6 +1,6 @@
 use query_builder::{Order, OrderByItem};
 
-use crate::query::{ExprMutVisitor, ExprNode, ExprVisitor};
+use crate::query_result::{ExprMutVisitor, ExprNode, ExprVisitor};
 use crate::view::{ExprViewBoxWithTag, InList, OrdViewTag, TagList, Value};
 
 pub struct SortItem<T: Value, TTags: TagList> {

@@ -1,5 +1,7 @@
 use yukino::{bt, eq, lt};
-use yukino::query::{ExecutableSelectQuery, Filter, Fold, GroupBy, GroupFold, Map, Map2, Sort};
+use yukino::query_result::{
+    ExecutableSelectQuery, Filter, Fold, GroupBy, GroupFold, Map, Map2, Sort,
+};
 use yukino::view::EntityWithView;
 use yukino_tests::schema::*;
 
@@ -86,7 +88,7 @@ fn test_group_fold_map() {
         .filter(|b| bt!(b.int, 1919))
         .group_by(|b| (b.int, b.short))
         .fold_group(|b, helper| helper.average(b.long))
-        .map(|(_, _), c| c)
+        .map(|(_, b), c| (b, c))
         .generate_query()
         .0;
 

@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use query_builder::{OrderByItem, SelectQuery, SelectSource};
 
-use crate::query::{AliasGenerator, ExecutableSelectQuery, ExecuteResultType};
+use crate::query_result::{AliasGenerator, ExecutableSelectQuery, ExecuteResultType};
 use crate::view::{ExprViewBoxWithTag, TagList, Value};
 
 pub struct QueryResultMap<R: Value, RTags: TagList, ResultType: ExecuteResultType> {

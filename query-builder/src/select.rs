@@ -1,8 +1,8 @@
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 
 use crate::{Alias, Expr, Join};
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Order {
     Asc,
     Desc,
@@ -10,6 +10,7 @@ pub enum Order {
 
 pub struct Select;
 
+#[derive(Clone, Debug)]
 pub struct SelectFrom {
     table: String,
     root_alias: Alias,
@@ -17,12 +18,14 @@ pub struct SelectFrom {
     where_clauses: Vec<Expr>,
 }
 
+#[derive(Clone, Debug)]
 pub struct GroupSelect {
     base: SelectFrom,
     group_by: Vec<Expr>,
     having: Vec<Expr>,
 }
 
+#[derive(Debug)]
 pub struct SelectQuery {
     base: Box<dyn SelectSource>,
     select: Vec<SelectItem>,
@@ -31,17 +34,19 @@ pub struct SelectQuery {
     offset: usize,
 }
 
+#[derive(Clone, Debug)]
 pub struct SelectItem {
     pub expr: Expr,
     pub alias: String,
 }
 
+#[derive(Clone, Debug)]
 pub struct OrderByItem {
     pub expr: Expr,
     pub order: Order,
 }
 
-pub trait SelectSource: Display + 'static {
+pub trait SelectSource: Debug + Display + 'static {
     fn select(self, items: Vec<SelectItem>) -> SelectQuery
     where
         Self: Sized,
@@ -87,6 +92,8 @@ pub trait SelectSource: Display + 'static {
             offset: o,
         }
     }
+
+    fn clone_source(&self) -> Box<dyn SelectSource>;
 }
 
 impl Select {
@@ -133,9 +140,17 @@ impl GroupSelect {
     }
 }
 
-impl SelectSource for SelectFrom {}
+impl SelectSource for SelectFrom {
+    fn clone_source(&self) -> Box<dyn SelectSource> {
+        Box::new(self.clone())
+    }
+}
 
-impl SelectSource for GroupSelect {}
+impl SelectSource for GroupSelect {
+    fn clone_source(&self) -> Box<dyn SelectSource> {
+        Box::new(self.clone())
+    }
+}
 
 impl SelectQuery {
     pub fn create(
@@ -175,6 +190,18 @@ impl SelectQuery {
         self.offset = o;
 
         self
+    }
+}
+
+impl Clone for SelectQuery {
+    fn clone(&self) -> Self {
+        SelectQuery {
+            base: self.base.clone_source(),
+            select: self.select.clone(),
+            order_by: self.order_by.clone(),
+            limit: self.limit,
+            offset: self.offset,
+        }
     }
 }
 

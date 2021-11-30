@@ -5,8 +5,8 @@ use generic_array::typenum::Sum;
 use query_builder::{Expr, SelectQuery, SelectSource};
 
 use crate::operator::AggregateHelper;
-use crate::query::{AliasGenerator, ExecutableSelectQuery, ExprNode, Map, QueryResultMap};
-use crate::query::exec::SingleRow;
+use crate::query_result::{AliasGenerator, ExecutableSelectQuery, ExprNode, Map, QueryResultMap};
+use crate::query_result::exec::SingleRow;
 use crate::view::{
     AggregateViewTag, EmptyTagList, ExprViewBoxWithTag, InList, TagList, Value, ValueCount,
     ValueCountOf,

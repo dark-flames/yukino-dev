@@ -167,6 +167,7 @@ impl ExprNode for Expr {
                 r.apply(visitor);
                 visitor.visit_or(l, r);
             }
+            _ => {} // hack
         }
     }
 
@@ -274,6 +275,7 @@ impl ExprNode for Expr {
                 r.apply_mut(visitor);
                 visitor.visit_or(l, r);
             }
+            _ => {} // hack
         }
     }
 }

@@ -8,7 +8,7 @@ use rand::rngs::ThreadRng;
 use interface::{AssociatedDefinition, DefinitionManager, FieldDefinition, JoinType};
 use query_builder::{Alias, AliasedTable, Expr, Ident, Join, SelectItem};
 
-use crate::query::ExprMutVisitor;
+use crate::query_result::ExprMutVisitor;
 use crate::view::EntityWithView;
 
 pub type AliasName = String;

@@ -5,7 +5,7 @@ use iroha::ToTokens;
 
 use crate::{DatabaseType, IndexMethod};
 
-#[derive(ToTokens, Clone)]
+#[derive(Debug, ToTokens, Clone)]
 #[Iroha(mod_path = "yukino")]
 pub struct EntityDefinition {
     pub id: usize,
@@ -17,7 +17,7 @@ pub struct EntityDefinition {
     pub primary_fields: Vec<String>,
 }
 
-#[derive(ToTokens, Clone)]
+#[derive(Debug, ToTokens, Clone)]
 #[Iroha(mod_path = "yukino")]
 pub struct FieldDefinition {
     pub name: String,
@@ -30,7 +30,7 @@ pub struct FieldDefinition {
     pub indexes: Vec<IndexDefinition>,
 }
 
-#[derive(ToTokens, Clone)]
+#[derive(Debug, ToTokens, Clone)]
 #[Iroha(mod_path = "yukino")]
 pub struct IndexDefinition {
     pub name: String,
@@ -39,7 +39,7 @@ pub struct IndexDefinition {
     pub method: IndexMethod,
 }
 
-#[derive(ToTokens, Clone)]
+#[derive(Debug, ToTokens, Clone)]
 #[Iroha(mod_path = "yukino")]
 pub struct ColumnDefinition {
     pub name: String,
@@ -48,7 +48,7 @@ pub struct ColumnDefinition {
     pub auto_increase: bool,
 }
 
-#[derive(ToTokens, Copy, Clone)]
+#[derive(Debug, ToTokens, Copy, Clone)]
 #[Iroha(mod_path = "yukino")]
 pub enum IndexType {
     Primary,
@@ -56,7 +56,7 @@ pub enum IndexType {
     Normal,
 }
 
-#[derive(ToTokens, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, ToTokens, Clone, Copy, Eq, PartialEq)]
 #[Iroha(mod_path = "yukino")]
 pub enum DefinitionType {
     Normal,
@@ -64,7 +64,7 @@ pub enum DefinitionType {
     Generated,
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, ToTokens)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, ToTokens)]
 #[Iroha(mod_path = "yukino")]
 pub enum JoinType {
     LeftJoin,
@@ -72,7 +72,7 @@ pub enum JoinType {
     InnerJoin,
 }
 
-#[derive(ToTokens, Clone)]
+#[derive(Debug, ToTokens, Clone)]
 #[Iroha(mod_path = "yukino")]
 pub enum AssociatedDefinition {
     AssociatedEntity {

@@ -6,7 +6,7 @@ use generic_array::typenum::U1;
 use query_builder::{DatabaseValue, Expr, FunctionCall};
 
 use crate::err::{RuntimeResult, YukinoError};
-use crate::query::{ExprMutVisitor, ExprNode, ExprVisitor};
+use crate::query_result::{ExprMutVisitor, ExprNode, ExprVisitor};
 use crate::view::{AggregateViewTag, ExprView, ExprViewBoxWithTag, TagList1, Value, ValueCountOf};
 
 #[derive(Clone)]
@@ -36,7 +36,14 @@ impl<T: Value<L = U1>> ExprView<T> for AggregateViewItem<T> {
     }
 
     fn expr_clone(&self) -> ExprViewBoxWithTag<T, Self::Tags> {
-        Box::new(self.clone())
+        Box::new(self.clone_expr_view())
+    }
+
+    fn clone_expr_view(&self) -> Self
+    where
+        Self: Sized,
+    {
+        Clone::clone(self)
     }
 
     fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<T>> {

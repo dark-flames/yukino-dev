@@ -4,7 +4,7 @@ use interface::DefinitionManager;
 use query_builder::{Alias, OrderByItem, Select, SelectFrom, SelectQuery};
 
 use crate::operator::{AggregateHelper, AggregateHelperCreate};
-use crate::query::{
+use crate::query_result::{
     AliasGenerator, ExecutableSelectQuery, ExprNode, Fold, FoldQueryResult, FoldResult, GroupBy,
     GroupedQueryResult, GroupResult, Map, MultiRows, QueryResultMap, Sort, SortHelper, SortResult,
 };

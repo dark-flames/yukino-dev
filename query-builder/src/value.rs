@@ -35,6 +35,8 @@ pub enum DatabaseValue {
     Character(char),
     String(String),
 
+    Array(DatabaseType, Vec<DatabaseValue>),
+
     #[cfg(any(feature = "json"))]
     Json(Value),
     Null(DatabaseType),
@@ -58,6 +60,14 @@ impl Display for DatabaseValue {
             DatabaseValue::DateTime(v) => v.fmt(f),
             DatabaseValue::Character(v) => write!(f, "'{}'", v),
             DatabaseValue::String(v) => write!(f, "\"{}\"", v),
+            DatabaseValue::Array(_, a) => write!(
+                f,
+                "[{}]",
+                a.iter()
+                    .map(|i| i.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
             DatabaseValue::Json(v) => v.fmt(f),
             DatabaseValue::Null(_) => write!(f, "NULL"),
         }
@@ -85,9 +95,10 @@ impl From<&DatabaseValue> for DatabaseType {
             DatabaseValue::DateTime(_) => DatabaseType::DateTime,
             DatabaseValue::Character(_) => DatabaseType::Character,
             DatabaseValue::String(_) => DatabaseType::String,
+            DatabaseValue::Array(ty, _) => ty.clone(),
             #[cfg(any(feature = "json"))]
             DatabaseValue::Json(_) => DatabaseType::Json,
-            DatabaseValue::Null(ty) => *ty,
+            DatabaseValue::Null(ty) => ty.clone(),
         }
     }
 }

@@ -1,7 +1,7 @@
 use interface::YukinoEntity;
 use query_builder::Alias;
 
-use crate::query::QueryResultFilter;
+use crate::query_result::QueryResultFilter;
 use crate::view::{ExprView, Value};
 
 pub trait EntityView: ExprView<Self::Entity> {

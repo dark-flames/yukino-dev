@@ -3,7 +3,7 @@ use generic_array::GenericArray;
 use query_builder::{DatabaseValue, Expr};
 
 use crate::err::RuntimeResult;
-use crate::query::ExprNode;
+use crate::query_result::ExprNode;
 use crate::view::{TagList, TagOfValueView, Value, ValueCountOf};
 
 pub type ExprViewBox<T> = ExprViewBoxWithTag<T, TagOfValueView<T>>;
@@ -16,6 +16,10 @@ pub trait ExprView<T: Value>: ExprNode {
         Self: Sized;
 
     fn expr_clone(&self) -> ExprViewBoxWithTag<T, Self::Tags>;
+
+    fn clone_expr_view(&self) -> Self
+    where
+        Self: Sized;
 
     fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<T>>;
 

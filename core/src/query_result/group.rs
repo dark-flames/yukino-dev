@@ -6,7 +6,7 @@ use generic_array::typenum::Sum;
 use query_builder::{Alias, Expr, GroupSelect, OrderByItem, SelectQuery};
 
 use crate::operator::{AggregateHelper, AggregateHelperCreate};
-use crate::query::{
+use crate::query_result::{
     AliasGenerator, ExecutableSelectQuery, ExprNode, Filter, Filter2, Fold, Fold2, FoldQueryResult,
     FoldResult, Map, Map2, MultiRows, QueryResultMap, Sort, Sort2, SortHelper, SortResult,
 };
