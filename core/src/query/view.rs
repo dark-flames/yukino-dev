@@ -1,4 +1,5 @@
-use crate::view::{AggregateViewTag, ExprView, HasTag, OrdViewTag, Value};
+use crate::query_result::{SortHelper, SortResult};
+use crate::view::{AggregateViewTag, ExprView, HasTag, Value};
 
 pub trait QueryView<T: Value> {
     type RowView: ExprView<T>;
@@ -11,36 +12,32 @@ pub trait QueryView<T: Value> {
 }
 
 pub trait QueryViewMap<T: Value, Row: ExprView<T>>: QueryView<T, RowView = Row> {
-    type Output<RV>;
-
-    fn make_result<R: Value, RV: ExprView<R>>(&self, r: RV) -> Self::Output<RV>;
+    type Output<R: Value, RV: ExprView<R>>;
 
     fn map<R: Value, RV: ExprView<R>, IntoRV: Into<RV>, F: Fn(Row) -> IntoRV>(
         self,
         f: F,
-    ) -> Self::Output<RV>
+    ) -> Self::Output<R, RV>
     where
-        Self: Sized,
-    {
-        self.make_result(f(self.row_view()).into())
-    }
+        Self: Sized;
 }
 
 pub trait QueryViewFold<T: Value, Row: ExprView<T>>: QueryView<T, RowView = Row> {
-    fn fold<R: Value, RV: ExprView<R>, IntoRV: Into<RV>, F: Fn(Self) -> IntoRV>(self, f: F) -> RV
+    type Unzip;
+    fn fold<R: Value, RV: ExprView<R>, IntoRV: Into<RV>, F: Fn(Self::Unzip) -> IntoRV>(
+        self,
+        f: F,
+    ) -> RV
     where
         Self: Sized,
-        RV::Tags: HasTag<AggregateViewTag>,
-    {
-        f(self.clone_query_view()).into()
-    }
+        RV::Tags: HasTag<AggregateViewTag>;
 }
 
 pub trait QueryViewSort<T: Value, Row: ExprView<T>>: QueryView<T, RowView = Row> {
-    fn sort<R: Value, RV: ExprView<R>, IntoRV: Into<RV>, F: Fn(Self) -> IntoRV>(self, f: F) -> Self
+    type Output;
+    fn sort<R: SortResult, F: Fn(Self, SortHelper) -> R>(self, f: F) -> Self::Output
     where
-        Self: Sized,
-        RV::Tags: HasTag<OrdViewTag>;
+        Self: Sized;
 }
 
 pub trait QueryViewFilter<T: Value, Row: ExprView<T>>: QueryView<T, RowView = Row> {
