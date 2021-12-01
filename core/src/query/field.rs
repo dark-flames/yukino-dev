@@ -3,8 +3,7 @@ use std::marker::PhantomData;
 use query_builder::OrderByItem;
 
 use crate::query::{QueryView, QueryViewFold, QueryViewMap, QueryViewSort};
-use crate::query_result::{SortHelper, SortResult};
-use crate::view::{AggregateViewTag, ExprView, HasTag, Value};
+use crate::view::{AggregateViewTag, ExprView, HasTag, SortHelper, SortResult, Value};
 
 pub struct FieldView<T: Value, View: ExprView<T>> {
     expr_view: View,

@@ -7,10 +7,11 @@ pub type U1 = Suc<U0>;
 pub type U2 = Suc<U1>;
 pub type EmptyTagList =
     TagListSegment<TagListSegment<TagListSegment<Terminal, false>, false>, false>;
-pub type SetFlag<B, F> = <B as SetBit<<F as Tag>::Offset, true>>::Result;
-pub type TagList1<T1> = SetFlag<EmptyTagList, T1>;
-pub type TagList2<T1, T2> = SetFlag<TagList1<T1>, T2>;
-pub type TagList3<T1, T2, T3> = SetFlag<TagList2<T1, T2>, T3>;
+pub type AddTag<B, F> = <B as SetBit<<F as Tag>::Offset, true>>::Result;
+pub type RemoveTag<B, F> = <B as SetBit<<F as Tag>::Offset, false>>::Result;
+pub type TagList1<T1> = AddTag<EmptyTagList, T1>;
+pub type TagList2<T1, T2> = AddTag<TagList1<T1>, T2>;
+pub type TagList3<T1, T2, T3> = AddTag<TagList2<T1, T2>, T3>;
 pub type TagOfValueView<T> = <<T as Value>::ValueExprView as ExprView<T>>::Tags;
 pub type TagsOfEntity<E> = <<E as EntityWithView>::View as ExprView<E>>::Tags;
 

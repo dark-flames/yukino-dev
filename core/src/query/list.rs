@@ -5,9 +5,9 @@ use generic_array::typenum::Sum;
 use crate::query::{
     FieldView, QueryView, QueryViewFold, QueryViewMap, QueryViewSort, SortedFieldView,
 };
-use crate::query_result::{SortHelper, SortResult};
 use crate::view::{
-    AggregateViewTag, ExprView, HasTag, TupleExprView, Value, ValueCount, ValueCountOf,
+    AggregateViewTag, ExprView, HasTag, SortHelper, SortResult, TupleExprView, Value, ValueCount,
+    ValueCountOf,
 };
 
 pub trait ListView<T: Value, View: ExprView<T>>:

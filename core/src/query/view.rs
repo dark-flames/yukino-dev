@@ -1,7 +1,8 @@
 use query_builder::SelectQuery;
 
-use crate::query_result::{SortHelper, SortResult};
-use crate::view::{AggregateViewTag, ExprView, ExprViewBoxWithTag, HasTag, Value};
+use crate::view::{
+    AggregateViewTag, ExprView, ExprViewBoxWithTag, HasTag, SortHelper, SortResult, Value,
+};
 
 pub trait QueryView<T: Value> {
     type RowView: ExprView<T>;

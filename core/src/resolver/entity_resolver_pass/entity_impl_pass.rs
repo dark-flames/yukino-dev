@@ -22,7 +22,6 @@ impl EntityResolvePass for EntityImplementPass {
         vec![quote! {
             use yukino::{YukinoEntity, EntityDefinition};
             use yukino::view::{Value, EntityWithView, ValueCountOf};
-            use yukino::query_result::QueryResultFilter;
             use yukino::converter::ConverterRef;
             use yukino::lazy_static::lazy_static;
         }]
@@ -63,10 +62,6 @@ impl EntityResolvePass for EntityImplementPass {
 
             impl EntityWithView for #name {
                 type View = #view_name;
-
-                fn all() -> QueryResultFilter<Self> {
-                    QueryResultFilter::create(&*DEFINITION_MANAGER)
-                }
             }
 
             impl Value for #name {

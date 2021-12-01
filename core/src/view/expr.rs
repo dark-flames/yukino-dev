@@ -3,13 +3,12 @@ use generic_array::GenericArray;
 use query_builder::{DatabaseValue, Expr};
 
 use crate::err::RuntimeResult;
-use crate::query_result::ExprNode;
 use crate::view::{TagList, TagOfValueView, Value, ValueCountOf};
 
 pub type ExprViewBox<T> = ExprViewBoxWithTag<T, TagOfValueView<T>>;
 pub type ExprViewBoxWithTag<T, Tags> = Box<dyn ExprView<T, Tags = Tags>>;
 
-pub trait ExprView<T: Value>: 'static + ExprNode {
+pub trait ExprView<T: Value>: 'static {
     type Tags: TagList;
     fn from_exprs(exprs: GenericArray<Expr, ValueCountOf<T>>) -> ExprViewBoxWithTag<T, Self::Tags>
     where

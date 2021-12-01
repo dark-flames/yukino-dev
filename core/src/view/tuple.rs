@@ -10,7 +10,6 @@ use query_builder::{DatabaseValue, Expr};
 
 use crate::converter::{Converter, ConverterRef, TupleConverter};
 use crate::err::{RuntimeResult, YukinoError};
-use crate::query_result::{ExprMutVisitor, ExprNode, ExprVisitor};
 use crate::view::{
     EmptyTagList, ExprView, ExprViewBoxWithTag, TagList, TagOfValueView, Value, ValueCount,
     ValueCountOf,
@@ -24,24 +23,6 @@ where
     ValueCountOf<L>: Add<ValueCountOf<R>>,
     Sum<ValueCountOf<L>, ValueCountOf<R>>:
         ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>;
-
-impl<L: Value, R: Value, LTags: TagList, RTags: TagList> ExprNode
-    for TupleExprView<L, R, LTags, RTags>
-where
-    ValueCountOf<L>: Add<ValueCountOf<R>>,
-    Sum<ValueCountOf<L>, ValueCountOf<R>>:
-        ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
-{
-    fn apply(&self, visitor: &mut dyn ExprVisitor) {
-        self.0.apply(visitor);
-        self.1.apply(visitor);
-    }
-
-    fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
-        self.0.apply_mut(visitor);
-        self.1.apply_mut(visitor);
-    }
-}
 
 impl<L: Value, R: Value, LTags: TagList, RTags: TagList> ExprView<(L, R)>
     for TupleExprView<L, R, LTags, RTags>
