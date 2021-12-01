@@ -6,10 +6,11 @@ pub use tag::*;
 pub use tuple::*;
 pub use value::*;
 
+mod aggregate;
 mod entity;
 mod expr;
+mod group;
 mod sort;
 mod tag;
 mod tuple;
 mod value;
-mod aggregate;

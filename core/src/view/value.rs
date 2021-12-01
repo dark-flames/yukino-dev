@@ -13,7 +13,10 @@ use crate::view::{ExprView, ExprViewBox, ExprViewBoxWithTag, OrdViewTag, TagList
 
 pub type ValueCountOf<T> = <T as Value>::L;
 
-pub trait ValueCount: ArrayLength<Expr> + ArrayLength<DatabaseValue> + ArrayLength<Box<dyn AggregateFunctionCall>> {}
+pub trait ValueCount:
+    ArrayLength<Expr> + ArrayLength<DatabaseValue> + ArrayLength<Box<dyn AggregateFunctionCall>>
+{
+}
 
 impl ValueCount for UTerm {}
 

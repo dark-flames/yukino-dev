@@ -21,15 +21,17 @@ pub enum Function {
 }
 
 pub trait FunctionCall: Debug {
-    fn boxed(&self) -> Box<dyn FunctionCall>;
+    fn func_call_box(&self) -> Box<dyn FunctionCall>;
 }
 
-pub trait AggregateFunctionCall: FunctionCall {}
+pub trait AggregateFunctionCall: FunctionCall {
+    fn aggr_func_call_box(&self) -> Box<dyn AggregateFunctionCall>;
+}
 
 #[derive(Debug, Clone)]
 pub struct SingleArgumentAggregateFunctionCall {
     pub func: AggregateFunction,
-    pub arg: Expr
+    pub arg: Expr,
 }
 
 #[derive(Debug, Clone)]
@@ -40,20 +42,28 @@ pub struct GroupConcat {
 }
 
 impl FunctionCall for SingleArgumentAggregateFunctionCall {
-    fn boxed(&self) -> Box<dyn FunctionCall> {
+    fn func_call_box(&self) -> Box<dyn FunctionCall> {
         Box::new(self.clone())
     }
 }
 
-impl AggregateFunctionCall for SingleArgumentAggregateFunctionCall {}
+impl AggregateFunctionCall for SingleArgumentAggregateFunctionCall {
+    fn aggr_func_call_box(&self) -> Box<dyn AggregateFunctionCall> {
+        Box::new(self.clone())
+    }
+}
 
 impl FunctionCall for GroupConcat {
-    fn boxed(&self) -> Box<dyn FunctionCall> {
+    fn func_call_box(&self) -> Box<dyn FunctionCall> {
         Box::new(self.clone())
     }
 }
 
-impl AggregateFunctionCall for GroupConcat {}
+impl AggregateFunctionCall for GroupConcat {
+    fn aggr_func_call_box(&self) -> Box<dyn AggregateFunctionCall> {
+        Box::new(self.clone())
+    }
+}
 
 macro_rules! single_arg_aggr_func {
     ($name: ident, $variant: ident) => {
@@ -63,7 +73,7 @@ macro_rules! single_arg_aggr_func {
                 arg,
             }
         }
-    }
+    };
 }
 
 single_arg_aggr_func!(average, Average);
@@ -80,5 +90,17 @@ pub fn group_concat(expr: Expr, order_by: Vec<OrderByItem>, separator: String) -
         expr,
         order_by,
         separator,
+    }
+}
+
+impl Clone for Box<dyn FunctionCall> {
+    fn clone(&self) -> Self {
+        self.func_call_box()
+    }
+}
+
+impl Clone for Box<dyn AggregateFunctionCall> {
+    fn clone(&self) -> Self {
+        self.aggr_func_call_box()
     }
 }

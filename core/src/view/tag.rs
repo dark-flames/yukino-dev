@@ -14,6 +14,7 @@ pub type TagList2<T1, T2> = AddTag<TagList1<T1>, T2>;
 pub type TagList3<T1, T2, T3> = AddTag<TagList2<T1, T2>, T3>;
 pub type TagOfValueView<T> = <<T as Value>::ValueExprView as ExprView<T>>::Tags;
 pub type TagsOfEntity<E> = <<E as EntityWithView>::View as ExprView<E>>::Tags;
+pub type OffsetOfTag<T> = <T as Tag>::Offset;
 
 pub struct Terminal;
 

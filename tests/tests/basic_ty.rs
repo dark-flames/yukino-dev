@@ -1,3 +1,4 @@
+/*
 use yukino::query_builder::Alias;
 use yukino::view::*;
 use yukino::{and, bt, bte, eq, lt, lte, neq, or};
@@ -106,4 +107,4 @@ pub fn test_boolean() {
     cmp_view(bte, "b.character >= b.character");
     cmp_view(lt, "b.double < b.double");
     cmp_view(lte, "b.float <= b.float");
-}
+}*/

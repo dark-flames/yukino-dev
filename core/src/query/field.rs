@@ -98,7 +98,7 @@ impl<T: Value, View: ExprView<T>> QueryViewMap<T, View> for SortedFieldView<T, V
     }
 }
 
-impl<T: Value, View: ExprView<T>> QueryViewFold<T, View> for FieldView<T, View> {
+impl<T: Value, View: ExprView<T>> QueryViewFold<T> for FieldView<T, View> {
     type Unzipped = FieldView<T, View>;
 
     fn fold<R: Value, RV: ExprView<R>, IntoRV: Into<RV>, F: Fn(Self::Unzipped) -> IntoRV>(
@@ -113,7 +113,7 @@ impl<T: Value, View: ExprView<T>> QueryViewFold<T, View> for FieldView<T, View> 
     }
 }
 
-impl<T: Value, View: ExprView<T>> QueryViewFold<T, View> for SortedFieldView<T, View> {
+impl<T: Value, View: ExprView<T>> QueryViewFold<T> for SortedFieldView<T, View> {
     type Unzipped = FieldView<T, View>;
 
     fn fold<R: Value, RV: ExprView<R>, IntoRV: Into<RV>, F: Fn(Self::Unzipped) -> IntoRV>(
@@ -131,13 +131,13 @@ impl<T: Value, View: ExprView<T>> QueryViewFold<T, View> for SortedFieldView<T, 
 impl<T: Value, View: ExprView<T>> QueryViewSort<T, View> for FieldView<T, View> {
     type Output = SortedFieldView<T, View>;
 
-    fn sort<R: SortResult, F: Fn(Self, SortHelper) -> R>(self, f: F) -> Self::Output
+    fn sort<R: SortResult, F: Fn(View, SortHelper) -> R>(self, f: F) -> Self::Output
     where
         Self: Sized,
     {
         SortedFieldView {
             nested: self.clone_query_view(),
-            order_by: f(self, SortHelper::create()).order_by_items(),
+            order_by: f(self.row_view(), SortHelper::create()).order_by_items(),
         }
     }
 }
@@ -145,13 +145,13 @@ impl<T: Value, View: ExprView<T>> QueryViewSort<T, View> for FieldView<T, View> 
 impl<T: Value, View: ExprView<T>> QueryViewSort<T, View> for SortedFieldView<T, View> {
     type Output = SortedFieldView<T, View>;
 
-    fn sort<R: SortResult, F: Fn(Self, SortHelper) -> R>(self, f: F) -> Self::Output
+    fn sort<R: SortResult, F: Fn(View, SortHelper) -> R>(self, f: F) -> Self::Output
     where
         Self: Sized,
     {
         SortedFieldView {
             nested: self.nested.clone(),
-            order_by: f(self, SortHelper::create()).order_by_items(),
+            order_by: f(self.row_view(), SortHelper::create()).order_by_items(),
         }
     }
 }
