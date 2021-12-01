@@ -1,5 +1,7 @@
+use query_builder::SelectQuery;
+
 use crate::query_result::{SortHelper, SortResult};
-use crate::view::{AggregateViewTag, ExprView, HasTag, Value};
+use crate::view::{AggregateViewTag, ExprView, ExprViewBoxWithTag, HasTag, Value};
 
 pub trait QueryView<T: Value> {
     type RowView: ExprView<T>;
@@ -9,6 +11,10 @@ pub trait QueryView<T: Value> {
         Self: Sized;
 
     fn row_view(&self) -> Self::RowView;
+}
+
+pub trait Executable<T: Value, Row: ExprView<T>> {
+    fn generate_query(self) -> (SelectQuery, ExprViewBoxWithTag<T, Row::Tags>);
 }
 
 pub trait QueryViewMap<T: Value, Row: ExprView<T>>: QueryView<T, RowView = Row> {
@@ -23,8 +29,8 @@ pub trait QueryViewMap<T: Value, Row: ExprView<T>>: QueryView<T, RowView = Row> 
 }
 
 pub trait QueryViewFold<T: Value, Row: ExprView<T>>: QueryView<T, RowView = Row> {
-    type Unzip;
-    fn fold<R: Value, RV: ExprView<R>, IntoRV: Into<RV>, F: Fn(Self::Unzip) -> IntoRV>(
+    type Unzipped;
+    fn fold<R: Value, RV: ExprView<R>, IntoRV: Into<RV>, F: Fn(Self::Unzipped) -> IntoRV>(
         self,
         f: F,
     ) -> RV

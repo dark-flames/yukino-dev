@@ -9,7 +9,7 @@ use crate::view::{TagList, TagOfValueView, Value, ValueCountOf};
 pub type ExprViewBox<T> = ExprViewBoxWithTag<T, TagOfValueView<T>>;
 pub type ExprViewBoxWithTag<T, Tags> = Box<dyn ExprView<T, Tags = Tags>>;
 
-pub trait ExprView<T: Value>: ExprNode {
+pub trait ExprView<T: Value>: 'static + ExprNode {
     type Tags: TagList;
     fn from_exprs(exprs: GenericArray<Expr, ValueCountOf<T>>) -> ExprViewBoxWithTag<T, Self::Tags>
     where
