@@ -4,7 +4,9 @@ use generic_array::arr;
 
 use query_builder::Expr;
 
-use crate::view::{ExprView, ExprViewBoxWithTag, SingleExprView, TagList, TagOfValueView, Value};
+use crate::view::{
+    ExprView, ExprViewBoxWithTag, MergeList, SingleExprView, TagList, TagOfValueView, Value,
+};
 
 macro_rules! impl_ops {
     (
@@ -21,9 +23,9 @@ macro_rules! impl_ops {
             Value + $ops_trait<Rhs, Output = Self::Result>
         {
             type Result: Value;
-            type ResultTags<LTags: TagList, RTags: TagList>: TagList;
+            type ResultTags<LTags: TagList + MergeList<RTags>, RTags: TagList>: TagList;
 
-            fn $trait_method<LTags: TagList, RTags: TagList>(
+            fn $trait_method<LTags: TagList + MergeList<RTags>, RTags: TagList>(
                 l: ExprViewBoxWithTag<Self, LTags>,
                 r: ExprViewBoxWithTag<Rhs, RTags>,
             ) -> ExprViewBoxWithTag<Self::Result, Self::ResultTags<LTags, RTags>>;
@@ -33,7 +35,7 @@ macro_rules! impl_ops {
             L: Value + $expr_trait<R, Result = O, ResultTags<LTags, RTags> = OTags>,
             R: Value,
             O: Value,
-            LTags: TagList,
+            LTags: TagList + MergeList<RTags, Output=OTags>,
             RTags: TagList,
             OTags: TagList
         > $ops_trait<ExprViewBoxWithTag<R, RTags>> for ExprViewBoxWithTag<L, LTags>
@@ -49,7 +51,7 @@ macro_rules! impl_ops {
             L: Value + $expr_trait<R, Result = O, ResultTags<LTags, TagOfValueView<R>> = OTags>,
             R: Value,
             O: Value,
-            LTags: TagList,
+            LTags: TagList + MergeList<TagOfValueView<R>, Output=OTags>,
             OTags: TagList
         > $ops_trait<R> for ExprViewBoxWithTag<L, LTags>
         {
@@ -64,9 +66,9 @@ macro_rules! impl_ops {
             ($ty: ty) => {
                 impl $expr_trait<$ty> for $ty {
                     type Result = $ty;
-                    type ResultTags<LTags: TagList, RTags: TagList> = TagOfValueView<$ty>;
+                    type ResultTags<LTags: TagList + MergeList<RTags>, RTags: TagList> = TagOfValueView<$ty>;
 
-                    fn $trait_method<LTags: TagList, RTags: TagList>(
+                    fn $trait_method<LTags: TagList + MergeList<RTags>, RTags: TagList>(
                         l: ExprViewBoxWithTag<Self, LTags>,
                         r: ExprViewBoxWithTag<$ty, RTags>,
                     ) -> ExprViewBoxWithTag<Self::Result, Self::ResultTags<LTags, RTags>>{

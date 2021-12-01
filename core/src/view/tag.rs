@@ -6,8 +6,7 @@ pub type U0 = Zero;
 pub type U1 = Suc<U0>;
 pub type U2 = Suc<U1>;
 pub type Len<L> = <L as BitMap>::L;
-pub type EmptyTagList =
-    BitMapSegment<BitMapSegment<BitMapSegment<Terminal, False>, False>, False>;
+pub type EmptyTagList = BitMapSegment<BitMapSegment<BitMapSegment<Terminal, False>, False>, False>;
 pub type AddTag<B, F> = <B as SetBit<<F as Tag>::Offset, True>>::Result;
 pub type RemoveTag<B, F> = <B as SetBit<<F as Tag>::Offset, False>>::Result;
 pub type TagList1<T1> = AddTag<EmptyTagList, T1>;
@@ -36,14 +35,13 @@ pub struct False;
 #[derive(Default)]
 pub struct BitMapSegment<U: BitMap, B: Bool>(PhantomData<(U, B)>);
 
-pub trait TagList: BitMap<L=Len<EmptyTagList>> {
-}
+pub trait TagList: BitMap<L = Len<EmptyTagList>> {}
 
 pub trait BitMap: 'static {
     type L: Usize;
 }
 
-pub trait Usize : 'static {}
+pub trait Usize: 'static {}
 
 pub trait Bool: 'static {}
 
@@ -70,7 +68,7 @@ pub trait Tag {
 pub trait AssertBit<O: Usize, V: Bool>: BitMap {}
 
 pub trait SetBit<O: Usize, V: Bool>: BitMap {
-    type Result: BitMap<L=Self::L>;
+    type Result: BitMap<L = Self::L>;
 }
 
 pub trait GetBit<O: Usize>: BitMap {
@@ -89,8 +87,8 @@ pub trait MergeList<R: TagList>: TagList {
     type Output: TagList;
 }
 
-pub trait MergeBitMap<L: Usize, R: BitMap<L=L>>: BitMap {
-    type Output: BitMap<L=L>;
+pub trait MergeBitMap<L: Usize, R: BitMap<L = L>>: BitMap {
+    type Output: BitMap<L = L>;
 }
 
 impl Usize for Zero {}
@@ -104,30 +102,32 @@ impl<P: Usize> NonZero for Suc<P> {
 impl Bool for True {}
 impl Bool for False {}
 
-impl BitMap for Terminal { type L = Zero; }
+impl BitMap for Terminal {
+    type L = Zero;
+}
 
-impl<U: BitMap, B: Bool> BitMap for BitMapSegment<U, B> { type L = Suc<U::L>; }
+impl<U: BitMap, B: Bool> BitMap for BitMapSegment<U, B> {
+    type L = Suc<U::L>;
+}
 
-impl<O: Usize, L: BitMap + GetBit<O, Result=True>> AssertBit<O, True> for L {}
+impl<O: Usize, L: BitMap + GetBit<O, Result = True>> AssertBit<O, True> for L {}
 
 impl<U: BitMap, V: Bool, H: Bool> SetBit<U0, V> for BitMapSegment<U, H> {
     type Result = BitMapSegment<U, V>;
 }
 
-impl<U: BitMap, O: NonZero + Usize, V: Bool, H: Bool> SetBit<O, V>
-    for BitMapSegment<U, H>
+impl<U: BitMap, O: NonZero + Usize, V: Bool, H: Bool> SetBit<O, V> for BitMapSegment<U, H>
 where
     U: SetBit<O::Prev, V>,
 {
     type Result = BitMapSegment<<U as SetBit<O::Prev, V>>::Result, H>;
 }
 
-impl <U: BitMap, H: Bool> GetBit<U0> for BitMapSegment<U, H> {
+impl<U: BitMap, H: Bool> GetBit<U0> for BitMapSegment<U, H> {
     type Result = H;
 }
 
-impl <U: BitMap, O: NonZero + Usize, H: Bool> GetBit<O>
-    for BitMapSegment<U, H>
+impl<U: BitMap, O: NonZero + Usize, H: Bool> GetBit<O> for BitMapSegment<U, H>
 where
     U: GetBit<O::Prev>,
 {
@@ -185,7 +185,7 @@ impl<L: TagList + MergeBitMap<Len<EmptyTagList>, R>, R: TagList> MergeList<R> fo
     type Output = <L as MergeBitMap<Len<EmptyTagList>, R>>::Output;
 }
 
-impl<B: BitMap<L=Len<EmptyTagList>>> TagList for B {}
+impl<B: BitMap<L = Len<EmptyTagList>>> TagList for B {}
 
 macro_rules! create_tag {
     ($name: ident, $offset: ty, $strategy: ident) => {
@@ -196,12 +196,16 @@ macro_rules! create_tag {
         }
 
         impl<
-            L: BitMap<L=$offset> + MergeBitMap<$offset, R>,
-            R: BitMap<L=$offset>,
-            LH: Bool + $strategy<RH>,
-            RH: Bool
-        > MergeBitMap<Suc<$offset>, BitMapSegment<R, RH>> for BitMapSegment<L, LH> {
-            type Output = BitMapSegment<<L as MergeBitMap<$offset, R>>::Output, <LH as $strategy<RH>>::Result>;
+                L: BitMap<L = $offset> + MergeBitMap<$offset, R>,
+                R: BitMap<L = $offset>,
+                LH: Bool + $strategy<RH>,
+                RH: Bool,
+            > MergeBitMap<Suc<$offset>, BitMapSegment<R, RH>> for BitMapSegment<L, LH>
+        {
+            type Output = BitMapSegment<
+                <L as MergeBitMap<$offset, R>>::Output,
+                <LH as $strategy<RH>>::Result,
+            >;
         }
     };
 }
@@ -212,7 +216,9 @@ create_tag!(AggregateViewTag, U2, And);
 
 #[cfg(test)]
 mod test {
-    use crate::view::{AggregateViewTag, ConcreteList, EntityViewTag, OrdViewTag, TagList1, TagList2, TagList3};
+    use crate::view::{
+        AggregateViewTag, ConcreteList, EntityViewTag, OrdViewTag, TagList1, TagList2, TagList3,
+    };
 
     type A = TagList3<OrdViewTag, EntityViewTag, AggregateViewTag>;
     type B = TagList2<OrdViewTag, EntityViewTag>;

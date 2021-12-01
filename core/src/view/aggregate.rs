@@ -4,7 +4,10 @@ use generic_array::GenericArray;
 use query_builder::{AggregateFunctionCall, DatabaseValue, Expr};
 
 use crate::err::{RuntimeResult, YukinoError};
-use crate::view::{AddTag, AggregateViewTag, ExprView, ExprViewBoxWithTag, OffsetOfTag, SetBit, TagOfValueView, True, Value, ValueCountOf};
+use crate::view::{
+    AddTag, AggregateViewTag, ExprView, ExprViewBoxWithTag, OffsetOfTag, SetBit, TagOfValueView,
+    True, Value, ValueCountOf,
+};
 
 #[derive(Clone)]
 pub struct AggregatedView<T: Value> {

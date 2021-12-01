@@ -9,7 +9,7 @@ use query_builder::{AggregateFunctionCall, DatabaseValue, Expr};
 
 use crate::converter::*;
 use crate::err::{RuntimeResult, YukinoError};
-use crate::view::{ExprView, ExprViewBox, ExprViewBoxWithTag, OrdViewTag, TagList1};
+use crate::view::{ExprView, ExprViewBox, ExprViewBoxWithTag, OrdViewTag, TagList, TagList1};
 
 pub type ValueCountOf<T> = <T as Value>::L;
 
@@ -49,17 +49,23 @@ pub trait Value: 'static + Clone + Debug {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct SingleExprView<T>
-where
-    T: Value<L = U1>,
-{
+#[derive(Debug)]
+pub struct SingleExprView<T: Value<L = U1>, Tags: TagList> {
     expr: Expr,
-    _ty: PhantomData<T>,
+    _ty: PhantomData<(T, Tags)>,
 }
 
-impl<T: Value<L = U1>> ExprView<T> for SingleExprView<T> {
-    type Tags = TagList1<OrdViewTag>;
+impl<T: Value<L = U1>, Tags: TagList> Clone for SingleExprView<T, Tags> {
+    fn clone(&self) -> Self {
+        Self {
+            expr: self.expr.clone(),
+            _ty: PhantomData,
+        }
+    }
+}
+
+impl<T: Value<L = U1>, Tags: TagList> ExprView<T> for SingleExprView<T, Tags> {
+    type Tags = Tags;
 
     fn from_exprs(exprs: GenericArray<Expr, U1>) -> ExprViewBoxWithTag<T, Self::Tags>
     where
@@ -98,7 +104,7 @@ macro_rules! impl_value {
     ($ty: ty, $converter: ty) => {
         impl Value for $ty {
             type L = U1;
-            type ValueExprView = SingleExprView<$ty>;
+            type ValueExprView = SingleExprView<$ty, TagList1<OrdViewTag>>;
 
             fn converter() -> ConverterRef<Self>
             where

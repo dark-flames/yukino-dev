@@ -241,7 +241,7 @@ impl FieldType {
         let ty = self.field_ty(optional);
 
         quote! {
-            SingleExprView::<#ty>
+            SingleExprView::<#ty, TagOfValueView<#ty>>
         }
     }
 
