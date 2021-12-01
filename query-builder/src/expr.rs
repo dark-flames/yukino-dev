@@ -1,14 +1,12 @@
-use std::fmt::{Display, Formatter, Result as FmtResult};
-
 use crate::{DatabaseValue, FunctionCall, Ident, SelectQuery};
 
 pub type ExprBox = Box<Expr>;
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub enum Expr {
     Ident(Ident),
     Lit(DatabaseValue),
-    FunctionCall(FunctionCall),
+    FunctionCall(Box<dyn FunctionCall>),
     Subquery(SelectQuery),
     BitInverse(ExprBox),
     BitXor(ExprBox, ExprBox),
@@ -32,33 +30,33 @@ pub enum Expr {
     Or(ExprBox, ExprBox),
 }
 
-impl Display for Expr {
-    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+impl Clone for Expr {
+    fn clone(&self) -> Self {
         match self {
-            Expr::Ident(i) => i.fmt(f),
-            Expr::Lit(l) => l.fmt(f),
-            Expr::FunctionCall(c) => c.fmt(f),
-            Expr::Subquery(q) => q.fmt(f),
-            Expr::BitInverse(e) => write!(f, "~{}", e),
-            Expr::BitXor(l, r) => write!(f, "{} ^ {}", l, r),
-            Expr::Mul(l, r) => write!(f, "{} * {}", l, r),
-            Expr::Div(l, r) => write!(f, "{} / {}", l, r),
-            Expr::Rem(l, r) => write!(f, "{} % {}", l, r),
-            Expr::Add(l, r) => write!(f, "{} + {}", l, r),
-            Expr::Sub(l, r) => write!(f, "{} - {}", l, r),
-            Expr::LeftShift(l, r) => write!(f, "{} << {}", l, r),
-            Expr::RightShift(l, r) => write!(f, "{} >> {}", l, r),
-            Expr::BitAnd(l, r) => write!(f, "{} & {}", l, r),
-            Expr::BitOr(l, r) => write!(f, "{} | {}", l, r),
-            Expr::Bte(l, r) => write!(f, "{} >= {}", l, r),
-            Expr::Lte(l, r) => write!(f, "{} <= {}", l, r),
-            Expr::Neq(l, r) => write!(f, "{} != {}", l, r),
-            Expr::Bt(l, r) => write!(f, "{} > {}", l, r),
-            Expr::Lt(l, r) => write!(f, "{} < {}", l, r),
-            Expr::Eq(l, r) => write!(f, "{} == {}", l, r),
-            Expr::Not(e) => write!(f, "!{}", e),
-            Expr::And(l, r) => write!(f, "{} AND {}", l, r),
-            Expr::Or(l, r) => write!(f, "{} OR {}", l, r),
+            Expr::Ident(ident) => Expr::Ident(ident.clone()),
+            Expr::Lit(lit) => Expr::Lit(lit.clone()),
+            Expr::FunctionCall(func) => Expr::FunctionCall(func.boxed()),
+            Expr::Subquery(subquery) => Expr::Subquery(subquery.clone()),
+            Expr::BitInverse(expr) => Expr::BitInverse(expr.clone()),
+            Expr::BitXor(expr1, expr2) => Expr::BitXor(expr1.clone(), expr2.clone()),
+            Expr::Mul(expr1, expr2) => Expr::Mul(expr1.clone(), expr2.clone()),
+            Expr::Div(expr1, expr2) => Expr::Div(expr1.clone(), expr2.clone()),
+            Expr::Rem(expr1, expr2) => Expr::Rem(expr1.clone(), expr2.clone()),
+            Expr::Add(expr1, expr2) => Expr::Add(expr1.clone(), expr2.clone()),
+            Expr::Sub(expr1, expr2) => Expr::Sub(expr1.clone(), expr2.clone()),
+            Expr::LeftShift(expr1, expr2) => Expr::LeftShift(expr1.clone(), expr2.clone()),
+            Expr::RightShift(expr1, expr2) => Expr::RightShift(expr1.clone(), expr2.clone()),
+            Expr::BitAnd(expr1, expr2) => Expr::BitAnd(expr1.clone(), expr2.clone()),
+            Expr::BitOr(expr1, expr2) => Expr::BitOr(expr1.clone(), expr2.clone()),
+            Expr::Bte(expr1, expr2) => Expr::Bte(expr1.clone(), expr2.clone()),
+            Expr::Lte(expr1, expr2) => Expr::Lte(expr1.clone(), expr2.clone()),
+            Expr::Neq(expr1, expr2) => Expr::Neq(expr1.clone(), expr2.clone()),
+            Expr::Bt(expr1, expr2) => Expr::Bt(expr1.clone(), expr2.clone()),
+            Expr::Lt(expr1, expr2) => Expr::Lt(expr1.clone(), expr2.clone()),
+            Expr::Eq(expr1, expr2) => Expr::Eq(expr1.clone(), expr2.clone()),
+            Expr::Not(expr) => Expr::Not(expr.clone()),
+            Expr::And(expr1, expr2) => Expr::And(expr1.clone(), expr2.clone()),
+            Expr::Or(expr1, expr2) => Expr::Or(expr1.clone(), expr2.clone())
         }
     }
 }

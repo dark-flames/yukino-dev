@@ -1,3 +1,4 @@
+pub use aggregate::*;
 pub use entity::*;
 pub use expr::*;
 pub use sort::*;
@@ -11,3 +12,4 @@ mod sort;
 mod tag;
 mod tuple;
 mod value;
+mod aggregate;

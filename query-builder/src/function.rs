@@ -1,6 +1,6 @@
-use std::fmt::{Debug, Display, Formatter, Write};
+use std::fmt::Debug;
 
-use crate::{Expr, QueryBuildState, ToSql};
+use crate::{Expr, OrderByItem};
 
 #[derive(Clone, Debug)]
 pub enum AggregateFunction {
@@ -10,7 +10,7 @@ pub enum AggregateFunction {
     BitXor,
     Count,
     CountDistinct,
-    Concat,
+    GroupConcat,
     Max,
     Min,
 }
@@ -20,35 +20,65 @@ pub enum Function {
     Aggregate(AggregateFunction),
 }
 
-#[derive(Clone, Debug)]
-pub struct FunctionCall {
-    pub func: Function,
-    pub params: Vec<Expr>,
+pub trait FunctionCall: Debug {
+    fn boxed(&self) -> Box<dyn FunctionCall>;
 }
 
-impl Display for Function {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+pub trait AggregateFunctionCall: FunctionCall {}
+
+#[derive(Debug, Clone)]
+pub struct SingleArgumentAggregateFunctionCall {
+    pub func: AggregateFunction,
+    pub arg: Expr
+}
+
+#[derive(Debug, Clone)]
+pub struct GroupConcat {
+    pub expr: Expr,
+    pub order_by: Vec<OrderByItem>,
+    pub separator: String,
+}
+
+impl FunctionCall for SingleArgumentAggregateFunctionCall {
+    fn boxed(&self) -> Box<dyn FunctionCall> {
+        Box::new(self.clone())
     }
 }
 
-impl Display for FunctionCall {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}({})",
-            self.func,
-            self.params
-                .iter()
-                .map(|e| format!("{}", e))
-                .collect::<Vec<_>>()
-                .join(", ")
-        )
+impl AggregateFunctionCall for SingleArgumentAggregateFunctionCall {}
+
+impl FunctionCall for GroupConcat {
+    fn boxed(&self) -> Box<dyn FunctionCall> {
+        Box::new(self.clone())
     }
 }
 
-impl ToSql for Function {
-    fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
-        write!(state, "{}", self)
+impl AggregateFunctionCall for GroupConcat {}
+
+macro_rules! single_arg_aggr_func {
+    ($name: ident, $variant: ident) => {
+        pub fn $name(arg: Expr) -> SingleArgumentAggregateFunctionCall {
+            SingleArgumentAggregateFunctionCall {
+                func: AggregateFunction::$variant,
+                arg,
+            }
+        }
+    }
+}
+
+single_arg_aggr_func!(average, Average);
+single_arg_aggr_func!(bit_and, BitAnd);
+single_arg_aggr_func!(bit_or, BitOr);
+single_arg_aggr_func!(bit_xor, BitXor);
+single_arg_aggr_func!(count, Count);
+single_arg_aggr_func!(count_distinct, CountDistinct);
+single_arg_aggr_func!(max, Max);
+single_arg_aggr_func!(min, Min);
+
+pub fn group_concat(expr: Expr, order_by: Vec<OrderByItem>, separator: String) -> GroupConcat {
+    GroupConcat {
+        expr,
+        order_by,
+        separator,
     }
 }

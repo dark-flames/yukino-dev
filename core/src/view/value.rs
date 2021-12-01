@@ -5,7 +5,7 @@ use generic_array::{arr, ArrayLength, functional::FunctionalSequence, GenericArr
 use generic_array::typenum::{U1, UInt, UTerm};
 use generic_array::typenum::bit::{B0, B1};
 
-use query_builder::{DatabaseValue, Expr};
+use query_builder::{AggregateFunctionCall, DatabaseValue, Expr};
 
 use crate::converter::*;
 use crate::err::{RuntimeResult, YukinoError};
@@ -13,7 +13,7 @@ use crate::view::{ExprView, ExprViewBox, ExprViewBoxWithTag, OrdViewTag, TagList
 
 pub type ValueCountOf<T> = <T as Value>::L;
 
-pub trait ValueCount: ArrayLength<Expr> + ArrayLength<DatabaseValue> {}
+pub trait ValueCount: ArrayLength<Expr> + ArrayLength<DatabaseValue> + ArrayLength<Box<dyn AggregateFunctionCall>> {}
 
 impl ValueCount for UTerm {}
 
