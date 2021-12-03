@@ -1,11 +1,13 @@
-use crate::converter::{ConvertResult, Converter, ConverterInstance, Deserializer};
+use generic_array::{arr, GenericArray};
+use generic_array::typenum::U1;
+use iroha::ToTokens;
+
+use interface::DatabaseType;
+use query_builder::DatabaseValue;
+
+use crate::converter::{Converter, ConverterInstance, ConvertResult, Deserializer};
 use crate::err::ConvertError;
 use crate::view::ValueCountOf;
-use generic_array::typenum::U1;
-use generic_array::{arr, GenericArray};
-use interface::DatabaseType;
-use iroha::ToTokens;
-use query_builder::DatabaseValue;
 
 macro_rules! basic_ty_converter {
     ($field_type:ty, $name:ident, $enum_variant:ident, $static: ident) => {

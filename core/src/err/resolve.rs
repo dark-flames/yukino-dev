@@ -1,5 +1,6 @@
-use crate::err::YukinoError;
 pub use thiserror::Error;
+
+use crate::err::YukinoError;
 
 #[derive(Error, Debug)]
 pub enum ResolveError {

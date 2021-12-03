@@ -4,14 +4,15 @@ use std::path::PathBuf;
 
 use proc_macro2::TokenStream;
 use quote::quote;
+use syn::{Fields, File as SynFile, Item, parse_file};
 use syn::spanned::Spanned;
-use syn::{parse_file, Fields, File as SynFile, Item};
+
+use interface::EntityDefinition;
 
 use crate::err::{CliResult, ResolveError, YukinoError};
 use crate::resolver::entity::{EntityResolvePass, EntityResolver};
 use crate::resolver::field::{FieldPath, FieldResolver, FieldResolverSeedBox, ReadyEntities};
 use crate::resolver::path::FileTypePathResolver;
-use interface::EntityDefinition;
 
 pub struct DefinitionResolver {
     source: Vec<PathBuf>,

@@ -1,13 +1,16 @@
-use crate::converter::{ConvertResult, Converter, ConverterInstance, Deserializer};
-use crate::view::{Value, ValueCount, ValueCountOf};
-use generic_array::{
-    sequence::{Concat, Split},
-    typenum::Sum,
-    GenericArray,
-};
-use query_builder::DatabaseValue;
 use std::marker::PhantomData;
 use std::ops::{Add, Sub};
+
+use generic_array::{
+    GenericArray,
+    sequence::{Concat, Split},
+    typenum::Sum,
+};
+
+use query_builder::DatabaseValue;
+
+use crate::converter::{Converter, ConverterInstance, ConvertResult, Deserializer};
+use crate::view::{Value, ValueCount, ValueCountOf};
 
 pub struct TupleConverter<L: Value, R: Value>(PhantomData<(L, R)>);
 

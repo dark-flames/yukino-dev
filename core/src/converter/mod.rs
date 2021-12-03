@@ -1,13 +1,14 @@
-mod basic;
-mod tuple;
+use generic_array::GenericArray;
 
 pub use basic::*;
+use query_builder::DatabaseValue;
 pub use tuple::*;
 
 use crate::err::ConvertError;
 use crate::view::{Value, ValueCountOf};
-use generic_array::GenericArray;
-use query_builder::DatabaseValue;
+
+mod basic;
+mod tuple;
 
 pub type ConverterRef<T> = &'static dyn Converter<Output = T>;
 

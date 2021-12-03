@@ -1,20 +1,23 @@
-use crate::err::CliResult;
-use crate::err::{ResolveError, YukinoError};
-use crate::resolver::field::ResolvedField;
+use std::collections::HashMap;
+use std::iter::Extend;
+
 use annotation_rs::AnnotationStructure;
 use heck::CamelCase;
 use heck::SnakeCase;
-use interface::DatabaseType;
+use proc_macro2::{Ident, Span, TokenStream};
+use quote::format_ident;
+use syn::ItemStruct;
+use syn::spanned::Spanned;
+
 use interface::{
     ColumnDefinition, DefinitionType, EntityDefinition, FieldDefinition, IndexDefinition, IndexType,
 };
 use interface::{Entity, Index, IndexMethod};
-use proc_macro2::{Ident, Span, TokenStream};
-use quote::format_ident;
-use std::collections::HashMap;
-use std::iter::Extend;
-use syn::spanned::Spanned;
-use syn::ItemStruct;
+use interface::DatabaseType;
+
+use crate::err::{ResolveError, YukinoError};
+use crate::err::CliResult;
+use crate::resolver::field::ResolvedField;
 
 pub struct UnassembledEntity {
     id: usize,

@@ -1,14 +1,16 @@
-use crate::err::{CliError, ResolveError, YukinoError};
+use std::any::type_name;
+use std::collections::HashMap;
+
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use quote::ToTokens;
-use std::any::type_name;
-use std::collections::HashMap;
-use syn::spanned::Spanned;
 use syn::{
-    parse_quote, parse_str, GenericArgument, ItemUse, PathArguments, PathSegment, ReturnType, Type,
+    GenericArgument, ItemUse, parse_quote, parse_str, PathArguments, PathSegment, ReturnType, Type,
     TypePath, UseTree,
 };
+use syn::spanned::Spanned;
+
+use crate::err::{CliError, ResolveError, YukinoError};
 
 pub type Entry = String;
 pub type FullPath = Vec<Ident>;
