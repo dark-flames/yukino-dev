@@ -110,7 +110,14 @@ impl<U: BitMap, B: Bool> BitMap for BitMapSegment<U, B> {
     type L = Suc<U::L>;
 }
 
-impl<O: Usize, L: BitMap + GetBit<O, Result = True>> AssertBit<O, True> for L {}
+impl<U: BitMap> AssertBit<U0, True> for BitMapSegment<U, True> {}
+
+impl<U: BitMap> AssertBit<U0, False> for BitMapSegment<U, False> {}
+
+impl<U: BitMap + AssertBit<O::Prev, A>, O: NonZero + Usize, A: Bool, H: Bool> AssertBit<O, A>
+    for BitMapSegment<U, H>
+{
+}
 
 impl<U: BitMap, V: Bool, H: Bool> SetBit<U0, V> for BitMapSegment<U, H> {
     type Result = BitMapSegment<U, V>;
@@ -134,12 +141,12 @@ where
     type Result = <U as GetBit<O::Prev>>::Result;
 }
 
-impl<T: Tag, B: TagList> HasTag<T> for B where B: AssertBit<T::Offset, True> {}
+impl<T: Tag, B: TagList + AssertBit<T::Offset, True>> HasTag<T> for B {}
 
-impl<T: Tag, B: TagList> NoTag<T> for B where B: AssertBit<T::Offset, False> {}
+impl<T: Tag, B: TagList + AssertBit<T::Offset, False>> NoTag<T> for B {}
 
-impl<T: Tag, L: TagList + HasTag<T>> InList<L> for T {}
-impl<T: Tag, L: TagList + NoTag<T>> NotInList<L> for T {}
+impl<T: Tag, L: TagList + HasTag<T> + AssertBit<T::Offset, True>> InList<L> for T {}
+impl<T: Tag, L: TagList + NoTag<T> + AssertBit<T::Offset, False>> NotInList<L> for T {}
 
 impl And<True> for True {
     type Result = True;
@@ -217,7 +224,8 @@ create_tag!(AggregateViewTag, U2, And);
 #[cfg(test)]
 mod test {
     use crate::view::{
-        AggregateViewTag, ConcreteList, EntityViewTag, OrdViewTag, TagList1, TagList2, TagList3,
+        AggregateViewTag, AssertBit, ConcreteList, EmptyTagList, EntityViewTag, False, InList,
+        NotInList, OffsetOfTag, OrdViewTag, Tag, TagList, TagList1, TagList2, TagList3,
     };
 
     type A = TagList3<OrdViewTag, EntityViewTag, AggregateViewTag>;
@@ -225,8 +233,18 @@ mod test {
     type R = TagList1<OrdViewTag>;
     type C = ConcreteList<A, B>;
 
+    fn assert_in_list<T: Tag + InList<List>, List: TagList>() {}
+    fn assert_not_in_list<
+        T: Tag + NotInList<List>,
+        List: TagList + AssertBit<OffsetOfTag<T>, False>,
+    >() {
+    }
+
     #[test]
     fn test() {
         let _a: R = C::default();
+        assert_in_list::<EntityViewTag, A>();
+        assert_not_in_list::<EntityViewTag, R>();
+        assert_not_in_list::<EntityViewTag, EmptyTagList>();
     }
 }

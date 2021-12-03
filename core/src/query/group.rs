@@ -10,8 +10,8 @@ use crate::query::{
     FoldResult, Map, Map2, MultiRows, QueryResultMap, Sort, Sort2, SortHelper, SortResult,
 };
 use crate::view::{
-    EmptyTagList, EntityView, EntityViewTag, EntityWithView, ExprViewBox, ExprViewBoxWithTag,
-    NotInList, TagList, Value, ValueCount, ValueCountOf,
+    EmptyTagList, EntityView, EntityViewTag, EntityWithView, ExprViewBox,
+    ExprViewBoxWithTag, NotInList, TagList, Value, ValueCount, ValueCountOf,
 };
 
 pub trait GroupResult: Clone {
