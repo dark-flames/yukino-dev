@@ -19,7 +19,6 @@ impl EntityResolvePass for EntityViewPass {
         vec![quote! {
             use yukino::view::{SingleExprView, ExprViewBox, ExprViewBoxWithTag, ExprView, EntityView, EntityViewTag, TagList1};
             use yukino::query_builder::{Expr, Alias, DatabaseValue};
-            use yukino::query::{ExprNode, ExprVisitor, ExprMutVisitor};
             use yukino::err::{RuntimeResult, YukinoError};
         }]
     }
@@ -42,13 +41,11 @@ impl EntityResolvePass for EntityViewPass {
             from_expr_branches,
             clone_branches,
             pure_branches,
-            apply_branches,
-            apply_mut_branches
         ) = iter
             .enumerate()
             .fold(
-                (vec![], vec![], quote! {arr![Expr;]}, vec![], vec![], vec![], vec![], vec![], vec![]),
-                |(mut fields, mut tmp, rst, mut expr_tmp, mut expr_branch, mut clone, mut pure, mut apply, mut apply_mut), (index, f)| {
+                (vec![], vec![], quote! {arr![Expr;]}, vec![], vec![], vec![], vec![]),
+                |(mut fields, mut tmp, rst, mut expr_tmp, mut expr_branch, mut clone, mut pure), (index, f)| {
                     let field_name = format_ident!("{}", f.path.field_name);
                     let field_value_count = format_ident!("U{}", f.converter_param_count);
                     let view_path = &f.view_path;
@@ -83,14 +80,6 @@ impl EntityResolvePass for EntityViewPass {
                         #field_name: #view
                     });
 
-                    apply.push(quote! {
-                        self.#field_name.apply(visitor);
-                    });
-
-                    apply_mut.push(quote! {
-                        self.#field_name.apply_mut(visitor);
-                    });
-
 
                     (
                         fields,
@@ -102,8 +91,6 @@ impl EntityResolvePass for EntityViewPass {
                         expr_branch,
                         clone,
                         pure,
-                        apply,
-                        apply_mut
                     )
                 }
             );
@@ -112,16 +99,6 @@ impl EntityResolvePass for EntityViewPass {
             #[derive(Clone)]
             pub struct #name {
                 #(#view_fields),*
-            }
-
-            impl ExprNode for #name {
-                fn apply(&self, visitor: &mut dyn ExprVisitor) {
-                    #(#apply_branches);*;
-                }
-
-                fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
-                    #(#apply_mut_branches);*;
-                }
             }
 
             impl ExprView<#entity_name> for #name {

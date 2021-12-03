@@ -11,3 +11,4 @@ mod node;
 mod tag;
 mod tuple;
 mod value;
+mod vertical;

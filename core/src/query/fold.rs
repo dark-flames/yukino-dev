@@ -4,15 +4,14 @@ use generic_array::typenum::Sum;
 
 use query_builder::{Expr, SelectQuery, SelectSource};
 
-use crate::operator::AggregateHelper;
-use crate::query::{AliasGenerator, ExecutableSelectQuery, ExprNode, Map, QueryResultMap};
+use crate::query::{AliasGenerator, ExecutableSelectQuery, Map, QueryResultMap};
 use crate::query::exec::SingleRow;
 use crate::view::{
     AggregateViewTag, EmptyTagList, ExprViewBoxWithTag, InList, TagList, Value, ValueCount,
     ValueCountOf,
 };
 
-pub trait FoldResult: ExprNode + Clone {
+pub trait FoldResult: Clone {
     type Value: Value;
     type Tags: TagList;
     fn collect_fold_expr_vec(&self) -> Vec<Expr>;
@@ -44,12 +43,10 @@ impl<View: FoldResult> Map<View> for FoldQueryResult<View> {
     type ResultType = SingleRow;
 
     fn map<R: Value, RTags: TagList, RV: Into<ExprViewBoxWithTag<R, RTags>>, F: Fn(View) -> RV>(
-        mut self,
+        self,
         f: F,
     ) -> QueryResultMap<R, RTags, Self::ResultType> {
-        let mut result = f(self.view).into();
-        let mut visitor = self.alias_generator.substitute_visitor();
-        result.apply_mut(&mut visitor);
+        let result = f(self.view).into();
 
         QueryResultMap::create(self.query, vec![], result, self.alias_generator)
     }
@@ -74,14 +71,11 @@ impl<View: FoldResult> ExecutableSelectQuery<View::Value, View::Tags> for FoldQu
 }
 
 pub trait Fold<View> {
-    fn fold<RV: FoldResult, F: Fn(View, AggregateHelper) -> RV>(self, f: F) -> FoldQueryResult<RV>;
+    fn fold<RV: FoldResult, F: Fn(View) -> RV>(self, f: F) -> FoldQueryResult<RV>;
 }
 
 pub trait Fold2<View1, View2> {
-    fn fold<RV: FoldResult, F: Fn(View1, View2, AggregateHelper) -> RV>(
-        self,
-        f: F,
-    ) -> FoldQueryResult<RV>;
+    fn fold<RV: FoldResult, F: Fn(View1, View2) -> RV>(self, f: F) -> FoldQueryResult<RV>;
 }
 
 impl<T1: Value, T1Tags: TagList> FoldResult for ExprViewBoxWithTag<T1, T1Tags>

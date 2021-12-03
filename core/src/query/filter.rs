@@ -3,10 +3,9 @@ use std::marker::PhantomData;
 use interface::DefinitionManager;
 use query_builder::{Alias, OrderByItem, Select, SelectFrom, SelectQuery};
 
-use crate::operator::{AggregateHelper, AggregateHelperCreate};
 use crate::query::{
-    AliasGenerator, ExecutableSelectQuery, ExprNode, Fold, FoldQueryResult, FoldResult, GroupBy,
-    GroupedQueryResult, GroupResult, Map, MultiRows, QueryResultMap, Sort, SortHelper, SortResult,
+    AliasGenerator, ExecutableSelectQuery, Fold, FoldQueryResult, FoldResult, GroupBy, GroupedQueryResult,
+    GroupResult, Map, MultiRows, QueryResultMap, Sort, SortHelper, SortResult,
 };
 use crate::view::{
     EntityView, EntityWithView, ExprView, ExprViewBox, ExprViewBoxWithTag, TagList, TagsOfEntity,
@@ -42,11 +41,8 @@ impl<E: EntityWithView> Filter<E::View> for QueryResultFilter<E> {
     where
         F: Fn(E::View) -> R,
     {
-        let mut view = f(E::View::pure(&self.root_alias)).into();
-        let mut visitor = self.alias_generator.substitute_visitor();
-        view.apply_mut(&mut visitor);
+        let view = f(E::View::pure(&self.root_alias)).into();
 
-        self.query.add_joins(visitor.joins());
         view.collect_expr().into_iter().for_each(|e| {
             self.query.and_where(e);
         });
@@ -63,15 +59,11 @@ impl<E: EntityWithView> Map<E::View> for QueryResultFilter<E> {
         RV: Into<ExprViewBoxWithTag<R, RTags>>,
         F: Fn(E::View) -> RV,
     >(
-        mut self,
+        self,
         f: F,
     ) -> QueryResultMap<R, RTags, Self::ResultType> {
-        let entity_view = E::View::pure(&self.root_alias);
-        let mut result_view = f(entity_view).into();
-        let mut visitor = self.alias_generator.substitute_visitor();
-        result_view.apply_mut(&mut visitor);
+        let result_view = f(E::View::pure(&self.root_alias)).into();
 
-        self.query.add_joins(visitor.joins());
         QueryResultMap::create(
             Box::new(self.query),
             vec![],
@@ -82,13 +74,8 @@ impl<E: EntityWithView> Map<E::View> for QueryResultFilter<E> {
 }
 
 impl<E: EntityWithView> Fold<E::View> for QueryResultFilter<E> {
-    fn fold<RV: FoldResult, F: Fn(E::View, AggregateHelper) -> RV>(
-        mut self,
-        f: F,
-    ) -> FoldQueryResult<RV> {
-        let mut visitor = self.alias_generator.substitute_visitor();
-        let mut result = f(E::View::pure(&self.root_alias), AggregateHelper::create());
-        result.apply_mut(&mut visitor);
+    fn fold<RV: FoldResult, F: Fn(E::View) -> RV>(self, f: F) -> FoldQueryResult<RV> {
+        let result = f(E::View::pure(&self.root_alias));
 
         FoldQueryResult::create(Box::new(self.query), result, self.alias_generator)
     }
@@ -96,12 +83,10 @@ impl<E: EntityWithView> Fold<E::View> for QueryResultFilter<E> {
 
 impl<E: EntityWithView> GroupBy<E, E::View> for QueryResultFilter<E> {
     fn group_by<RV: GroupResult, F: Fn(E::View) -> RV>(
-        mut self,
+        self,
         f: F,
     ) -> GroupedQueryResult<RV, (), E> {
-        let mut result = f(E::View::pure(&self.root_alias));
-        let mut visitor = self.alias_generator.substitute_visitor();
-        result.apply_mut(&mut visitor);
+        let result = f(E::View::pure(&self.root_alias));
 
         GroupedQueryResult::create(
             self.query.group_by(result.collect_expr_vec()),
@@ -115,12 +100,8 @@ impl<E: EntityWithView> GroupBy<E, E::View> for QueryResultFilter<E> {
 impl<E: EntityWithView> Sort<E::View> for QueryResultFilter<E> {
     type Result = SortedQueryResultFilter<E>;
 
-    fn sort<R: SortResult, F: Fn(E::View, SortHelper) -> R>(mut self, f: F) -> Self::Result {
-        let mut result = f(E::View::pure(&self.root_alias), SortHelper::create());
-        let mut visitor = self.alias_generator.substitute_visitor();
-        result.apply_mut(&mut visitor);
-
-        self.query.add_joins(visitor.joins());
+    fn sort<R: SortResult, F: Fn(E::View, SortHelper) -> R>(self, f: F) -> Self::Result {
+        let result = f(E::View::pure(&self.root_alias), SortHelper::create());
 
         SortedQueryResultFilter {
             nested: self,
@@ -132,11 +113,9 @@ impl<E: EntityWithView> Sort<E::View> for QueryResultFilter<E> {
 impl<E: EntityWithView> ExecutableSelectQuery<E, TagsOfEntity<E>> for QueryResultFilter<E> {
     type ResultType = MultiRows;
 
-    fn generate_query(mut self) -> (SelectQuery, ExprViewBoxWithTag<E, TagsOfEntity<E>>) {
-        let mut view = E::View::pure(&self.root_alias);
-        let mut visitor = self.alias_generator.substitute_visitor();
-        view.apply_mut(&mut visitor);
-        self.query.add_joins(visitor.joins());
+    fn generate_query(self) -> (SelectQuery, ExprViewBoxWithTag<E, TagsOfEntity<E>>) {
+        let view = E::View::pure(&self.root_alias);
+
         (
             SelectQuery::create(
                 Box::new(self.query),
@@ -173,15 +152,11 @@ impl<E: EntityWithView> Map<E::View> for SortedQueryResultFilter<E> {
         RV: Into<ExprViewBoxWithTag<R, TTags>>,
         F: Fn(E::View) -> RV,
     >(
-        mut self,
+        self,
         f: F,
     ) -> QueryResultMap<R, TTags, Self::ResultType> {
-        let entity_view = E::View::pure(&self.nested.root_alias);
-        let mut result_view = f(entity_view).into();
-        let mut visitor = self.nested.alias_generator.substitute_visitor();
-        result_view.apply_mut(&mut visitor);
+        let result_view = f(E::View::pure(&self.nested.root_alias)).into();
 
-        self.nested.query.add_joins(visitor.joins());
         QueryResultMap::create(
             Box::new(self.nested.query),
             self.order_by,
@@ -194,11 +169,9 @@ impl<E: EntityWithView> Map<E::View> for SortedQueryResultFilter<E> {
 impl<E: EntityWithView> ExecutableSelectQuery<E, TagsOfEntity<E>> for SortedQueryResultFilter<E> {
     type ResultType = MultiRows;
 
-    fn generate_query(mut self) -> (SelectQuery, ExprViewBoxWithTag<E, TagsOfEntity<E>>) {
-        let mut view = E::View::pure(&self.nested.root_alias);
-        let mut visitor = self.nested.alias_generator.substitute_visitor();
-        view.apply_mut(&mut visitor);
-        self.nested.query.add_joins(visitor.joins());
+    fn generate_query(self) -> (SelectQuery, ExprViewBoxWithTag<E, TagsOfEntity<E>>) {
+        let view = E::View::pure(&self.nested.root_alias);
+
         (
             SelectQuery::create(
                 Box::new(self.nested.query),

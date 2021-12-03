@@ -3,26 +3,15 @@ use std::marker::PhantomData;
 use generic_array::{arr, GenericArray};
 use generic_array::typenum::U1;
 
-use query_builder::{DatabaseValue, Expr, FunctionCall};
+use query_builder::{AggregateFunctionCall, DatabaseValue, Expr};
 
 use crate::err::{RuntimeResult, YukinoError};
-use crate::query::{ExprMutVisitor, ExprNode, ExprVisitor};
 use crate::view::{AggregateViewTag, ExprView, ExprViewBoxWithTag, TagList1, Value, ValueCountOf};
 
 #[derive(Clone)]
 pub struct AggregateViewItem<T: Value<L = U1>> {
-    function_call: FunctionCall,
+    function_call: Box<dyn AggregateFunctionCall>,
     _marker: PhantomData<T>,
-}
-
-impl<T: Value<L = U1>> ExprNode for AggregateViewItem<T> {
-    fn apply(&self, visitor: &mut dyn ExprVisitor) {
-        self.function_call.apply(visitor);
-    }
-
-    fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
-        self.function_call.apply_mut(visitor);
-    }
 }
 
 impl<T: Value<L = U1>> ExprView<T> for AggregateViewItem<T> {
@@ -40,7 +29,7 @@ impl<T: Value<L = U1>> ExprView<T> for AggregateViewItem<T> {
     }
 
     fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<T>> {
-        arr![Expr; Expr::FunctionCall(self.function_call.clone())]
+        arr![Expr; Expr::FunctionCall(self.function_call.clone_box())]
     }
 
     fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<T>>) -> RuntimeResult<T> {
@@ -49,9 +38,9 @@ impl<T: Value<L = U1>> ExprView<T> for AggregateViewItem<T> {
 }
 
 impl<T: Value<L = U1>> AggregateViewItem<T> {
-    pub fn from_function_call(f: FunctionCall) -> Self {
+    pub fn from_agg_fn_call<F: AggregateFunctionCall>(f: F) -> Self {
         AggregateViewItem {
-            function_call: f,
+            function_call: Box::new(f),
             _marker: Default::default(),
         }
     }

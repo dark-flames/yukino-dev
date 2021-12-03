@@ -1,6 +1,5 @@
 use query_builder::{Order, OrderByItem};
 
-use crate::query::{ExprMutVisitor, ExprNode, ExprVisitor};
 use crate::view::{ExprViewBoxWithTag, InList, OrdViewTag, TagList, Value};
 
 pub struct SortItem<T: Value, TTags: TagList> {
@@ -10,7 +9,7 @@ pub struct SortItem<T: Value, TTags: TagList> {
 
 pub struct SortHelper;
 
-pub trait SortResult: ExprNode {
+pub trait SortResult {
     fn order_by_items(&self) -> Vec<OrderByItem>;
 }
 
@@ -22,16 +21,6 @@ pub trait Sort<View> {
 pub trait Sort2<View1, View2> {
     type Result;
     fn sort<R: SortResult, F: Fn(View1, View2, SortHelper) -> R>(self, f: F) -> Self::Result;
-}
-
-impl<T: Value, TTags: TagList> ExprNode for SortItem<T, TTags> {
-    fn apply(&self, visitor: &mut dyn ExprVisitor) {
-        self.expr.apply(visitor);
-    }
-
-    fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
-        self.expr.apply_mut(visitor);
-    }
 }
 
 impl<T: Value, TTags: TagList> SortResult for SortItem<T, TTags>
@@ -47,20 +36,6 @@ where
                 order: self.order,
             })
             .collect()
-    }
-}
-
-impl<T1: Value, T1Tags: TagList, T2: Value, T2Tags: TagList> ExprNode
-    for (SortItem<T1, T1Tags>, SortItem<T2, T2Tags>)
-{
-    fn apply(&self, visitor: &mut dyn ExprVisitor) {
-        self.0.apply(visitor);
-        self.1.apply(visitor);
-    }
-
-    fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
-        self.0.apply_mut(visitor);
-        self.1.apply_mut(visitor);
     }
 }
 

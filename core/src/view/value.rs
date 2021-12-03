@@ -9,7 +9,6 @@ use query_builder::{DatabaseValue, Expr};
 
 use crate::converter::*;
 use crate::err::{RuntimeResult, YukinoError};
-use crate::query::{ExprMutVisitor, ExprNode, ExprVisitor};
 use crate::view::{ExprView, ExprViewBox, ExprViewBoxWithTag, OrdViewTag, TagList1};
 
 pub type ValueCountOf<T> = <T as Value>::L;
@@ -54,16 +53,6 @@ where
 {
     expr: Expr,
     _ty: PhantomData<T>,
-}
-
-impl<T: Value<L = U1>> ExprNode for SingleExprView<T> {
-    fn apply(&self, visitor: &mut dyn ExprVisitor) {
-        self.expr.apply(visitor)
-    }
-
-    fn apply_mut(&mut self, visitor: &mut dyn ExprMutVisitor) {
-        self.expr.apply_mut(visitor)
-    }
 }
 
 impl<T: Value<L = U1>> ExprView<T> for SingleExprView<T> {

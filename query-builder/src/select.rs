@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use crate::{Alias, Expr, Join};
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum Order {
     Asc,
     Desc,
@@ -36,6 +36,7 @@ pub struct SelectItem {
     pub alias: String,
 }
 
+#[derive(Clone, Debug)]
 pub struct OrderByItem {
     pub expr: Expr,
     pub order: Order,

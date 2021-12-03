@@ -8,7 +8,7 @@ pub type ExprBox = Box<Expr>;
 pub enum Expr {
     Ident(Ident),
     Lit(DatabaseValue),
-    FunctionCall(FunctionCall),
+    FunctionCall(Box<dyn FunctionCall>),
     BitInverse(ExprBox),
     BitXor(ExprBox, ExprBox),
     Mul(ExprBox, ExprBox),
