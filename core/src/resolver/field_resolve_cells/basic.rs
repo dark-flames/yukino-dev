@@ -223,7 +223,7 @@ impl FieldType {
 
     pub fn view(&self, column: &str) -> TokenStream {
         quote! {
-            SingleExprView::from_exprs(arr![Expr;
+            SingleExprView::from_exprs_with_tags(arr![Expr;
                 alias.create_ident_expr(#column)
             ])
         }
@@ -241,7 +241,7 @@ impl FieldType {
         let ty = self.field_ty(optional);
 
         quote! {
-            SingleExprView::<#ty, TagOfValueView<#ty>>
+            SingleExprView::<#ty, TagsOfValueView<#ty>>
         }
     }
 

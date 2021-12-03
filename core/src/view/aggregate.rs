@@ -6,7 +6,9 @@ use generic_array::typenum::U1;
 use query_builder::{AggregateFunctionCall, DatabaseValue, Expr};
 
 use crate::err::{RuntimeResult, YukinoError};
-use crate::view::{AggregateViewTag, ExprView, ExprViewBoxWithTag, TagList1, Value, ValueCountOf};
+use crate::view::{
+    AggregateViewTag, ExprView, ExprViewBox, ExprViewBoxWithTag, TagList1, Value, ValueCountOf,
+};
 
 #[derive(Clone)]
 pub struct AggregateViewItem<T: Value<L = U1>> {
@@ -17,7 +19,7 @@ pub struct AggregateViewItem<T: Value<L = U1>> {
 impl<T: Value<L = U1>> ExprView<T> for AggregateViewItem<T> {
     type Tags = TagList1<AggregateViewTag>;
 
-    fn from_exprs(_exprs: GenericArray<Expr, ValueCountOf<T>>) -> ExprViewBoxWithTag<T, Self::Tags>
+    fn from_exprs(_exprs: GenericArray<Expr, ValueCountOf<T>>) -> ExprViewBox<T>
     where
         Self: Sized,
     {

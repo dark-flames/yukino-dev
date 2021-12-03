@@ -9,7 +9,9 @@ use query_builder::{DatabaseValue, Expr};
 
 use crate::converter::*;
 use crate::err::{RuntimeResult, YukinoError};
-use crate::view::{ExprView, ExprViewBox, ExprViewBoxWithTag, OrdViewTag, TagList, TagList1};
+use crate::view::{
+    AnyTagExprView, ExprView, ExprViewBox, ExprViewBoxWithTag, OrdViewTag, TagList, TagList1,
+};
 
 pub type ValueCountOf<T> = <T as Value>::L;
 
@@ -55,7 +57,7 @@ pub struct SingleExprView<T: Value<L = U1>, Tags: TagList> {
 impl<T: Value<L = U1>, Tags: TagList> ExprView<T> for SingleExprView<T, Tags> {
     type Tags = Tags;
 
-    fn from_exprs(exprs: GenericArray<Expr, U1>) -> ExprViewBoxWithTag<T, Self::Tags>
+    fn from_exprs(exprs: GenericArray<Expr, U1>) -> ExprViewBox<T>
     where
         Self: Sized,
     {
@@ -81,6 +83,20 @@ impl<T: Value<L = U1>, Tags: TagList> ExprView<T> for SingleExprView<T, Tags> {
 
     fn eval(&self, v: &GenericArray<DatabaseValue, U1>) -> RuntimeResult<T> {
         (*T::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
+    }
+}
+
+impl<T: Value<L = U1>, Tags: TagList> AnyTagExprView<T> for SingleExprView<T, Tags> {
+    fn from_exprs_with_tags(
+        exprs: GenericArray<Expr, ValueCountOf<T>>,
+    ) -> ExprViewBoxWithTag<T, Self::Tags>
+    where
+        Self: Sized,
+    {
+        Box::new(SingleExprView {
+            expr: exprs.into_iter().next().unwrap(),
+            _ty: Default::default(),
+        })
     }
 }
 

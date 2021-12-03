@@ -3,8 +3,8 @@ use generic_array::arr;
 use query_builder::Expr;
 
 use crate::view::{
-    ConcreteList, ExprView, ExprViewBoxWithTag, MergeList, SingleExprView, TagList, TagOfValueView,
-    Value,
+    AnyTagExprView, ConcreteList, ExprViewBoxWithTag, MergeList, SingleExprView, TagList,
+    TagsOfValueView, Value,
 };
 
 macro_rules! op_trait {
@@ -50,7 +50,7 @@ macro_rules! impl_expr_for {
                 let l_expr = l.collect_expr().into_iter().next().unwrap();
                 let r_expr = r.collect_expr().into_iter().next().unwrap();
                 let result = Expr::$expr_variant(Box::new(l_expr), Box::new(r_expr));
-                SingleExprView::from_exprs(arr![Expr; result])
+                SingleExprView::from_exprs_with_tags(arr![Expr; result])
             }
         }
         )*
@@ -100,9 +100,9 @@ macro_rules! impl_bool_operator {
         impl<
             L: Value + $expr_op_trait<R>,
             R: Value,
-            LTags: TagList + MergeList<TagOfValueView<R>>,
+            LTags: TagList + MergeList<TagsOfValueView<R>>,
         > $view_op_trait<R> for ExprViewBoxWithTag<L, LTags> {
-            type Output = ExprViewBoxWithTag<bool, <L as $expr_op_trait<R>>::ResultTags<LTags, TagOfValueView<R>>>;
+            type Output = ExprViewBoxWithTag<bool, <L as $expr_op_trait<R>>::ResultTags<LTags, TagsOfValueView<R>>>;
 
             fn $view_op_method(self, rhs: R) -> Self::Output {
                 L::$expr_op_method(self, rhs.view())

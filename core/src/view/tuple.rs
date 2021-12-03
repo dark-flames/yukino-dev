@@ -11,8 +11,8 @@ use query_builder::{DatabaseValue, Expr};
 use crate::converter::{Converter, ConverterRef, TupleConverter};
 use crate::err::{RuntimeResult, YukinoError};
 use crate::view::{
-    EmptyTagList, ExprView, ExprViewBoxWithTag, TagList, TagOfValueView, Value, ValueCount,
-    ValueCountOf,
+    ConcreteList, ExprView, ExprViewBox, ExprViewBoxWithTag, MergeList, TagList, TagsOfValueView,
+    Value, ValueCount, ValueCountOf,
 };
 
 pub struct TupleExprView<L: Value, R: Value, LTags: TagList, RTags: TagList>(
@@ -24,18 +24,17 @@ where
     Sum<ValueCountOf<L>, ValueCountOf<R>>:
         ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>;
 
-impl<L: Value, R: Value, LTags: TagList, RTags: TagList> ExprView<(L, R)>
+impl<L: Value, R: Value, LTags: TagList + MergeList<RTags>, RTags: TagList> ExprView<(L, R)>
     for TupleExprView<L, R, LTags, RTags>
 where
+    TagsOfValueView<L>: MergeList<TagsOfValueView<R>>,
     ValueCountOf<L>: Add<ValueCountOf<R>>,
     Sum<ValueCountOf<L>, ValueCountOf<R>>:
         ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
 {
-    type Tags = EmptyTagList;
+    type Tags = ConcreteList<LTags, RTags>;
 
-    fn from_exprs(
-        exprs: GenericArray<Expr, ValueCountOf<(L, R)>>,
-    ) -> ExprViewBoxWithTag<(L, R), Self::Tags>
+    fn from_exprs(exprs: GenericArray<Expr, ValueCountOf<(L, R)>>) -> ExprViewBox<(L, R)>
     where
         Self: Sized,
     {
@@ -61,12 +60,13 @@ where
 
 impl<L: Value, R: Value> Value for (L, R)
 where
+    TagsOfValueView<L>: MergeList<TagsOfValueView<R>>,
     ValueCountOf<L>: Add<ValueCountOf<R>>,
     Sum<ValueCountOf<L>, ValueCountOf<R>>:
         ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
 {
     type L = Sum<ValueCountOf<L>, ValueCountOf<R>>;
-    type ValueExprView = TupleExprView<L, R, TagOfValueView<L>, TagOfValueView<R>>;
+    type ValueExprView = TupleExprView<L, R, TagsOfValueView<L>, TagsOfValueView<R>>;
 
     fn converter() -> ConverterRef<Self>
     where

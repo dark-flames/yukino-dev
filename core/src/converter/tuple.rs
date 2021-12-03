@@ -10,12 +10,13 @@ use generic_array::{
 use query_builder::DatabaseValue;
 
 use crate::converter::{Converter, ConverterInstance, ConvertResult, Deserializer};
-use crate::view::{Value, ValueCount, ValueCountOf};
+use crate::view::{MergeList, TagsOfValueView, Value, ValueCount, ValueCountOf};
 
 pub struct TupleConverter<L: Value, R: Value>(PhantomData<(L, R)>);
 
 impl<L: Value, R: Value> Converter for TupleConverter<L, R>
 where
+    TagsOfValueView<L>: MergeList<TagsOfValueView<R>>,
     ValueCountOf<L>: Add<ValueCountOf<R>>,
     Sum<ValueCountOf<L>, ValueCountOf<R>>:
         ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
@@ -52,6 +53,7 @@ where
 
 impl<L: Value, R: Value> ConverterInstance for TupleConverter<L, R>
 where
+    TagsOfValueView<L>: MergeList<TagsOfValueView<R>>,
     ValueCountOf<L>: Add<ValueCountOf<R>>,
     Sum<ValueCountOf<L>, ValueCountOf<R>>:
         ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,

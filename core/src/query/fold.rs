@@ -1,14 +1,12 @@
 use std::ops::{Add, Sub};
 
-use generic_array::typenum::Sum;
-
 use query_builder::{Expr, SelectQuery, SelectSource};
 
 use crate::query::{AliasGenerator, ExecutableSelectQuery, Map, QueryResultMap};
 use crate::query::exec::SingleRow;
 use crate::view::{
-    AggregateViewTag, EmptyTagList, ExprViewBoxWithTag, InList, TagList, Value, ValueCount,
-    ValueCountOf,
+    AggregateViewTag, ConcreteList, ExprViewBoxWithTag, InList, MergeList, TagList,
+    TagsOfValueView, Value, ValueCountOf,
 };
 
 pub trait FoldResult: Clone {
@@ -94,19 +92,20 @@ where
     }
 }
 
-impl<T1: Value, T1Tags: TagList, T2: Value, T2Tags: TagList> FoldResult
+impl<T1: Value, T1Tags: TagList + MergeList<T2Tags>, T2: Value, T2Tags: TagList> FoldResult
     for (
         ExprViewBoxWithTag<T1, T1Tags>,
         ExprViewBoxWithTag<T2, T2Tags>,
     )
 where
+    (T1, T2): Value,
+    TagsOfValueView<T1>: MergeList<TagsOfValueView<T2>>,
     AggregateViewTag: InList<T1Tags> + InList<T2Tags>,
-    ValueCountOf<T1>: Add<ValueCountOf<T2>>,
-    Sum<ValueCountOf<T1>, ValueCountOf<T2>>:
-        ValueCount + Sub<ValueCountOf<T1>, Output = ValueCountOf<T2>>,
+    ValueCountOf<T1>: Add<ValueCountOf<T2>, Output = ValueCountOf<(T1, T2)>>,
+    ValueCountOf<(T1, T2)>: Sub<ValueCountOf<T1>, Output = ValueCountOf<T2>>,
 {
     type Value = (T1, T2);
-    type Tags = EmptyTagList;
+    type Tags = ConcreteList<T1Tags, T2Tags>;
 
     fn collect_fold_expr_vec(&self) -> Vec<Expr> {
         self.0
@@ -116,7 +115,7 @@ where
             .collect()
     }
 
-    fn expr_box(self) -> ExprViewBoxWithTag<Self::Value, EmptyTagList> {
+    fn expr_box(self) -> ExprViewBoxWithTag<Self::Value, Self::Tags> {
         self.into()
     }
 }

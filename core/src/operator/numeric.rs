@@ -5,8 +5,8 @@ use generic_array::arr;
 use query_builder::Expr;
 
 use crate::view::{
-    ConcreteList, ExprView, ExprViewBoxWithTag, MergeList, SingleExprView, TagList, TagOfValueView,
-    Value,
+    AnyTagExprView, ConcreteList, ExprViewBoxWithTag, MergeList, SingleExprView, TagList,
+    TagsOfValueView, Value,
 };
 
 macro_rules! impl_ops {
@@ -49,10 +49,10 @@ macro_rules! impl_ops {
         }
 
         impl<
-            L: Value + $expr_trait<R, Result = O, ResultTags<LTags, TagOfValueView<R>> = OTags>,
+            L: Value + $expr_trait<R, Result = O, ResultTags<LTags, TagsOfValueView<R>> = OTags>,
             R: Value,
             O: Value,
-            LTags: TagList + MergeList<TagOfValueView<R>>,
+            LTags: TagList + MergeList<TagsOfValueView<R>>,
             OTags: TagList
         > $ops_trait<R> for ExprViewBoxWithTag<L, LTags>
         {
@@ -76,7 +76,7 @@ macro_rules! impl_ops {
                         let l_expr = l.collect_expr().into_iter().next().unwrap();
                         let r_expr = r.collect_expr().into_iter().next().unwrap();
                         let result = Expr::$expr_variant(Box::new(l_expr), Box::new(r_expr));
-                        SingleExprView::from_exprs(arr![Expr; result])
+                        SingleExprView::from_exprs_with_tags(arr![Expr; result])
                     }
                 }
             }

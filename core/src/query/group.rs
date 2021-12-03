@@ -1,8 +1,6 @@
 use std::marker::PhantomData;
 use std::ops::{Add, Sub};
 
-use generic_array::typenum::Sum;
-
 use query_builder::{Alias, Expr, GroupSelect, OrderByItem, SelectQuery};
 
 use crate::query::{
@@ -10,8 +8,8 @@ use crate::query::{
     FoldResult, Map, Map2, MultiRows, QueryResultMap, Sort, Sort2, SortHelper, SortResult,
 };
 use crate::view::{
-    EmptyTagList, EntityView, EntityViewTag, EntityWithView, ExprViewBox, ExprViewBoxWithTag,
-    NotInList, TagList, Value, ValueCount, ValueCountOf,
+    ConcreteList, EntityView, EntityViewTag, EntityWithView, ExprViewBox, ExprViewBoxWithTag,
+    MergeList, NotInList, TagList, TagsOfValueView, Value, ValueCountOf,
 };
 
 pub trait GroupResult: Clone {
@@ -210,23 +208,32 @@ impl<View: GroupResult, E: EntityWithView> ExecutableSelectQuery<View::Value, Vi
         )
     }
 }
-type ValueTuple<V1, V2> = (<V1 as GroupResult>::Value, <V2 as FoldResult>::Value);
+
+type ValueTuple<G, A> = (ValueOfGroupResult<G>, ValueOfFoldResult<A>);
+type TagOfGroupResult<G> = <G as GroupResult>::Tags;
+type TagOfFoldResult<A> = <A as FoldResult>::Tags;
+type ValueOfGroupResult<G> = <G as GroupResult>::Value;
+type ValueOfFoldResult<A> = <A as FoldResult>::Value;
+type ConcretedTags<G, A> = ConcreteList<TagOfGroupResult<G>, TagOfFoldResult<A>>;
+type ResultExprViewBox<G, A> = ExprViewBoxWithTag<ValueTuple<G, A>, ConcretedTags<G, A>>;
+
 impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView>
-    ExecutableSelectQuery<ValueTuple<View, AggregateView>, EmptyTagList>
+    ExecutableSelectQuery<ValueTuple<View, AggregateView>, ConcretedTags<View, AggregateView>>
     for GroupedQueryResult<View, AggregateView, E>
 where
-    ValueCountOf<View::Value>: Add<ValueCountOf<AggregateView::Value>>,
-    Sum<ValueCountOf<View::Value>, ValueCountOf<AggregateView::Value>>:
-        ValueCount + Sub<ValueCountOf<View::Value>, Output = ValueCountOf<AggregateView::Value>>,
+    ValueTuple<View, AggregateView>: Value,
+    TagsOfValueView<View::Value>: MergeList<TagsOfValueView<AggregateView::Value>>,
+    TagOfGroupResult<View>: MergeList<TagOfFoldResult<AggregateView>>,
+    ValueCountOf<View::Value>: Add<
+        ValueCountOf<AggregateView::Value>,
+        Output = ValueCountOf<ValueTuple<View, AggregateView>>,
+    >,
+    ValueCountOf<ValueTuple<View, AggregateView>>:
+        Sub<ValueCountOf<View::Value>, Output = ValueCountOf<AggregateView::Value>>,
 {
     type ResultType = MultiRows;
 
-    fn generate_query(
-        self,
-    ) -> (
-        SelectQuery,
-        ExprViewBoxWithTag<ValueTuple<View, AggregateView>, EmptyTagList>,
-    ) {
+    fn generate_query(self) -> (SelectQuery, ResultExprViewBox<View, AggregateView>) {
         (
             SelectQuery::create(
                 Box::new(self.query),
@@ -327,21 +334,22 @@ impl<View: GroupResult, E: EntityWithView> ExecutableSelectQuery<View::Value, Vi
 }
 
 impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView>
-    ExecutableSelectQuery<ValueTuple<View, AggregateView>, EmptyTagList>
+    ExecutableSelectQuery<ValueTuple<View, AggregateView>, ConcretedTags<View, AggregateView>>
     for SortedGroupedQueryResult<View, AggregateView, E>
 where
-    ValueCountOf<View::Value>: Add<ValueCountOf<AggregateView::Value>>,
-    Sum<ValueCountOf<View::Value>, ValueCountOf<AggregateView::Value>>:
-        ValueCount + Sub<ValueCountOf<View::Value>, Output = ValueCountOf<AggregateView::Value>>,
+    ValueTuple<View, AggregateView>: Value,
+    TagsOfValueView<View::Value>: MergeList<TagsOfValueView<AggregateView::Value>>,
+    TagOfGroupResult<View>: MergeList<TagOfFoldResult<AggregateView>>,
+    ValueCountOf<View::Value>: Add<
+        ValueCountOf<AggregateView::Value>,
+        Output = ValueCountOf<ValueTuple<View, AggregateView>>,
+    >,
+    ValueCountOf<ValueTuple<View, AggregateView>>:
+        Sub<ValueCountOf<View::Value>, Output = ValueCountOf<AggregateView::Value>>,
 {
     type ResultType = MultiRows;
 
-    fn generate_query(
-        self,
-    ) -> (
-        SelectQuery,
-        ExprViewBoxWithTag<ValueTuple<View, AggregateView>, EmptyTagList>,
-    ) {
+    fn generate_query(self) -> (SelectQuery, ResultExprViewBox<View, AggregateView>) {
         (
             SelectQuery::create(
                 Box::new(self.nested.query),
@@ -378,12 +386,12 @@ impl<View: GroupResult, E: EntityWithView> GroupFold<View, E>
     }
 }
 
-impl<T1: Value, T1Tag: TagList> GroupResult for ExprViewBoxWithTag<T1, T1Tag>
+impl<T1: Value, T1Tags: TagList> GroupResult for ExprViewBoxWithTag<T1, T1Tags>
 where
-    EntityViewTag: NotInList<T1Tag>,
+    EntityViewTag: NotInList<T1Tags>,
 {
     type Value = T1;
-    type Tags = T1Tag;
+    type Tags = T1Tags;
 
     fn collect_expr_vec(&self) -> Vec<Expr> {
         self.collect_expr().into_iter().collect()
@@ -394,16 +402,20 @@ where
     }
 }
 
-impl<T1: Value, T1Tag: TagList, T2: Value, T2Tag: TagList> GroupResult
-    for (ExprViewBoxWithTag<T1, T1Tag>, ExprViewBoxWithTag<T2, T2Tag>)
+impl<T1: Value, T1Tags: TagList + MergeList<T2Tags>, T2: Value, T2Tags: TagList> GroupResult
+    for (
+        ExprViewBoxWithTag<T1, T1Tags>,
+        ExprViewBoxWithTag<T2, T2Tags>,
+    )
 where
-    EntityViewTag: NotInList<T1Tag> + NotInList<T2Tag>,
-    ValueCountOf<T1>: Add<ValueCountOf<T2>>,
-    Sum<ValueCountOf<T1>, ValueCountOf<T2>>:
-        ValueCount + Sub<ValueCountOf<T1>, Output = ValueCountOf<T2>>,
+    (T1, T2): Value,
+    TagsOfValueView<T1>: MergeList<TagsOfValueView<T2>>,
+    EntityViewTag: NotInList<T1Tags> + NotInList<T2Tags>,
+    ValueCountOf<T1>: Add<ValueCountOf<T2>, Output = ValueCountOf<(T1, T2)>>,
+    ValueCountOf<(T1, T2)>: Sub<ValueCountOf<T1>, Output = ValueCountOf<T2>>,
 {
     type Value = (T1, T2);
-    type Tags = EmptyTagList;
+    type Tags = ConcreteList<T1Tags, T2Tags>;
 
     fn collect_expr_vec(&self) -> Vec<Expr> {
         self.0
