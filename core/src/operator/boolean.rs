@@ -2,7 +2,10 @@ use generic_array::arr;
 
 use query_builder::Expr;
 
-use crate::view::{ExprView, ExprViewBox, ExprViewBoxWithTag, SingleExprView, TagList, Value};
+use crate::view::{
+    ConcreteList, ExprView, ExprViewBoxWithTag, MergeList, SingleExprView, TagList, TagOfValueView,
+    Value,
+};
 
 macro_rules! op_trait {
     (
@@ -39,10 +42,11 @@ macro_rules! impl_expr_for {
     ) => {
         $(
         impl $expr_op_trait for $ty {
-            fn $expr_op_method<LTags: TagList, RTags: TagList>(
+            type ResultTags<LTags: TagList + MergeList<RTags>, RTags: TagList> = ConcreteList<LTags, RTags>;
+            fn $expr_op_method<LTags: TagList + MergeList<RTags>, RTags: TagList>(
                 l: ExprViewBoxWithTag<Self, LTags>,
                 r: ExprViewBoxWithTag<$ty, RTags>
-            ) -> ExprViewBox<bool> {
+            ) -> ExprViewBoxWithTag<bool, Self::ResultTags<LTags, RTags>> {
                 let l_expr = l.collect_expr().into_iter().next().unwrap();
                 let r_expr = r.collect_expr().into_iter().next().unwrap();
                 let result = Expr::$expr_variant(Box::new(l_expr), Box::new(r_expr));
@@ -71,21 +75,23 @@ macro_rules! impl_bool_operator {
 
 
         pub trait $expr_op_trait<Rhs: Value = Self>: Value + $op_trait<Rhs> {
-            fn $expr_op_method<LTags: TagList, RTags: TagList>(
+            type ResultTags<LTags: TagList + MergeList<RTags>, RTags: TagList>: TagList;
+
+            fn $expr_op_method<LTags: TagList + MergeList<RTags>, RTags: TagList>(
                 l: ExprViewBoxWithTag<Self, LTags>,
                 r: ExprViewBoxWithTag<Rhs, RTags>
-            ) -> ExprViewBox<bool>;
+            ) -> ExprViewBoxWithTag<bool, Self::ResultTags<LTags, RTags>>;
         }
 
         impl<
             L: Value + $expr_op_trait<R>,
             R: Value,
-            LTags: TagList,
+            LTags: TagList + MergeList<RTags>,
             RTags: TagList
         > $view_op_trait<ExprViewBoxWithTag<R, RTags>>
             for ExprViewBoxWithTag<L, LTags>
         {
-            type Output = ExprViewBox<bool>;
+            type Output = ExprViewBoxWithTag<bool, <L as $expr_op_trait<R>>::ResultTags<LTags, RTags>>;
 
             fn $view_op_method(self, rhs: ExprViewBoxWithTag<R, RTags>) -> Self::Output {
                 L::$expr_op_method(self, rhs)
@@ -94,9 +100,9 @@ macro_rules! impl_bool_operator {
         impl<
             L: Value + $expr_op_trait<R>,
             R: Value,
-            LTags: TagList,
+            LTags: TagList + MergeList<TagOfValueView<R>>,
         > $view_op_trait<R> for ExprViewBoxWithTag<L, LTags> {
-            type Output = ExprViewBox<bool>;
+            type Output = ExprViewBoxWithTag<bool, <L as $expr_op_trait<R>>::ResultTags<LTags, TagOfValueView<R>>>;
 
             fn $view_op_method(self, rhs: R) -> Self::Output {
                 L::$expr_op_method(self, rhs.view())
