@@ -9,15 +9,19 @@ use crate::query::{
 };
 use crate::view::{
     ConcreteList, EntityView, EntityViewTag, EntityWithView, ExprViewBox, ExprViewBoxWithTag,
-    MergeList, NotInList, TagList, TagsOfValueView, Value, ValueCountOf,
+    MergeList, NotInList, TagList, TagsOfValueView, Value, ValueCountOf, VerticalExprView,
+    VerticalView,
 };
 
 pub trait GroupResult: Clone {
     type Value: Value;
     type Tags: TagList;
+    type Vertical: VerticalView<Self::Value>;
     fn collect_expr_vec(&self) -> Vec<Expr>;
 
     fn expr_box(self) -> ExprViewBoxWithTag<Self::Value, Self::Tags>;
+
+    fn vertical_view(self) -> Self::Vertical;
 }
 
 pub trait GroupBy<E: EntityWithView, View> {
@@ -26,7 +30,7 @@ pub trait GroupBy<E: EntityWithView, View> {
 
 pub trait GroupFold<View: GroupResult, E: EntityWithView> {
     type Result<RV: FoldResult>;
-    fn fold_group<RV: FoldResult, F: Fn(E::View) -> RV>(self, f: F) -> Self::Result<RV>;
+    fn fold_group<RV: FoldResult, F: Fn(E::VerticalView) -> RV>(self, f: F) -> Self::Result<RV>;
 }
 
 pub struct GroupedQueryResult<View: GroupResult, AggregateView: Clone, E: EntityWithView> {
@@ -136,19 +140,24 @@ impl<View: GroupResult, E: EntityWithView> Filter<View> for GroupedQueryResult<V
     }
 }
 
-impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Fold2<View, AggregateView>
-    for GroupedQueryResult<View, AggregateView, E>
+impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView>
+    Fold2<View::Vertical, AggregateView> for GroupedQueryResult<View, AggregateView, E>
 {
-    fn fold<RV: FoldResult, F: Fn(View, AggregateView) -> RV>(self, f: F) -> FoldQueryResult<RV> {
-        let result = f(self.view, self.aggregate);
+    fn fold<RV: FoldResult, F: Fn(View::Vertical, AggregateView) -> RV>(
+        self,
+        f: F,
+    ) -> FoldQueryResult<RV> {
+        let result = f(self.view.vertical_view(), self.aggregate);
 
         FoldQueryResult::create(Box::new(self.query), result, self.alias_generator)
     }
 }
 
-impl<View: GroupResult, E: EntityWithView> Fold<View> for GroupedQueryResult<View, (), E> {
-    fn fold<RV: FoldResult, F: Fn(View) -> RV>(self, f: F) -> FoldQueryResult<RV> {
-        let result = f(self.view);
+impl<View: GroupResult, E: EntityWithView> Fold<View::Vertical>
+    for GroupedQueryResult<View, (), E>
+{
+    fn fold<RV: FoldResult, F: Fn(View::Vertical) -> RV>(self, f: F) -> FoldQueryResult<RV> {
+        let result = f(self.view.vertical_view());
 
         FoldQueryResult::create(Box::new(self.query), result, self.alias_generator)
     }
@@ -255,8 +264,8 @@ where
 impl<View: GroupResult, E: EntityWithView> GroupFold<View, E> for GroupedQueryResult<View, (), E> {
     type Result<RV: FoldResult> = GroupedQueryResult<View, RV, E>;
 
-    fn fold_group<RV: FoldResult, F: Fn(E::View) -> RV>(self, f: F) -> Self::Result<RV> {
-        let aggregate = f(E::View::pure(&self.root_alias));
+    fn fold_group<RV: FoldResult, F: Fn(E::VerticalView) -> RV>(self, f: F) -> Self::Result<RV> {
+        let aggregate = f(E::View::pure(&self.root_alias).vertical());
 
         GroupedQueryResult {
             query: self.query,
@@ -378,7 +387,7 @@ impl<View: GroupResult, E: EntityWithView> GroupFold<View, E>
 {
     type Result<RV: FoldResult> = SortedGroupedQueryResult<View, RV, E>;
 
-    fn fold_group<RV: FoldResult, F: Fn(E::View) -> RV>(self, f: F) -> Self::Result<RV> {
+    fn fold_group<RV: FoldResult, F: Fn(E::VerticalView) -> RV>(self, f: F) -> Self::Result<RV> {
         SortedGroupedQueryResult {
             nested: self.nested.fold_group(f),
             order_by: self.order_by,
@@ -392,6 +401,7 @@ where
 {
     type Value = T1;
     type Tags = T1Tags;
+    type Vertical = VerticalExprView<T1, T1Tags>;
 
     fn collect_expr_vec(&self) -> Vec<Expr> {
         self.collect_expr().into_iter().collect()
@@ -399,6 +409,10 @@ where
 
     fn expr_box(self) -> ExprViewBoxWithTag<Self::Value, Self::Tags> {
         self
+    }
+
+    fn vertical_view(self) -> Self::Vertical {
+        VerticalExprView::create(self, vec![])
     }
 }
 
@@ -416,6 +430,7 @@ where
 {
     type Value = (T1, T2);
     type Tags = ConcreteList<T1Tags, T2Tags>;
+    type Vertical = (VerticalExprView<T1, T1Tags>, VerticalExprView<T2, T2Tags>);
 
     fn collect_expr_vec(&self) -> Vec<Expr> {
         self.0
@@ -427,5 +442,9 @@ where
 
     fn expr_box(self) -> ExprViewBoxWithTag<Self::Value, Self::Tags> {
         self.into()
+    }
+
+    fn vertical_view(self) -> Self::Vertical {
+        (self.0.vertical_view(), self.1.vertical_view())
     }
 }

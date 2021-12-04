@@ -179,6 +179,10 @@ impl EntityResolvePass for EntityViewPass {
             impl VerticalView<#entity_name> for #vertical_name {
                 type RowView = #name;
 
+                fn row_view(&self) -> Self::RowView {
+                    self._row_view.clone()
+                }
+
                 fn map<
                     R: Value,
                     RTags: TagList,
@@ -195,7 +199,7 @@ impl EntityResolvePass for EntityViewPass {
                 }
 
                 fn sort<R: SortResult, F: Fn(Self::RowView, SortHelper) -> R>(mut self, f: F) -> Self {
-                    let result = f(self._row_view.clone(), SortHelper::create());
+                    let result = f(self.row_view(), SortHelper::create());
                     self._order_by = result.order_by_items();
                     self
                 }

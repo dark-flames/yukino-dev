@@ -73,9 +73,9 @@ impl<E: EntityWithView> Map<E::View> for QueryResultFilter<E> {
     }
 }
 
-impl<E: EntityWithView> Fold<E::View> for QueryResultFilter<E> {
-    fn fold<RV: FoldResult, F: Fn(E::View) -> RV>(self, f: F) -> FoldQueryResult<RV> {
-        let result = f(E::View::pure(&self.root_alias));
+impl<E: EntityWithView> Fold<E::VerticalView> for QueryResultFilter<E> {
+    fn fold<RV: FoldResult, F: Fn(E::VerticalView) -> RV>(self, f: F) -> FoldQueryResult<RV> {
+        let result = f(E::View::pure(&self.root_alias).vertical());
 
         FoldQueryResult::create(Box::new(self.query), result, self.alias_generator)
     }

@@ -1,5 +1,6 @@
 use yukino::{bt, eq, lt};
-use yukino::query::{ExecutableSelectQuery, Filter, GroupBy, Map, Sort};
+use yukino::operator::{VerticalAverage, VerticalBitAnd};
+use yukino::query::{ExecutableSelectQuery, Filter, Fold, GroupBy, GroupFold, Map, Map2, Sort};
 use yukino::view::EntityWithView;
 use yukino_tests::schema::*;
 
@@ -18,7 +19,7 @@ fn test_fold() {
     let query = Basic::all()
         .filter(|b| lt!(b.int, 114514))
         .filter(|b| bt!(b.int, 1919))
-        //.fold(|b, helper| (helper.average(b.short), helper.bit_and(b.int)))
+        .fold(|b| (b.short.average(), b.int.bit_and()))
         .generate_query()
         .0;
 
@@ -32,7 +33,7 @@ fn test_group() {
         .filter(|b| bt!(b.int, 1919))
         .group_by(|b| (b.int, b.short))
         .filter(|(a, _)| eq!(a, 910))
-        //.fold(|(a, b), helper| (helper.average(a), helper.average(b)))
+        .fold(|(a, b)| (a.average(), b.average()))
         .generate_query()
         .0;
 
@@ -81,14 +82,14 @@ fn test_map() {
 
 #[test]
 fn test_group_fold_map() {
-    let _query = Basic::all()
+    let query = Basic::all()
         .filter(|b| lt!(b.int, 114514))
         .filter(|b| bt!(b.int, 1919))
-        .group_by(|b| (b.int, b.short));
-    //.fold_group(|b, helper| helper.average(b.long))
-    //.map(|(_, _), c| c)
-    //.generate_query()
-    //.0;
+        .group_by(|b| (b.int, b.short))
+        .fold_group(|b| b.long.average())
+        .map(|(_, b), c| (b, c))
+        .generate_query()
+        .0;
 
-    //println!("{}", query);
+    println!("{}", query);
 }
