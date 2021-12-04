@@ -4,8 +4,8 @@ use crate::query::{SortHelper, SortResult};
 use crate::view::{ExprViewBoxWithTag, TagList, Value};
 
 pub struct VerticalExprView<T: Value, TTags: TagList> {
-    expr: ExprViewBoxWithTag<T, TTags>,
-    order_by: Vec<OrderByItem>,
+    pub(crate) expr: ExprViewBoxWithTag<T, TTags>,
+    pub(crate) order_by: Vec<OrderByItem>,
 }
 
 pub trait VerticalView<T: Value> {

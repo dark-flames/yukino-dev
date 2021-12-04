@@ -36,9 +36,9 @@ pub struct NormalAggregateFunctionCall {
 
 #[derive(Clone, Debug)]
 pub struct GroupConcatFunctionCall {
-    expr: Expr,
-    order_by: Vec<OrderByItem>,
-    separator: Option<String>,
+    pub expr: Expr,
+    pub order_by: Vec<OrderByItem>,
+    pub separator: Option<String>,
 }
 
 impl Display for NormalAggregateFunctionCall {

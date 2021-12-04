@@ -4,6 +4,7 @@ pub use node::*;
 pub use tag::*;
 pub use tuple::*;
 pub use value::*;
+pub use vertical::*;
 
 mod aggregate;
 mod entity;

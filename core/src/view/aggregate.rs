@@ -7,17 +7,23 @@ use query_builder::{AggregateFunctionCall, DatabaseValue, Expr};
 
 use crate::err::{RuntimeResult, YukinoError};
 use crate::view::{
-    AggregateViewTag, ExprView, ExprViewBox, ExprViewBoxWithTag, TagList1, Value, ValueCountOf,
+    AddTag, AggregateViewTag, ExprView, ExprViewBox, ExprViewBoxWithTag, OffsetOfTag, SetBit,
+    TagList, True, Value, ValueCountOf,
 };
 
 #[derive(Clone)]
-pub struct AggregateViewItem<T: Value<L = U1>> {
+pub struct AggregateViewItem<
+    T: Value<L = U1>,
+    TTags: TagList + SetBit<OffsetOfTag<AggregateViewTag>, True>,
+> {
     function_call: Box<dyn AggregateFunctionCall>,
-    _marker: PhantomData<T>,
+    _marker: PhantomData<(T, TTags)>,
 }
 
-impl<T: Value<L = U1>> ExprView<T> for AggregateViewItem<T> {
-    type Tags = TagList1<AggregateViewTag>;
+impl<T: Value<L = U1>, TTags: TagList + SetBit<OffsetOfTag<AggregateViewTag>, True>> ExprView<T>
+    for AggregateViewItem<T, TTags>
+{
+    type Tags = AddTag<TTags, AggregateViewTag>;
 
     fn from_exprs(_exprs: GenericArray<Expr, ValueCountOf<T>>) -> ExprViewBox<T>
     where
@@ -27,7 +33,10 @@ impl<T: Value<L = U1>> ExprView<T> for AggregateViewItem<T> {
     }
 
     fn expr_clone(&self) -> ExprViewBoxWithTag<T, Self::Tags> {
-        Box::new(self.clone())
+        Box::new(AggregateViewItem::<T, TTags> {
+            function_call: self.function_call.clone(),
+            _marker: Default::default(),
+        })
     }
 
     fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<T>> {
@@ -39,7 +48,9 @@ impl<T: Value<L = U1>> ExprView<T> for AggregateViewItem<T> {
     }
 }
 
-impl<T: Value<L = U1>> AggregateViewItem<T> {
+impl<T: Value<L = U1>, TTags: TagList + SetBit<OffsetOfTag<AggregateViewTag>, True>>
+    AggregateViewItem<T, TTags>
+{
     pub fn from_agg_fn_call<F: AggregateFunctionCall>(f: F) -> Self {
         AggregateViewItem {
             function_call: Box::new(f),
