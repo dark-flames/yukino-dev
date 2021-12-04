@@ -17,14 +17,16 @@ impl EntityResolvePass for EntityViewPass {
 
     fn get_dependencies(&self) -> Vec<TokenStream> {
         vec![quote! {
-            use yukino::view::{SingleExprView, ExprViewBox, ExprViewBoxWithTag, ExprView, EntityView, EntityViewTag, TagList1, TagsOfValueView, AnyTagExprView};
-            use yukino::query_builder::{Expr, Alias, DatabaseValue};
+            use yukino::query::{SortHelper, SortResult};
+            use yukino::view::{SingleExprView, ExprViewBox, ExprViewBoxWithTag, ExprView, EntityView, EntityViewTag, TagList1, TagsOfValueView, AnyTagExprView, VerticalExprView, VerticalView, TagList, EntityVerticalView};
+            use yukino::query_builder::{Expr, Alias, DatabaseValue, OrderByItem};
             use yukino::err::{RuntimeResult, YukinoError};
         }]
     }
 
     fn get_entity_implements(&mut self, entity: &ResolvedEntity) -> Vec<TokenStream> {
-        let name = format_ident!("{}View", &entity.name);
+        let name = &entity.view_name;
+        let vertical_name = &entity.vertical_view_name;
         let entity_name = format_ident!("{}", &entity.name);
         let iter = entity
             .fields
@@ -41,15 +43,19 @@ impl EntityResolvePass for EntityViewPass {
             from_expr_branches,
             clone_branches,
             pure_branches,
+            vertical_fields,
+            to_vertical_branches,
         ) = iter
             .enumerate()
             .fold(
-                (vec![], vec![], quote! {arr![Expr;]}, vec![], vec![], vec![], vec![]),
-                |(mut fields, mut tmp, rst, mut expr_tmp, mut expr_branch, mut clone, mut pure), (index, f)| {
+                (vec![], vec![], quote! {arr![Expr;]}, vec![], vec![], vec![], vec![], vec![], vec![]),
+                |(mut fields, mut tmp, rst, mut expr_tmp, mut expr_branch, mut clone, mut pure, mut vertical_fields, mut vertical_branches), (index, f)| {
                     let field_name = format_ident!("{}", f.path.field_name);
                     let field_value_count = format_ident!("U{}", f.converter_param_count);
                     let view_path = &f.view_path;
+                    let vertical_view_path = &f.vertical_view_path;
                     let view_ty = &f.view_ty;
+                    let vertical_view_ty = &f.vertical_view_ty;
                     let view = &f.view;
                     fields.push(quote! {
                         pub #field_name: #view_ty
@@ -80,6 +86,14 @@ impl EntityResolvePass for EntityViewPass {
                         #field_name: #view
                     });
 
+                    vertical_fields.push(quote! {
+                        pub #field_name: #vertical_view_ty
+                    });
+
+                    vertical_branches.push(quote! {
+                        #field_name: #vertical_view_path::create(self.#field_name, vec![])
+                    });
+
 
                     (
                         fields,
@@ -91,6 +105,8 @@ impl EntityResolvePass for EntityViewPass {
                         expr_branch,
                         clone,
                         pure,
+                        vertical_fields,
+                        vertical_branches
                     )
                 }
             );
@@ -143,6 +159,50 @@ impl EntityResolvePass for EntityViewPass {
                         #(#pure_branches),*
                     }
                 }
+
+                fn vertical(self) -> <Self::Entity as EntityWithView>::VerticalView where Self: Sized {
+                    let _row_view = self.clone();
+                    #vertical_name {
+                        #(#to_vertical_branches,)*
+                        _row_view,
+                        _order_by: vec![],
+                    }
+                }
+            }
+
+            pub struct #vertical_name {
+                #(#vertical_fields,)*
+                _row_view: #name,
+                _order_by: Vec<OrderByItem>
+            }
+
+            impl VerticalView<#entity_name> for #vertical_name {
+                type RowView = #name;
+
+                fn map<
+                    R: Value,
+                    RTags: TagList,
+                    RV: Into<ExprViewBoxWithTag<R, RTags>>,
+                    F: Fn(Self::RowView) -> RV,
+                >(
+                    self,
+                    f: F,
+                ) -> VerticalExprView<R, RTags> {
+                    VerticalExprView::create(
+                        f(self._row_view).into(),
+                        self._order_by
+                    )
+                }
+
+                fn sort<R: SortResult, F: Fn(Self::RowView, SortHelper) -> R>(mut self, f: F) -> Self {
+                    let result = f(self._row_view.clone(), SortHelper::create());
+                    self._order_by = result.order_by_items();
+                    self
+                }
+            }
+
+            impl EntityVerticalView for #vertical_name {
+                type Entity = #entity_name;
             }
         }]
     }

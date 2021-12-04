@@ -37,6 +37,7 @@ pub struct ResolvedEntity {
     pub marker_mod: Ident,
     pub converter_name: Ident,
     pub view_name: Ident,
+    pub vertical_view_name: Ident,
 }
 
 #[derive(Default)]
@@ -173,6 +174,7 @@ impl UnassembledEntity {
             marker_mod: format_ident!("{}", self.struct_name.to_snake_case()),
             converter_name: format_ident!("{}Converter", self.struct_name.to_camel_case()),
             view_name: format_ident!("{}View", self.struct_name.to_camel_case()),
+            vertical_view_name: format_ident!("Vertical{}View", self.struct_name.to_camel_case()),
         })
     }
 }

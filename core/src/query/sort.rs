@@ -54,7 +54,7 @@ where
 }
 
 impl SortHelper {
-    pub(crate) fn create() -> Self {
+    pub fn create() -> Self {
         SortHelper
     }
 

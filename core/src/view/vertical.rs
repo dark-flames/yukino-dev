@@ -51,11 +51,7 @@ impl<T: Value, TTags: TagList> VerticalView<T> for VerticalExprView<T, TTags> {
 }
 
 impl<T: Value, TTags: TagList> VerticalExprView<T, TTags> {
-    #[allow(dead_code)]
-    pub fn create(expr: ExprViewBoxWithTag<T, TTags>) -> Self {
-        VerticalExprView {
-            expr,
-            order_by: Vec::new(),
-        }
+    pub fn create(expr: ExprViewBoxWithTag<T, TTags>, order_by: Vec<OrderByItem>) -> Self {
+        VerticalExprView { expr, order_by }
     }
 }

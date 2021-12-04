@@ -31,6 +31,7 @@ impl EntityResolvePass for EntityImplementPass {
     fn get_entity_implements(&mut self, entity: &ResolvedEntity) -> Vec<TokenStream> {
         let name = format_ident!("{}", &entity.name);
         let view_name = &entity.view_name;
+        let vertical_view_name = &entity.vertical_view_name;
         let converter_name = &entity.converter_name;
         let value_count = format_ident!(
             "U{}",
@@ -63,6 +64,7 @@ impl EntityResolvePass for EntityImplementPass {
 
             impl EntityWithView for #name {
                 type View = #view_name;
+                type VerticalView = #vertical_view_name;
 
                 fn all() -> QueryResultFilter<Self> {
                     QueryResultFilter::create(&*DEFINITION_MANAGER)

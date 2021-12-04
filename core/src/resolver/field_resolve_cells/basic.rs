@@ -143,7 +143,9 @@ impl FieldResolverCell for BasicFieldResolverCell {
             ty: self.ty.field_ty(self.optional),
             view: self.ty.view(&self.column),
             view_ty: self.ty.view_ty(self.optional),
+            vertical_view_ty: self.ty.vertical_view_ty(self.optional),
             view_path: self.ty.view_path(self.optional),
+            vertical_view_path: self.ty.vertical_view_path(self.optional),
             marker_name: format_ident!("{}", field_path.field_name.to_snake_case()),
             primary: self.primary,
             entities: vec![],
@@ -237,11 +239,27 @@ impl FieldType {
         }
     }
 
+    pub fn vertical_view_ty(&self, optional: bool) -> TokenStream {
+        let ty = self.field_ty(optional);
+
+        quote! {
+            VerticalExprView<#ty, TagsOfValueView<#ty>>
+        }
+    }
+
     pub fn view_path(&self, optional: bool) -> TokenStream {
         let ty = self.field_ty(optional);
 
         quote! {
             SingleExprView::<#ty, TagsOfValueView<#ty>>
+        }
+    }
+
+    pub fn vertical_view_path(&self, optional: bool) -> TokenStream {
+        let ty = self.field_ty(optional);
+
+        quote! {
+            VerticalExprView::<#ty, TagsOfValueView<#ty>>
         }
     }
 
