@@ -1,5 +1,5 @@
 use yukino::{bt, eq, lt};
-use yukino::operator::{VerticalAverage, VerticalBitAnd};
+use yukino::operator::VerticalAverage;
 use yukino::query::{ExecutableSelectQuery, Filter, Fold, GroupBy, GroupFold, Map, Map2, Sort};
 use yukino::view::EntityWithView;
 use yukino_tests::schema::*;
@@ -19,7 +19,7 @@ fn test_fold() {
     let query = Basic::all()
         .filter(|b| lt!(b.int, 114514))
         .filter(|b| bt!(b.int, 1919))
-        .fold(|b| (b.short.average(), b.int.bit_and()))
+        .fold(|b| b.int.average() * 2)
         .generate_query()
         .0;
 

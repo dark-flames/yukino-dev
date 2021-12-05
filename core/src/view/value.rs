@@ -38,14 +38,16 @@ pub trait Value: 'static + Clone + Debug {
         Self::view_from_exprs(Self::converter().serialize(self).unwrap().map(Expr::Lit))
     }
 
-    fn view_from_exprs(
-        exprs: GenericArray<Expr, Self::L>,
-    ) -> ExprViewBoxWithTag<Self, <Self::ValueExprView as ExprView<Self>>::Tags>
+    fn view_from_exprs(exprs: GenericArray<Expr, Self::L>) -> ExprViewBox<Self>
     where
         Self: Sized,
     {
         Self::ValueExprView::from_exprs(exprs)
     }
+}
+
+pub trait AnyTagsValue: Value {
+    fn view_with_tags<Tags: TagList>(&self) -> ExprViewBoxWithTag<Self, Tags>;
 }
 
 #[derive(Debug, Clone)]
@@ -111,6 +113,21 @@ macro_rules! impl_value {
                 Self: Sized,
             {
                 <$converter>::instance()
+            }
+        }
+
+        impl AnyTagsValue for $ty {
+            fn view_with_tags<Tags: TagList>(&self) -> ExprViewBoxWithTag<Self, Tags> {
+                Box::new(SingleExprView {
+                    expr: Self::converter()
+                        .serialize(self)
+                        .unwrap()
+                        .map(Expr::Lit)
+                        .into_iter()
+                        .next()
+                        .unwrap(),
+                    _ty: Default::default(),
+                })
             }
         }
     };

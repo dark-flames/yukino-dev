@@ -3,8 +3,8 @@ use generic_array::arr;
 use query_builder::Expr;
 
 use crate::view::{
-    AnyTagExprView, ConcreteList, ExprViewBoxWithTag, MergeList, SingleExprView, TagList,
-    TagsOfValueView, Value,
+    AnyTagExprView, AnyTagsValue, ConcreteList, ExprViewBoxWithTag, MergeList, SingleExprView,
+    TagList, Value,
 };
 
 macro_rules! op_trait {
@@ -99,13 +99,13 @@ macro_rules! impl_bool_operator {
         }
         impl<
             L: Value + $expr_op_trait<R>,
-            R: Value,
-            LTags: TagList + MergeList<TagsOfValueView<R>>,
+            R: AnyTagsValue,
+            LTags: TagList + MergeList<LTags>,
         > $view_op_trait<R> for ExprViewBoxWithTag<L, LTags> {
-            type Output = ExprViewBoxWithTag<bool, <L as $expr_op_trait<R>>::ResultTags<LTags, TagsOfValueView<R>>>;
+            type Output = ExprViewBoxWithTag<bool, <L as $expr_op_trait<R>>::ResultTags<LTags, LTags>>;
 
             fn $view_op_method(self, rhs: R) -> Self::Output {
-                L::$expr_op_method(self, rhs.view())
+                L::$expr_op_method(self, rhs.view_with_tags::<LTags>())
             }
         }
 
