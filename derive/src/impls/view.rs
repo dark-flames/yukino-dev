@@ -1,39 +1,18 @@
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 
-use interface::DefinitionType;
+use crate::impls::Implementor;
+use crate::resolved::ResolvedEntity;
 
-use crate::resolver::entity::{EntityResolvePass, ResolvedEntity};
+pub struct ViewImplementor;
 
-pub struct EntityViewPass();
+impl Implementor for ViewImplementor {
+    fn get_implements(&self, resolved: &ResolvedEntity) -> Vec<TokenStream> {
+        let name = &resolved.view_name;
+        let vertical_name = &resolved.vertical_name;
+        let entity_name = &resolved.entity_name;
 
-impl EntityResolvePass for EntityViewPass {
-    fn instance() -> Box<dyn EntityResolvePass>
-    where
-        Self: Sized,
-    {
-        Box::new(EntityViewPass())
-    }
-
-    fn get_dependencies(&self) -> Vec<TokenStream> {
-        vec![quote! {
-            use yukino::query::{SortHelper, SortResult};
-            use yukino::view::{SingleExprView, ExprViewBox, ExprViewBoxWithTag, ExprView, EntityView, EntityViewTag, TagList1, TagsOfValueView, AnyTagExprView, VerticalExprView, VerticalView, TagList, EntityVerticalView};
-            use yukino::query_builder::{Expr, Alias, DatabaseValue, OrderByItem};
-            use yukino::err::{RuntimeResult, YukinoError};
-        }]
-    }
-
-    fn get_entity_implements(&mut self, entity: &ResolvedEntity) -> Vec<TokenStream> {
-        let name = &entity.view_name;
-        let vertical_name = &entity.vertical_view_name;
-        let entity_name = format_ident!("{}", &entity.name);
-        let iter = entity
-            .fields
-            .iter()
-            .filter(|f| f.definition.definition_ty != DefinitionType::Generated);
-
-        let last_index = iter.clone().count() - 1;
+        let last_index = resolved.fields.len() - 1;
 
         let (
             view_fields,
@@ -45,18 +24,23 @@ impl EntityResolvePass for EntityViewPass {
             pure_branches,
             vertical_fields,
             to_vertical_branches,
-        ) = iter
+        ) = resolved.fields.iter()
             .enumerate()
             .fold(
-                (vec![], vec![], quote! {arr![Expr;]}, vec![], vec![], vec![], vec![], vec![], vec![]),
+                (vec![], vec![], quote! {yukino::generic_array::arr![yukino::query_builder::Expr;]}, vec![], vec![], vec![], vec![], vec![], vec![]),
                 |(mut fields, mut tmp, rst, mut expr_tmp, mut expr_branch, mut clone, mut pure, mut vertical_fields, mut vertical_branches), (index, f)| {
-                    let field_name = format_ident!("{}", f.path.field_name);
-                    let field_value_count = format_ident!("U{}", f.converter_param_count);
-                    let view_path = &f.view_path;
-                    let vertical_view_path = &f.vertical_view_path;
+                    let field_name = &f.name;
+                    let field_value_count = {
+                        let type_num = format_ident!("U{}", f.converter_value_count);
+                        quote! {
+                            yukino::generic_array::typenum::#type_num
+                        }
+                    };
+                    let view_path = &f.view_full_path;
+                    let vertical_view_path = &f.vertical_full_path;
                     let view_ty = &f.view_ty;
-                    let vertical_view_ty = &f.vertical_view_ty;
-                    let view = &f.view;
+                    let vertical_view_ty = &f.vertical_ty;
+                    let view = &f.view_construct;
                     fields.push(quote! {
                         pub #field_name: #view_ty
                     });
@@ -66,11 +50,15 @@ impl EntityResolvePass for EntityViewPass {
 
                     if index == last_index {
                         expr_tmp.push(quote! {
-                            let (#field_name, _) = Split::<_, typenum::#field_value_count>::split(rest)
+                            let (#field_name, _) = yukino::generic_array::sequence::Split::<
+                                _, #field_value_count
+                            >::split(rest)
                         });
                     } else {
                         expr_tmp.push(quote! {
-                            let (#field_name, rest) = Split::<_, typenum::#field_value_count>::split(rest)
+                            let (#field_name, rest) =  yukino::generic_array::sequence::Split::<
+                                _, #field_value_count
+                            >::split(rest)
                         });
                     }
 
@@ -99,7 +87,7 @@ impl EntityResolvePass for EntityViewPass {
                         fields,
                         tmp,
                         quote! {
-                            Concat::concat(#rst, #field_name)
+                             yukino::generic_array::sequence::Concat::concat(#rst, #field_name)
                         },
                         expr_tmp,
                         expr_branch,
@@ -117,13 +105,17 @@ impl EntityResolvePass for EntityViewPass {
                 #(#view_fields),*
             }
 
-            impl ExprView<#entity_name> for #name {
-                type Tags = TagList1<EntityViewTag>;
+            impl yukino::view::ExprView<#entity_name> for #name {
+                type Tags = yukino::view::TagList1<yukino::view::EntityViewTag>;
 
-                fn from_exprs(exprs: GenericArray<Expr, ValueCountOf<#entity_name>>)
-                -> ExprViewBox<#entity_name>
+                fn from_exprs(
+                    exprs: yukino::generic_array::GenericArray<
+                        yukino::query_builder::Expr, yukino::view::ValueCountOf<#entity_name>
+                    >
+                )-> yukino::view::ExprViewBox<#entity_name>
                 where
                     Self: Sized {
+                    use yukino::view::ExprView;
                     let rest = exprs;
                     #(#from_expr_tmp;)*
 
@@ -132,7 +124,7 @@ impl EntityResolvePass for EntityViewPass {
                     })
                 }
 
-                fn expr_clone(&self) -> ExprViewBoxWithTag<#entity_name, Self::Tags>
+                fn expr_clone(&self) -> yukino::view::ExprViewBoxWithTag<#entity_name, Self::Tags>
                 where
                     Self: Sized {
                     Box::new(#name {
@@ -140,27 +132,36 @@ impl EntityResolvePass for EntityViewPass {
                     })
                 }
 
-                fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<#entity_name>> {
+                fn collect_expr(&self) -> yukino::generic_array::GenericArray<
+                    yukino::query_builder::Expr, yukino::view::ValueCountOf<#entity_name>
+                > {
                     #(#collect_tmp;)*
 
                     #collect_rst
                 }
 
-                fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<#entity_name>>) -> RuntimeResult<#entity_name> {
+                fn eval(
+                    &self,
+                    v: &yukino::generic_array::GenericArray<
+                        yukino::query_builder::DatabaseValue,
+                        yukino::view::ValueCountOf<#entity_name>>
+                ) -> yukino::err::RuntimeResult<#entity_name> {
+                    use yukino::view::Value;
+                    use yukino::err::YukinoError;
                     (*#entity_name::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
                 }
             }
 
-            impl EntityView for #name {
+            impl yukino::view::EntityView for #name {
                 type Entity = #entity_name;
 
-                fn pure(alias: &Alias) -> Self where Self: Sized {
+                fn pure(alias: &yukino::query_builder::Alias) -> Self where Self: Sized {
                     #name {
                         #(#pure_branches),*
                     }
                 }
 
-                fn vertical(self) -> <Self::Entity as EntityWithView>::VerticalView where Self: Sized {
+                fn vertical(self) -> <Self::Entity as yukino::view::EntityWithView>::VerticalView where Self: Sized {
                     let _row_view = self.clone();
                     #vertical_name {
                         #(#to_vertical_branches,)*
@@ -173,10 +174,10 @@ impl EntityResolvePass for EntityViewPass {
             pub struct #vertical_name {
                 #(#vertical_fields,)*
                 _row_view: #name,
-                _order_by: Vec<OrderByItem>
+                _order_by: Vec<yukino::query_builder::OrderByItem>
             }
 
-            impl VerticalView<#entity_name> for #vertical_name {
+            impl yukino::view::VerticalView<#entity_name> for #vertical_name {
                 type RowView = #name;
 
                 fn row_view(&self) -> Self::RowView {
@@ -184,34 +185,31 @@ impl EntityResolvePass for EntityViewPass {
                 }
 
                 fn map<
-                    R: Value,
-                    RTags: TagList,
-                    RV: Into<ExprViewBoxWithTag<R, RTags>>,
+                    R: yukino::view::Value,
+                    RTags: yukino::view::TagList,
+                    RV: Into<yukino::view::ExprViewBoxWithTag<R, RTags>>,
                     F: Fn(Self::RowView) -> RV,
                 >(
                     self,
                     f: F,
-                ) -> VerticalExprView<R, RTags> {
-                    VerticalExprView::create(
+                ) -> yukino::view::VerticalExprView<R, RTags> {
+                    yukino::view::VerticalExprView::create(
                         f(self._row_view).into(),
                         self._order_by
                     )
                 }
 
-                fn sort<R: SortResult, F: Fn(Self::RowView, SortHelper) -> R>(mut self, f: F) -> Self {
-                    let result = f(self.row_view(), SortHelper::create());
+                fn sort<R: yukino::query::SortResult, F: Fn(Self::RowView, yukino::query::SortHelper) -> R>(mut self, f: F) -> Self {
+                    use yukino::query::SortResult;
+                    let result = f(self.row_view(), yukino::query::SortHelper::create());
                     self._order_by = result.order_by_items();
                     self
                 }
             }
 
-            impl EntityVerticalView for #vertical_name {
+            impl yukino::view::EntityVerticalView for #vertical_name {
                 type Entity = #entity_name;
             }
         }]
-    }
-
-    fn get_additional_implements(&self) -> Vec<TokenStream> {
-        vec![]
     }
 }

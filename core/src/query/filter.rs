@@ -1,6 +1,5 @@
 use std::marker::PhantomData;
 
-use interface::DefinitionManager;
 use query_builder::{Alias, OrderByItem, Select, SelectFrom, SelectQuery};
 
 use crate::query::{
@@ -131,11 +130,12 @@ impl<E: EntityWithView> ExecutableSelectQuery<E, TagsOfEntity<E>> for QueryResul
 }
 
 impl<E: EntityWithView> QueryResultFilter<E> {
-    pub fn create(manager: &'static DefinitionManager) -> Self {
-        let mut generator = AliasGenerator::create(manager);
+    pub fn create() -> Self {
+        let mut generator = AliasGenerator::create();
         let root_alias = generator.generate_root_alias::<E>();
         QueryResultFilter {
-            query: Select::from(E::definition().name.clone(), root_alias.clone()),
+            query: Select::from(
+                E::table_name().to_string(), root_alias.clone()),
             root_alias,
             alias_generator: generator,
             _entity: Default::default(),

@@ -86,9 +86,11 @@ fn test_group_fold_map() {
         .filter(|b| lt!(b.int, 114514))
         .filter(|b| bt!(b.int, 1919))
         .group_by(|b| (b.int, b.short))
-        .fold_group(|b| b.sort(
-            |b, helper| helper.asc(b.long)
-        ).string.join(Some(", ")))
+        .fold_group(|b| {
+            b.sort(|b, helper| helper.asc(b.long))
+                .string
+                .join(Some(", "))
+        })
         .map(|(_, b), c| (b, c))
         .generate_query()
         .0;
