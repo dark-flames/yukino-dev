@@ -1,4 +1,4 @@
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 
 use crate::{Alias, Expr, Join};
 
@@ -8,8 +8,10 @@ pub enum Order {
     Desc,
 }
 
+#[derive(Clone, Debug)]
 pub struct Select;
 
+#[derive(Clone, Debug)]
 pub struct SelectFrom {
     table: String,
     root_alias: Alias,
@@ -17,12 +19,14 @@ pub struct SelectFrom {
     where_clauses: Vec<Expr>,
 }
 
+#[derive(Clone, Debug)]
 pub struct GroupSelect {
     base: SelectFrom,
     group_by: Vec<Expr>,
     having: Vec<Expr>,
 }
 
+#[derive(Clone, Debug)]
 pub struct SelectQuery {
     base: Box<dyn SelectSource>,
     select: Vec<SelectItem>,
@@ -31,6 +35,7 @@ pub struct SelectQuery {
     offset: usize,
 }
 
+#[derive(Clone, Debug)]
 pub struct SelectItem {
     pub expr: Expr,
     pub alias: String,
@@ -42,7 +47,8 @@ pub struct OrderByItem {
     pub order: Order,
 }
 
-pub trait SelectSource: Display + 'static {
+pub trait SelectSource: Display + Debug + 'static {
+    fn box_clone(&self) -> Box<dyn SelectSource>;
     fn select(self, items: Vec<SelectItem>) -> SelectQuery
     where
         Self: Sized,
@@ -134,9 +140,17 @@ impl GroupSelect {
     }
 }
 
-impl SelectSource for SelectFrom {}
+impl SelectSource for SelectFrom {
+    fn box_clone(&self) -> Box<dyn SelectSource> {
+        Box::new(self.clone())
+    }
+}
 
-impl SelectSource for GroupSelect {}
+impl SelectSource for GroupSelect {
+    fn box_clone(&self) -> Box<dyn SelectSource> {
+        Box::new(self.clone())
+    }
+}
 
 impl SelectQuery {
     pub fn create(
@@ -288,5 +302,11 @@ impl Display for SelectQuery {
             "SELECT {} {} {} {} OFFSET {}",
             select_items, self.base, order_by_clauses, limit_clause, self.offset
         )
+    }
+}
+
+impl Clone for Box<dyn SelectSource> {
+    fn clone(&self) -> Self {
+        self.box_clone()
     }
 }

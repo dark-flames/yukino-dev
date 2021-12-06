@@ -2,12 +2,14 @@ use std::fmt::{Display, Formatter};
 
 use crate::{AliasedTable, Expr};
 
+#[derive(Copy, Clone, Debug)]
 pub enum JoinType {
     InnerJoin,
     LeftJoin,
     RightJoin,
 }
 
+#[derive(Clone, Debug)]
 pub struct Join {
     pub ty: JoinType,
     pub table: AliasedTable,
