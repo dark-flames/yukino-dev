@@ -22,13 +22,6 @@ jobs:
           toolchain: nightly
           components: rustfmt, clippy
           override: true
-      - name: clear-schema
-        run: echo "" > tests/src/schema.rs
-      - name: run-setup
-        uses: actions-rs/cargo@v1
-        with:
-          command: run
-          args: --package yukino-tests --bin cli setup
       - name: build
         uses: actions-rs/cargo@v1
         with:
