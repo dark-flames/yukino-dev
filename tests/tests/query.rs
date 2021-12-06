@@ -1,7 +1,7 @@
 use yukino::{bt, eq, lt};
-use yukino::operator::VerticalAverage;
+use yukino::operator::{VerticalAverage, VerticalJoin};
 use yukino::query::{ExecutableSelectQuery, Filter, Fold, GroupBy, GroupFold, Map, Map2, Sort};
-use yukino::view::EntityWithView;
+use yukino::view::{EntityWithView, VerticalView};
 use yukino_tests::schema::*;
 
 #[test]
@@ -86,7 +86,9 @@ fn test_group_fold_map() {
         .filter(|b| lt!(b.int, 114514))
         .filter(|b| bt!(b.int, 1919))
         .group_by(|b| (b.int, b.short))
-        .fold_group(|b| b.long.average())
+        .fold_group(|b| b.sort(
+            |b, helper| helper.asc(b.long)
+        ).string.join(Some(", ")))
         .map(|(_, b), c| (b, c))
         .generate_query()
         .0;

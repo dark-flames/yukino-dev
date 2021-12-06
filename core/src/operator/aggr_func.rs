@@ -16,7 +16,7 @@ pub trait ExprJoin {
 }
 
 pub trait VerticalJoin {
-    fn vertical_join(
+    fn join(
         self,
         separator: Option<&str>,
     ) -> ExprViewBoxWithTag<String, AddTag<TagsOfValueView<String>, AggregateViewTag>>;
@@ -25,7 +25,7 @@ pub trait VerticalJoin {
 impl<T: Value + ExprJoin, TTags: TagList + SetBit<OffsetOfTag<AggregateViewTag>, True>> VerticalJoin
     for VerticalExprView<T, TTags>
 {
-    fn vertical_join(
+    fn join(
         self,
         separator: Option<&str>,
     ) -> ExprViewBoxWithTag<String, AddTag<TagsOfValueView<String>, AggregateViewTag>> {
