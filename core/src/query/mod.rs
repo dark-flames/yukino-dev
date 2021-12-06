@@ -1,4 +1,5 @@
 pub use alias::*;
+pub use assoc::*;
 pub use exec::*;
 pub use filter::*;
 pub use fold::*;
@@ -15,3 +16,4 @@ mod group;
 mod map;
 mod sort;
 mod visitor;
+mod assoc;

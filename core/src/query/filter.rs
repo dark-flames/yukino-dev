@@ -1,11 +1,9 @@
 use std::marker::PhantomData;
 
-use query_builder::{Alias, OrderByItem, Select, SelectFrom, SelectQuery};
+use interface::{Association, WithPrimaryKey};
+use query_builder::{Alias, OrderByItem, Select, SelectFrom, SelectItem, SelectQuery, SelectSource};
 
-use crate::query::{
-    AliasGenerator, ExecutableSelectQuery, Fold, FoldQueryResult, FoldResult, GroupBy, GroupedQueryResult,
-    GroupResult, Map, MultiRows, QueryResultMap, Sort, SortHelper, SortResult,
-};
+use crate::query::{AliasGenerator, AssociationBuilder, ExecutableSelectQuery, Fold, FoldQueryResult, FoldResult, GroupBy, GroupedQueryResult, GroupResult, Map, MultiRows, QueryResultMap, Sort, SortHelper, SortResult};
 use crate::view::{
     EntityView, EntityWithView, ExprView, ExprViewBox, ExprViewBoxWithTag, TagList, TagsOfEntity,
     Value,
@@ -184,5 +182,22 @@ impl<E: EntityWithView> ExecutableSelectQuery<E, TagsOfEntity<E>> for SortedQuer
             ),
             Box::new(view),
         )
+    }
+}
+
+impl<
+    Children: EntityWithView + Association<Parent, ForeignKey>,
+    Parent: EntityWithView + WithPrimaryKey<ForeignKey>,
+    ForeignKey: Value,
+> AssociationBuilder<Children, Parent, ForeignKey> for QueryResultFilter<Parent> {
+    fn build_query(self) -> QueryResultFilter<Children> {
+        let _subquery = self.query.select(vec![
+            SelectItem {
+                expr: self.root_alias.create_ident_expr(Parent::primary_key_name()),
+                alias: "".to_string() // todo: optional
+            }
+        ]);
+
+        todo!()
     }
 }
