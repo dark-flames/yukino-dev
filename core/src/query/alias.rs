@@ -12,6 +12,7 @@ use crate::view::EntityWithView;
 pub type AliasName = String;
 pub type TableName = &'static str;
 
+#[derive(Clone)]
 pub struct AliasGenerator {
     rng: ThreadRng,
     alias: HashMap<AliasName, TableName>,

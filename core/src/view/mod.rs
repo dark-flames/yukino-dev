@@ -1,6 +1,7 @@
 pub use aggregate::*;
 pub use entity::*;
 pub use node::*;
+pub use subquery::*;
 pub use tag::*;
 pub use tuple::*;
 pub use value::*;
@@ -13,3 +14,4 @@ mod tag;
 mod tuple;
 mod value;
 mod vertical;
+mod subquery;

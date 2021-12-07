@@ -1,10 +1,15 @@
 use std::marker::PhantomData;
 
-use query_builder::{OrderByItem, SelectQuery, SelectSource};
+use generic_array::{arr, GenericArray};
+use generic_array::typenum::U1;
 
-use crate::query::{AliasGenerator, ExecutableSelectQuery, ExecuteResultType};
-use crate::view::{ExprViewBoxWithTag, TagList, Value};
+use query_builder::{DatabaseValue, Expr, OrderByItem, SelectQuery, SelectSource};
 
+use crate::err::{RuntimeResult, YukinoError};
+use crate::query::{AliasGenerator, ExecutableSelectQuery, ExecuteResultType, SingleRow};
+use crate::view::{ExprView, ExprViewBox, ExprViewBoxWithTag, SingleRowSubqueryView, SubqueryView, TagList, Value, ValueCountOf};
+
+#[derive(Clone)]
 pub struct QueryResultMap<R: Value, RTags: TagList, ResultType: ExecuteResultType> {
     query: Box<dyn SelectSource>,
     order_by_items: Vec<OrderByItem>,
@@ -70,4 +75,45 @@ impl<R: Value, RTags: TagList, ResultType: ExecuteResultType> ExecutableSelectQu
             view,
         )
     }
+}
+
+impl<T: Value<L=U1>, TTags: TagList, ResultType: ExecuteResultType> SubqueryView<T> for QueryResultMap<T, TTags, ResultType> {
+    fn subquery(&self) -> SelectQuery {
+        SelectQuery::create(
+            self.query.clone(),
+            self.alias_generator
+                .generate_select_list(self.view.collect_expr()),
+            self.order_by_items.clone(),
+            None,
+            0,
+        )
+    }
+}
+
+impl<T: Value<L=U1>, TTags: TagList> ExprView<T> for QueryResultMap<T, TTags, SingleRow> {
+    type Tags = TTags;
+
+    fn from_exprs(_exprs: GenericArray<Expr, ValueCountOf<T>>) -> ExprViewBox<T> where Self: Sized {
+        unreachable!("QueryResultMap::from_exprs should never be called")
+    }
+
+    fn expr_clone(&self) -> ExprViewBoxWithTag<T, Self::Tags> {
+        Box::new(QueryResultMap ::create(
+            self.query.clone(),
+            self.order_by_items.clone(),
+            self.view.expr_clone(),
+            self.alias_generator.clone(),
+        ))
+    }
+
+    fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<T>> {
+        arr![Expr; Expr::Subquery(self.subquery())]
+    }
+
+    fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<T>>) -> RuntimeResult<T> {
+        (*T::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
+    }
+}
+
+impl<T: Value<L=U1>, TTags: TagList> SingleRowSubqueryView<T> for QueryResultMap<T, TTags, SingleRow> {
 }
