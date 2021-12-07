@@ -187,7 +187,7 @@ impl<E: EntityWithView> ExecutableSelectQuery<E, TagsOfEntity<E>> for SortedQuer
 
 impl<
     Children: EntityWithView + Association<Parent, ForeignKey>,
-    Parent: EntityWithView + WithPrimaryKey<ForeignKey>,
+    Parent: EntityWithView + WithPrimaryKey<Type=ForeignKey>,
     ForeignKey: Value,
 > AssociationBuilder<Children, Parent, ForeignKey> for QueryResultFilter<Parent> {
     fn build_query(self) -> QueryResultFilter<Children> {

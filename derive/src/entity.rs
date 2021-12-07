@@ -119,6 +119,13 @@ impl EntityResolver {
             ))
         }?;
 
+        if fields.iter().filter(|f| f.definition.primary_key).count() > 1 {
+            return Err(Error::new_spanned(
+                ast,
+                "Only one field can be marked as primary key"
+            ))
+        }
+
         Ok(ResolvedEntity {
             table_name,
             view_name: format_ident!("{}View", entity_name),

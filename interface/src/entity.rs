@@ -8,8 +8,9 @@ pub trait Association<Parent: YukinoEntity, ForeignKey: 'static + Clone>: Yukino
     fn foreign_key_name() -> &'static str where Self: Sized;
 }
 
-pub trait WithPrimaryKey<PrimaryKey: 'static + Clone>: YukinoEntity {
-    fn primary_key(&self) -> &PrimaryKey;
+pub trait WithPrimaryKey: YukinoEntity {
+    type Type: 'static + Clone;
+    fn primary_key(&self) -> &Self::Type;
 
     fn primary_key_name() -> &'static str where Self: Sized;
 }

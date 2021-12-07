@@ -34,6 +34,7 @@ impl FieldResolver for BasicFieldResolver {
         let (ty, optional) = FieldType::from_ty(&field.ty).unwrap();
         let column_name = field.ident.as_ref().unwrap().to_string().to_snake_case();
         let auto_increment = field.attrs.iter().any(|attr| attr.path.is_ident("auto_increment"));
+        let primary_key = field.attrs.iter().any(|attr| attr.path.is_ident("id"));
         Ok(ResolvedField {
             name: field.ident.clone().unwrap(),
             ty: ty.field_ty(optional),
@@ -47,12 +48,14 @@ impl FieldResolver for BasicFieldResolver {
                 name: field.ident.as_ref().unwrap().to_string(),
                 columns: vec![
                     ColumnDefinition {
-                        name: column_name,
+                        name: column_name.clone(),
                         ty: (&ty).into(),
                         optional,
                         auto_increment
                     }
-                ]
+                ],
+                identity_column: column_name,
+                primary_key
             },
             converter_value_count: 1
         })

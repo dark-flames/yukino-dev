@@ -13,7 +13,9 @@ pub struct AssociationDefinition {
 
 pub struct FieldDefinition {
     pub name: String,
-    pub columns: Vec<ColumnDefinition>
+    pub columns: Vec<ColumnDefinition>,
+    pub identity_column: String,
+    pub primary_key: bool
 }
 
 pub struct ColumnDefinition {
