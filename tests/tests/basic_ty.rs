@@ -1,7 +1,7 @@
+use yukino::{and, bt, bte, eq, lt, lte, neq, or};
 use yukino::query_builder::Alias;
 use yukino::view::*;
-use yukino::{and, bt, bte, eq, lt, lte, neq, or};
-use yukino_tests::schema::*;
+use yukino_tests::*;
 
 pub fn cmp_view<T: Value>(view: ExprViewBox<T>, query: &str) {
     assert_eq!(

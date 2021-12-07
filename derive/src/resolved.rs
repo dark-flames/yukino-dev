@@ -16,6 +16,8 @@ pub struct ResolvedEntity {
 pub struct ResolvedAssociation {
     pub ref_entity_path: Path,
     pub foreign_key: Ident,
+    pub column_name: String,
+    pub ty: TokenStream,
 }
 
 pub struct ResolvedField {

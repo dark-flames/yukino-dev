@@ -2,11 +2,11 @@ use yukino::{bt, eq, lt};
 use yukino::operator::{VerticalAverage, VerticalJoin};
 use yukino::query::{ExecutableSelectQuery, Filter, Fold, GroupBy, GroupFold, Map, Map2, Sort};
 use yukino::view::{EntityWithView, VerticalView};
-use yukino_tests::schema::*;
+use yukino_tests::*;
 
 #[test]
 fn test_filter_map() {
-    let query = Basic::all()
+    let query = Foo::all()
         .filter(|b| lt!(b.int, 114514))
         .generate_query()
         .0;
@@ -16,7 +16,7 @@ fn test_filter_map() {
 
 #[test]
 fn test_fold() {
-    let query = Basic::all()
+    let query = Foo::all()
         .filter(|b| lt!(b.int, 114514))
         .filter(|b| bt!(b.int, 1919))
         .fold(|b| b.int.average() * 2)
@@ -28,7 +28,7 @@ fn test_fold() {
 
 #[test]
 fn test_group() {
-    let query = Basic::all()
+    let query = Foo::all()
         .filter(|b| lt!(b.int, 114514))
         .filter(|b| bt!(b.int, 1919))
         .group_by(|b| (b.int, b.short))
@@ -42,7 +42,7 @@ fn test_group() {
 
 #[test]
 fn test_order_by() {
-    let query = Basic::all()
+    let query = Foo::all()
         .filter(|b| lt!(b.int, 114514))
         .sort(|b, helper| helper.asc(b.int))
         .generate_query()
@@ -53,7 +53,7 @@ fn test_order_by() {
 
 #[test]
 fn test_group_order_by() {
-    let query = Basic::all()
+    let query = Foo::all()
         .filter(|b| lt!(b.int, 114514))
         .filter(|b| bt!(b.int, 1919))
         .group_by(|b| (b.int, b.short))
@@ -67,7 +67,7 @@ fn test_group_order_by() {
 
 #[test]
 fn test_map() {
-    let query = Basic::all()
+    let query = Foo::all()
         .filter(|b| lt!(b.int, 114514))
         .filter(|b| bt!(b.int, 1919))
         .group_by(|b| (b.int, b.short))
@@ -82,7 +82,7 @@ fn test_map() {
 
 #[test]
 fn test_group_fold_map() {
-    let query = Basic::all()
+    let query = Foo::all()
         .filter(|b| lt!(b.int, 114514))
         .filter(|b| bt!(b.int, 1919))
         .group_by(|b| (b.int, b.short))

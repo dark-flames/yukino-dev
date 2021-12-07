@@ -1,9 +1,9 @@
 use yukino::WithPrimaryKey;
-use yukino_tests::schema::*;
+use yukino_tests::*;
 
 #[test]
 fn test_parse_primary_key() {
-    let test = Basic {
+    let test = Foo {
         id: 114514,
         boolean: false,
         u_short: 0,
@@ -19,6 +19,6 @@ fn test_parse_primary_key() {
         optional: None
     };
 
-    assert_eq!(Basic::primary_key_name(), "id");
+    assert_eq!(Foo::primary_key_name(), "id");
     assert_eq!(*test.primary_key(), 114514);
 }

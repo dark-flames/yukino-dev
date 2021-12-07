@@ -1,7 +1,7 @@
 use yukino::Entity;
 
 #[derive(Entity, Clone, Debug)]
-pub struct Basic {
+pub struct Foo {
     #[id]
     pub id: u32,
     pub boolean: bool,

@@ -33,6 +33,26 @@ impl EntityResolver {
             Ok(ast.ident.to_string().to_snake_case())
         })?;
 
+        let fields = if let Fields::Named(name_fields) = &ast.fields {
+            name_fields.named.iter().map(
+                |field| self.field_resolvers.iter().find(
+                    |resolver| resolver.can_resolve(field)
+                ).ok_or_else(
+                    || Error::new_spanned(
+                        field,
+                        "Cannot find a field resolver for this field"
+                    )
+                ).and_then(
+                    |resolver| resolver.resolve_field(field)
+                )
+            ).collect::<Result<Vec<_>>>()
+        } else {
+            return Err(Error::new_spanned(
+                ast,
+                "Expected named fields"
+            ))
+        }?;
+
         let associations = ast.attrs.iter().filter(
             |attr| attr.path.is_ident("belongs_to")
         ).map(|attr| {
@@ -79,16 +99,26 @@ impl EntityResolver {
                                 _ => {
                                     Err(Error::new_spanned(
                                         attr,
-                                        "Expected foreign key"
+                                        "Expected foreign key1"
                                     ))
                                 }
                             }
                         }
                     )?;
-                    Ok(ResolvedAssociation {
-                        ref_entity_path,
-                        foreign_key
-                    })
+
+                    fields.iter().find(|f| f.name == foreign_key).ok_or_else(
+                        || Error::new_spanned(
+                            attr,
+                            "Cannot find a field with this name"
+                        )
+                    ).map(
+                        |field| ResolvedAssociation {
+                            ref_entity_path,
+                            foreign_key,
+                            column_name: field.definition.identity_column.clone(),
+                            ty: field.ty.clone()
+                        }
+                    )
                 }
                 _ => {
                     Err(Error::new_spanned(
@@ -98,26 +128,6 @@ impl EntityResolver {
                 }
             }
         }).collect::<Result<Vec<_>>>()?;
-
-        let fields = if let Fields::Named(name_fields) = &ast.fields {
-            name_fields.named.iter().map(
-                |field| self.field_resolvers.iter().find(
-                    |resolver| resolver.can_resolve(field)
-                ).ok_or_else(
-                    || Error::new_spanned(
-                        field,
-                        "Cannot find a field resolver for this field"
-                    )
-                ).and_then(
-                    |resolver| resolver.resolve_field(field)
-                )
-            ).collect::<Result<Vec<_>>>()
-        } else {
-            return Err(Error::new_spanned(
-                ast,
-                "Expected named fields"
-            ))
-        }?;
 
         if fields.iter().filter(|f| f.definition.primary_key).count() > 1 {
             return Err(Error::new_spanned(

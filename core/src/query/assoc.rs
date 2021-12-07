@@ -4,7 +4,7 @@ use crate::query::QueryResultFilter;
 use crate::view::{EntityWithView, Value};
 
 pub trait AssociationBuilder<
-    Children: EntityWithView + Association<Parent, ForeignKey>,
+    Children: EntityWithView + Association<Parent, ForeignKeyType=ForeignKey>,
     Parent: EntityWithView + WithPrimaryKey<Type=ForeignKey>,
     ForeignKey: Value
 > {
@@ -14,7 +14,7 @@ pub trait AssociationBuilder<
 pub trait BelongsToQueryResult<
     Parent: EntityWithView + WithPrimaryKey<Type=ForeignKey>,
     ForeignKey: Value
->: EntityWithView + Association<Parent, ForeignKey>
+>: EntityWithView + Association<Parent, ForeignKeyType=ForeignKey>
     where QueryResultFilter<Parent>: AssociationBuilder<Self, Parent, ForeignKey> {
     fn belongs_to(&self, r: QueryResultFilter<Parent>) -> QueryResultFilter<Self> {
         r.build_query()

@@ -1,5 +1,6 @@
 use proc_macro2::TokenStream;
 
+pub use association::*;
 pub use converter::*;
 pub use entity::*;
 pub use primary::*;
@@ -11,6 +12,7 @@ mod converter;
 mod entity;
 mod view;
 mod primary;
+mod association;
 
 pub trait Implementor {
     fn get_implements(&self, resolved: &ResolvedEntity) -> Vec<TokenStream>;

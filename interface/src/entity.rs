@@ -2,8 +2,9 @@ pub trait YukinoEntity: 'static {
     fn table_name() -> &'static str;
 }
 
-pub trait Association<Parent: YukinoEntity, ForeignKey: 'static + Clone>: YukinoEntity {
-    fn foreign_key(&self) -> &ForeignKey;
+pub trait Association<Parent: YukinoEntity + WithPrimaryKey<Type=Self::ForeignKeyType>>: YukinoEntity {
+    type ForeignKeyType: 'static + Clone;
+    fn foreign_key(&self) -> &Self::ForeignKeyType;
 
     fn foreign_key_name() -> &'static str where Self: Sized;
 }
