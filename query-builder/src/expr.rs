@@ -60,7 +60,7 @@ impl Display for Expr {
             Expr::Not(e) => write!(f, "!{}", e),
             Expr::And(l, r) => write!(f, "{} AND {}", l, r),
             Expr::Or(l, r) => write!(f, "{} OR {}", l, r),
-            Expr::In(l, r) => write!(f, "{} IN {}", l, r),
+            Expr::In(l, r) => write!(f, "{} IN ({})", l, r),
         }
     }
 }

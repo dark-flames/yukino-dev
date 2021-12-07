@@ -16,7 +16,7 @@ pub fn test_numeric() {
         name: "b".to_string(),
     };
 
-    let view = BasicView::pure(&alias);
+    let view = FooView::pure(&alias);
 
     let add_const = view.int.clone() + 114514;
     let sub_const = view.int.clone() - 114514;
@@ -69,7 +69,7 @@ pub fn test_boolean() {
         name: "b".to_string(),
     };
 
-    let view = BasicView::pure(&alias);
+    let view = FooView::pure(&alias);
 
     let and_const = and!(view.boolean.clone(), true);
     let or_const = or!(view.boolean.clone(), false);

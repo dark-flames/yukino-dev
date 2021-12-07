@@ -16,7 +16,13 @@ pub trait BelongsToQueryResult<
     ForeignKey: Value
 >: EntityWithView + Association<Parent, ForeignKeyType=ForeignKey>
     where QueryResultFilter<Parent>: AssociationBuilder<Self, Parent, ForeignKey> {
-    fn belongs_to(&self, r: QueryResultFilter<Parent>) -> QueryResultFilter<Self> {
+    fn belonging_to(r: QueryResultFilter<Parent>) -> QueryResultFilter<Self> where Self: Sized {
         r.build_query()
     }
 }
+
+impl<
+    Children: EntityWithView + Association<Parent, ForeignKeyType=ForeignKey>,
+    Parent: EntityWithView + WithPrimaryKey<Type=ForeignKey>,
+    ForeignKey: Value
+> BelongsToQueryResult<Parent, ForeignKey> for Children {}
