@@ -6,6 +6,8 @@ use time::{Date, PrimitiveDateTime, Time};
 
 use interface::DatabaseType;
 
+use crate::{QueryBuildState, ToSql};
+
 pub type Binary = Vec<u8>;
 
 pub type ValuePack = HashMap<String, DatabaseValue>;
@@ -89,5 +91,11 @@ impl From<&DatabaseValue> for DatabaseType {
             DatabaseValue::Json(_) => DatabaseType::Json,
             DatabaseValue::Null(ty) => *ty,
         }
+    }
+}
+
+impl ToSql for DatabaseValue {
+    fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
+        state.append_param(self)
     }
 }

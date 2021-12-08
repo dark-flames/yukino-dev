@@ -1,6 +1,6 @@
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Debug, Display, Formatter, Write};
 
-use crate::{Alias, Expr, Join};
+use crate::{Alias, Expr, Join, QueryBuildState, ToSql};
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum Order {
@@ -308,5 +308,27 @@ impl Display for SelectQuery {
 impl Clone for Box<dyn SelectSource> {
     fn clone(&self) -> Self {
         self.box_clone()
+    }
+}
+
+impl ToSql for SelectQuery {
+    fn to_sql(&self, _state: &mut QueryBuildState) -> std::fmt::Result {
+        todo!()
+    }
+}
+
+impl ToSql for Order {
+    fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
+        match self {
+            Order::Asc => write!(state, "ASC"),
+            Order::Desc => write!(state, "DESC"),
+        }
+    }
+}
+
+impl ToSql for OrderByItem {
+    fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
+        self.expr.to_sql(state)?;
+        self.order.to_sql(state)
     }
 }

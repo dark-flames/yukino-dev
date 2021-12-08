@@ -1,6 +1,7 @@
-use std::fmt::{Debug, Display, Formatter, Write};
+use std::fmt::{Debug, Display, Formatter};
 
 use crate::{Expr, OrderByItem, QueryBuildState, SelectQuery, ToSql};
+use crate::drivers::{convert_group_concat, convert_normal_aggregate_fn_call, convert_subquery_fn};
 
 #[derive(Clone, Debug, Copy)]
 pub enum AggregateFunction {
@@ -70,6 +71,12 @@ impl Display for NormalAggregateFunctionCall {
     }
 }
 
+impl ToSql for NormalAggregateFunctionCall {
+    fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
+        convert_normal_aggregate_fn_call(self, state)
+    }
+}
+
 impl FunctionCall for NormalAggregateFunctionCall {
     fn clone_box(&self) -> Box<dyn FunctionCall> {
         Box::new(self.clone())
@@ -101,6 +108,12 @@ impl Display for GroupConcatFunctionCall {
     }
 }
 
+impl ToSql for GroupConcatFunctionCall {
+    fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
+        convert_group_concat(self, state)
+    }
+}
+
 impl FunctionCall for GroupConcatFunctionCall {
     fn clone_box(&self) -> Box<dyn FunctionCall> {
         Box::new(self.clone())
@@ -119,15 +132,15 @@ impl Display for SubqueryFunctionCall {
     }
 }
 
-impl FunctionCall for SubqueryFunctionCall {
-    fn clone_box(&self) -> Box<dyn FunctionCall> {
-        Box::new(self.clone())
+impl ToSql for SubqueryFunctionCall {
+    fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
+        convert_subquery_fn(self, state)
     }
 }
 
-impl<T: FunctionCall> ToSql for T {
-    fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
-        write!(state, "{}", self) // todo: param
+impl FunctionCall for SubqueryFunctionCall {
+    fn clone_box(&self) -> Box<dyn FunctionCall> {
+        Box::new(self.clone())
     }
 }
 
@@ -146,18 +159,6 @@ impl Display for SubqueryFunction {
 impl Display for Function {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self)
-    }
-}
-
-impl ToSql for AggregateFunction {
-    fn to_sql(&self, _state: &mut QueryBuildState) -> std::fmt::Result {
-        todo!()
-    }
-}
-
-impl ToSql for SubqueryFunction {
-    fn to_sql(&self, _state: &mut QueryBuildState) -> std::fmt::Result {
-        todo!()
     }
 }
 

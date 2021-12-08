@@ -75,3 +75,9 @@ impl ToSql for AliasedTable {
         write!(state, "{} {}", self.table, self.alias)
     }
 }
+
+impl ToSql for Alias {
+    fn to_sql(&self, state: &mut QueryBuildState) -> FmtResult {
+        write!(state, "{}", self.name)
+    }
+}

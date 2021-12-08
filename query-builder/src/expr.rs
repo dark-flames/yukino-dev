@@ -1,6 +1,6 @@
-use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::fmt::{Display, Formatter, Result as FmtResult, Write};
 
-use crate::{DatabaseValue, FunctionCall, Ident, SelectQuery};
+use crate::{DatabaseValue, FunctionCall, Ident, QueryBuildState, SelectQuery, ToSql};
 
 pub type ExprBox = Box<Expr>;
 
@@ -40,7 +40,7 @@ impl Display for Expr {
         match self {
             Expr::Ident(i) => i.fmt(f),
             Expr::Lit(l) => l.fmt(f),
-            Expr::FunctionCall(c) => c.fmt(f),
+            Expr::FunctionCall(c) => Display::fmt(&c, f),
             Expr::Subquery(s) => write!(f, "({})", s),
             Expr::BitInverse(e) => write!(f, "~{}", e),
             Expr::BitXor(l, r) => write!(f, "{} ^ {}", l, r),
@@ -65,6 +65,184 @@ impl Display for Expr {
             Expr::In(l, r) => write!(f, "{} IN ({})", l, r),
             Expr::Exists(s) => write!(f, "EXISTS ({})", s),
             Expr::NotExists(s) => write!(f, "NOT EXISTS ({})", s),
+        }
+    }
+}
+
+impl ToSql for Expr {
+    fn to_sql(&self, state: &mut QueryBuildState) -> FmtResult {
+        match self {
+            Expr::Ident(ident) => ident.to_sql(state),
+            Expr::Lit(l) => l.to_sql(state),
+            Expr::FunctionCall(f) => f.to_sql(state),
+            Expr::Subquery(query) => {
+                write!(state, "(")?;
+                query.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::BitInverse(e) => {
+                write!(state, "(")?;
+                write!(state, "~")?;
+                e.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::BitXor(l, r) => {
+                write!(state, "(")?;
+                l.to_sql(state)?;
+                write!(state, "^")?;
+                r.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::Mul(l, r) => {
+                write!(state, "(")?;
+                l.to_sql(state)?;
+                write!(state, "*")?;
+                r.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::Div(l, r) => {
+                write!(state, "(")?;
+                l.to_sql(state)?;
+                write!(state, "/")?;
+                r.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::Rem(l, r) => {
+                write!(state, "(")?;
+                l.to_sql(state)?;
+                write!(state, "%")?;
+                r.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::Add(l, r) => {
+                write!(state, "(")?;
+                l.to_sql(state)?;
+                write!(state, "+")?;
+                r.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::Sub(l, r) => {
+                write!(state, "(")?;
+                l.to_sql(state)?;
+                write!(state, "-")?;
+                r.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::LeftShift(l, r) => {
+                write!(state, "(")?;
+                l.to_sql(state)?;
+                write!(state, "<<")?;
+                r.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::RightShift(l, r) => {
+                write!(state, "(")?;
+                l.to_sql(state)?;
+                write!(state, ">>")?;
+                r.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::BitAnd(l, r) => {
+                write!(state, "(")?;
+                l.to_sql(state)?;
+                write!(state, "&")?;
+                r.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::BitOr(l, r) => {
+                write!(state, "(")?;
+                l.to_sql(state)?;
+                write!(state, "|")?;
+                r.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::Bte(l, r) => {
+                write!(state, "(")?;
+                l.to_sql(state)?;
+                write!(state, ">=")?;
+                r.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::Lte(l, r) => {
+                write!(state, "(")?;
+                l.to_sql(state)?;
+                write!(state, "<=")?;
+                r.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::Neq(l, r) => {
+                write!(state, "(")?;
+                l.to_sql(state)?;
+                write!(state, "!=")?;
+                r.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::Bt(l, r) => {
+                write!(state, "(")?;
+                l.to_sql(state)?;
+                write!(state, ">")?;
+                r.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::Lt(l, r) => {
+                write!(state, "(")?;
+                l.to_sql(state)?;
+                write!(state, "<")?;
+                r.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::Eq(l, r) => {
+                write!(state, "(")?;
+                l.to_sql(state)?;
+                write!(state, "=")?;
+                r.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::Not(e) => {
+                write!(state, "(")?;
+                write!(state, "Not")?;
+                e.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::And(l, r) => {
+                write!(state, "(")?;
+                l.to_sql(state)?;
+                write!(state, "AND")?;
+                r.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::Or(l, r) => {
+                write!(state, "(")?;
+                l.to_sql(state)?;
+                write!(state, "OR")?;
+                r.to_sql(state)?;
+                write!(state, ")")
+            }
+            Expr::In(e, s) => {
+                write!(state, "(")?;
+                e.to_sql(state)?;
+                write!(state, "IN")?;
+                write!(state, "(")?;
+                s.to_sql(state)?;
+                write!(state, ")")?;
+                write!(state, ")")
+            }
+            Expr::Exists(s) => {
+                write!(state, "(")?;
+                write!(state, "EXISTS")?;
+                write!(state, "(")?;
+                s.to_sql(state)?;
+                write!(state, ")")?;
+                write!(state, ")")
+            }
+            Expr::NotExists(s) => {
+                write!(state, "(")?;
+                write!(state, "NOT EXISTS")?;
+                write!(state, "(")?;
+                s.to_sql(state)?;
+                write!(state, ")")?;
+                write!(state, ")")
+            }
         }
     }
 }
