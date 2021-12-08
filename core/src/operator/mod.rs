@@ -7,3 +7,4 @@ mod aggr_func;
 mod boolean;
 mod numeric;
 mod tuple;
+mod subquery;

@@ -17,7 +17,7 @@ pub enum AggregateFunction {
 
 #[derive(Clone, Debug, Copy)]
 pub enum Function {
-    Aggregate(AggregateFunction),
+    Aggregate(AggregateFunction)
 }
 
 pub trait AggregateFunctionCall: 'static + Display + FunctionCall {
