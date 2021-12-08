@@ -66,7 +66,15 @@ impl Display for AliasedTable {
 
 impl ToSql for Ident {
     fn to_sql(&self, state: &mut QueryBuildState) -> FmtResult {
-        write!(state, "{}", self.seg.join("."))
+        let last_index = self.seg.len() - 1;
+        for (index, item) in self.seg.iter().enumerate() {
+            write!(state, "`{}`", item)?;
+            if index != last_index {
+                write!(state, ".")?;
+            }
+        };
+
+        Ok(())
     }
 }
 
@@ -78,6 +86,6 @@ impl ToSql for AliasedTable {
 
 impl ToSql for Alias {
     fn to_sql(&self, state: &mut QueryBuildState) -> FmtResult {
-        write!(state, "{}", self.name)
+        write!(state, "`{}`", self.name)
     }
 }
