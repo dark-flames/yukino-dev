@@ -57,6 +57,53 @@ macro_rules! impl_expr_for {
         )*
     }
 }
+
+macro_rules! impl_comparator_for_subquery_fn_call {
+    (
+        $view_op_trait: ident,
+        $view_op_method: ident,
+        $expr_op_trait: ident,
+        $expr_op_method: ident
+    ) => {
+        impl<
+            L: Value + $expr_op_trait<R>,
+            R: Value<L=U1>,
+            LTags: TagList + MergeList<TagsOfValueView<R>>,
+        > $view_op_trait<SubqueryFnCallView<R>> for ExprViewBoxWithTag<L, LTags> {
+            type Output = ExprViewBoxWithTag<bool, <L as $expr_op_trait<R>>::ResultTags<LTags, TagsOfValueView<R>>>;
+
+            fn $view_op_method(self, rhs: SubqueryFnCallView<R>) -> Self::Output {
+                L::$expr_op_method(self, rhs.into_expr_view())
+            }
+        }
+
+        impl<
+            L: Value<L=U1> + $expr_op_trait<R>,
+            R: Value,
+            RTags: TagList,
+        > $view_op_trait<ExprViewBoxWithTag<R, RTags>> for SubqueryFnCallView<L>
+            where TagsOfValueView<L>: MergeList<RTags> {
+            type Output = ExprViewBoxWithTag<bool, <L as $expr_op_trait<R>>::ResultTags<TagsOfValueView<L>, RTags>>;
+
+            fn $view_op_method(self, rhs: ExprViewBoxWithTag<R, RTags>) -> Self::Output {
+                L::$expr_op_method(self.into_expr_view(), rhs)
+            }
+        }
+
+        impl<
+            L: Value<L=U1> + $expr_op_trait<R>,
+            R: Value<L=U1>,
+        > $view_op_trait<SubqueryFnCallView<R>> for SubqueryFnCallView<L>
+            where TagsOfValueView<L>: MergeList<TagsOfValueView<R>> {
+            type Output = ExprViewBoxWithTag<bool, <L as $expr_op_trait<R>>::ResultTags<TagsOfValueView<L>, TagsOfValueView<R>>>;
+
+            fn $view_op_method(self, rhs: SubqueryFnCallView<R>) -> Self::Output {
+                L::$expr_op_method(self.into_expr_view(), rhs.into_expr_view())
+            }
+        }
+    };
+}
+
 macro_rules! impl_bool_operator {
     (
         $op: tt,
@@ -107,31 +154,6 @@ macro_rules! impl_bool_operator {
 
             fn $view_op_method(self, rhs: R) -> Self::Output {
                 L::$expr_op_method(self, rhs.view_with_tags::<LTags>())
-            }
-        }
-
-        impl<
-            L: Value + $expr_op_trait<R>,
-            R: Value<L=U1>,
-            LTags: TagList + MergeList<TagsOfValueView<R>>,
-        > $view_op_trait<SubqueryFnCallView<R>> for ExprViewBoxWithTag<L, LTags> {
-            type Output = ExprViewBoxWithTag<bool, <L as $expr_op_trait<R>>::ResultTags<LTags, TagsOfValueView<R>>>;
-
-            fn $view_op_method(self, rhs: SubqueryFnCallView<R>) -> Self::Output {
-                L::$expr_op_method(self, rhs.into_expr_view())
-            }
-        }
-
-        impl<
-            L: Value<L=U1> + $expr_op_trait<R>,
-            R: Value,
-            RTags: TagList,
-        > $view_op_trait<ExprViewBoxWithTag<R, RTags>> for SubqueryFnCallView<L>
-            where TagsOfValueView<L>: MergeList<RTags> {
-            type Output = ExprViewBoxWithTag<bool, <L as $expr_op_trait<R>>::ResultTags<TagsOfValueView<L>, RTags>>;
-
-            fn $view_op_method(self, rhs: ExprViewBoxWithTag<R, RTags>) -> Self::Output {
-                L::$expr_op_method(self.into_expr_view(), rhs)
             }
         }
 
@@ -193,3 +215,10 @@ generate_macro!(bt, ViewBt, view_bt);
 generate_macro!(bte, ViewBte, view_bte);
 generate_macro!(lt, ViewLt, view_lt);
 generate_macro!(lte, ViewLte, view_lte);
+
+impl_comparator_for_subquery_fn_call!(ViewEq, view_eq, ExprEq, expr_eq);
+impl_comparator_for_subquery_fn_call!(ViewNeq, view_neq, ExprNeq, expr_neq);
+impl_comparator_for_subquery_fn_call!(ViewBt, view_bt, ExprBt, expr_bt);
+impl_comparator_for_subquery_fn_call!(ViewBte, view_bte, ExprBte, expr_bte);
+impl_comparator_for_subquery_fn_call!(ViewLt, view_lt, ExprLt, expr_lt);
+impl_comparator_for_subquery_fn_call!(ViewLte, view_lte, ExprLte, expr_lte);
