@@ -2,7 +2,7 @@ use yukino::*;
 use yukino::Association;
 use yukino::operator::{SubqueryExists, VerticalJoin};
 use yukino::query::{BelongsToQueryResult, BelongsToView, ExecutableSelectQuery, Filter, Fold, Map};
-use yukino::view::{EntityWithView, ExprView};
+use yukino::view::{EntityWithView, ExprView, SubqueryView};
 use yukino_tests::*;
 
 #[test]
@@ -50,14 +50,14 @@ fn test_subquery_from_view() {
 fn test_subquery_fn() {
     let query = Foo::all()
         .filter(|f| {
-            lt!(f.string.clone(), all Bar::belonging_to_view(&f).map(
+            lt!(f.string.clone(), Bar::belonging_to_view(&f).map(
                 |b| b.name
-            ))
+            ).all())
         })
         .filter(|f| {
-            bt!(f.string.clone(), any Bar::belonging_to_view(&f).map(
+            bt!(Bar::belonging_to_view(&f).map(
                 |b| b.name
-            ))
+            ).any(), f.string)
         }).map(|f| {
         Bar::belonging_to_view(&f).fold(
             |b| b.name.join(Some(", "))

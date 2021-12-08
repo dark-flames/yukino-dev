@@ -122,6 +122,19 @@ macro_rules! impl_bool_operator {
             }
         }
 
+        impl<
+            L: Value<L=U1> + $expr_op_trait<R>,
+            R: Value,
+            RTags: TagList,
+        > $view_op_trait<ExprViewBoxWithTag<R, RTags>> for SubqueryFnCallView<L>
+            where TagsOfValueView<L>: MergeList<RTags> {
+            type Output = ExprViewBoxWithTag<bool, <L as $expr_op_trait<R>>::ResultTags<TagsOfValueView<L>, RTags>>;
+
+            fn $view_op_method(self, rhs: ExprViewBoxWithTag<R, RTags>) -> Self::Output {
+                L::$expr_op_method(self.into_expr_view(), rhs)
+            }
+        }
+
         impl_expr_for! (
             $expr_op_trait,
             $expr_op_method,
@@ -138,16 +151,6 @@ macro_rules! generate_macro {
             ($l: expr, $r: expr) => {{
                 use yukino::operator::$view_trait;
                 ($l).$view_trait_method($r)
-            }};
-            ($l: expr, any $r: expr) => {{
-                use yukino::operator::$view_trait;
-                use yukino::view::SubqueryView;
-                ($l).$view_trait_method($r.any())
-            }};
-            ($l: expr, all $r: expr) => {{
-                use yukino::operator::$view_trait;
-                use yukino::view::SubqueryView;
-                ($l).$view_trait_method($r.all())
             }};
         }
     };
