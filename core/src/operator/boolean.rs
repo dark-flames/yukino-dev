@@ -1,3 +1,5 @@
+use std::ops::Not;
+
 use generic_array::arr;
 use generic_array::typenum::U1;
 
@@ -7,6 +9,26 @@ use crate::view::{
     AnyTagExprView, AnyTagsValue, ConcreteList, ExprViewBoxWithTag, IntoView, MergeList,
     SingleExprView, SubqueryFnCallView, TagList, TagsOfValueView, Value
 };
+
+pub trait ExprNot: Value + Not {
+    fn expr_not<Tags: TagList>(e: ExprViewBoxWithTag<Self, Tags>) -> ExprViewBoxWithTag<bool, Tags>;
+}
+
+impl ExprNot for bool {
+    fn expr_not<Tags: TagList>(e: ExprViewBoxWithTag<Self, Tags>) -> ExprViewBoxWithTag<bool, Tags> {
+        SingleExprView::<bool, Tags>::from_exprs_with_tags(
+            arr![Expr; Expr::Not(Box::new(e.collect_expr().into_iter().next().unwrap()))]
+        )
+    }
+}
+
+impl<T: Value + ExprNot, Tags: TagList> Not for ExprViewBoxWithTag<T, Tags> {
+    type Output = ExprViewBoxWithTag<bool, Tags>;
+
+    fn not(self) -> Self::Output {
+        T::expr_not(self)
+    }
+}
 
 macro_rules! op_trait {
     (
