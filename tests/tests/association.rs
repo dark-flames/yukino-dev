@@ -45,3 +45,24 @@ fn test_subquery_from_view() {
 
     println!("{}", query)
 }
+
+#[test]
+fn test_subquery_fn() {
+    let query = Foo::all()
+        .filter(|f| {
+            lt!(f.string.clone(), all Bar::belonging_to_view(&f).map(
+                |b| b.name
+            ))
+        })
+        .filter(|f| {
+            bt!(f.string.clone(), any Bar::belonging_to_view(&f).map(
+                |b| b.name
+            ))
+        }).map(|f| {
+        Bar::belonging_to_view(&f).fold(
+            |b| b.name.join(Some(", "))
+        ).expr_clone()
+    }).generate_query().0;
+
+    println!("{}", query)
+}

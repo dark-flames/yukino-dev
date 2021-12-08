@@ -1,10 +1,11 @@
 use generic_array::arr;
+use generic_array::typenum::U1;
 
 use query_builder::Expr;
 
 use crate::view::{
-    AnyTagExprView, AnyTagsValue, ConcreteList, ExprViewBoxWithTag, MergeList, SingleExprView,
-    TagList, Value,
+    AnyTagExprView, AnyTagsValue, ConcreteList, ExprViewBoxWithTag, IntoView, MergeList,
+    SingleExprView, SubqueryFnCallView, TagList, TagsOfValueView, Value
 };
 
 macro_rules! op_trait {
@@ -109,6 +110,18 @@ macro_rules! impl_bool_operator {
             }
         }
 
+        impl<
+            L: Value + $expr_op_trait<R>,
+            R: Value<L=U1>,
+            LTags: TagList + MergeList<TagsOfValueView<R>>,
+        > $view_op_trait<SubqueryFnCallView<R>> for ExprViewBoxWithTag<L, LTags> {
+            type Output = ExprViewBoxWithTag<bool, <L as $expr_op_trait<R>>::ResultTags<LTags, TagsOfValueView<R>>>;
+
+            fn $view_op_method(self, rhs: SubqueryFnCallView<R>) -> Self::Output {
+                L::$expr_op_method(self, rhs.into_expr_view())
+            }
+        }
+
         impl_expr_for! (
             $expr_op_trait,
             $expr_op_method,
@@ -125,6 +138,16 @@ macro_rules! generate_macro {
             ($l: expr, $r: expr) => {{
                 use yukino::operator::$view_trait;
                 ($l).$view_trait_method($r)
+            }};
+            ($l: expr, any $r: expr) => {{
+                use yukino::operator::$view_trait;
+                use yukino::view::SubqueryView;
+                ($l).$view_trait_method($r.any())
+            }};
+            ($l: expr, all $r: expr) => {{
+                use yukino::operator::$view_trait;
+                use yukino::view::SubqueryView;
+                ($l).$view_trait_method($r.all())
             }};
         }
     };

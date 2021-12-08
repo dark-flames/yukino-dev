@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display, Formatter, Write};
 
-use crate::{Expr, OrderByItem, QueryBuildState, ToSql};
+use crate::{Expr, OrderByItem, QueryBuildState, SelectQuery, ToSql};
 
 #[derive(Clone, Debug, Copy)]
 pub enum AggregateFunction {
@@ -46,6 +46,12 @@ pub struct GroupConcatFunctionCall {
     pub expr: Expr,
     pub order_by: Vec<OrderByItem>,
     pub separator: Option<String>,
+}
+
+#[derive(Clone, Debug)]
+pub struct SubqueryFunctionCall {
+    pub function: SubqueryFunction,
+    pub subquery: SelectQuery
 }
 
 impl Display for NormalAggregateFunctionCall {
@@ -107,6 +113,18 @@ impl AggregateFunctionCall for GroupConcatFunctionCall {
     }
 }
 
+impl Display for SubqueryFunctionCall {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} ({})", self.function, self.subquery)
+    }
+}
+
+impl FunctionCall for SubqueryFunctionCall {
+    fn clone_box(&self) -> Box<dyn FunctionCall> {
+        Box::new(self.clone())
+    }
+}
+
 impl<T: FunctionCall> ToSql for T {
     fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
         write!(state, "{}", self) // todo: param
@@ -132,6 +150,12 @@ impl Display for Function {
 }
 
 impl ToSql for AggregateFunction {
+    fn to_sql(&self, _state: &mut QueryBuildState) -> std::fmt::Result {
+        todo!()
+    }
+}
+
+impl ToSql for SubqueryFunction {
     fn to_sql(&self, _state: &mut QueryBuildState) -> std::fmt::Result {
         todo!()
     }
