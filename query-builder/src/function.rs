@@ -16,8 +16,15 @@ pub enum AggregateFunction {
 }
 
 #[derive(Clone, Debug, Copy)]
+pub enum SubqueryFunction {
+    Any,
+    All
+}
+
+#[derive(Clone, Debug, Copy)]
 pub enum Function {
-    Aggregate(AggregateFunction)
+    Aggregate(AggregateFunction),
+    Subquery(SubqueryFunction),
 }
 
 pub trait AggregateFunctionCall: 'static + Display + FunctionCall {
@@ -112,11 +119,15 @@ impl Display for AggregateFunction {
     }
 }
 
+impl Display for SubqueryFunction {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 impl Display for Function {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Function::Aggregate(func) => write!(f, "{}", func),
-        }
+        write!(f, "{:?}", self)
     }
 }
 

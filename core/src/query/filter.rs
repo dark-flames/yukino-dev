@@ -4,10 +4,7 @@ use interface::{Association, WithPrimaryKey};
 use query_builder::{Alias, Expr, OrderByItem, Select, SelectFrom, SelectItem, SelectQuery, SelectSource};
 
 use crate::query::{AliasGenerator, AssociationBuilder, ExecutableSelectQuery, Fold, FoldQueryResult, FoldResult, GroupBy, GroupedQueryResult, GroupResult, Map, MultiRows, QueryResultMap, Sort, SortHelper, SortResult};
-use crate::view::{
-    EntityView, EntityWithView, ExprView, ExprViewBox, ExprViewBoxWithTag, TagList, TagsOfEntity,
-    Value,
-};
+use crate::view::{EntityView, EntityWithView, ExprView, ExprViewBox, ExprViewBoxWithTag, TagList, TagsOfEntity, Value, ViewWithPrimaryKey};
 
 pub struct QueryResultFilter<E: EntityWithView> {
     query: SelectFrom,
@@ -189,7 +186,8 @@ impl<
     Children: EntityWithView + Association<Parent, ForeignKeyType= ForeignKey>,
     Parent: EntityWithView + WithPrimaryKey<Type = ForeignKey>,
     ForeignKey: Value,
-> AssociationBuilder<Children, Parent, ForeignKey> for QueryResultFilter<Parent> {
+> AssociationBuilder<Children, Parent, ForeignKey> for QueryResultFilter<Parent>
+    where Parent::View: ViewWithPrimaryKey<Type=ForeignKey> {
     fn build_query(self) -> QueryResultFilter<Children> {
         let subquery = self.query.select(vec![
             SelectItem {
@@ -204,6 +202,20 @@ impl<
         result.query.and_where(Expr::In(
             Box::new(ident),
             subquery
+        ));
+
+        result
+    }
+
+    fn build_from_parent_view(parent_view: &Parent::View) -> QueryResultFilter<Children> {
+        let mut result = Children::all();
+        let primary_key_view = parent_view;
+
+        let ident = result.root_alias.create_ident_expr(Children::foreign_key_name());
+
+        result.query.and_where(Expr::Eq(
+            Box::new(ident),
+            Box::new(primary_key_view.primary_key().collect_expr().into_iter().next().unwrap())
         ));
 
         result

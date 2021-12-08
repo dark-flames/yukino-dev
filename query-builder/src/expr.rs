@@ -31,6 +31,8 @@ pub enum Expr {
     And(ExprBox, ExprBox),
     Or(ExprBox, ExprBox),
     In(ExprBox, SelectQuery),
+    Exists(SelectQuery),
+    NotExists(SelectQuery),
 }
 
 impl Display for Expr {
@@ -39,7 +41,7 @@ impl Display for Expr {
             Expr::Ident(i) => i.fmt(f),
             Expr::Lit(l) => l.fmt(f),
             Expr::FunctionCall(c) => c.fmt(f),
-            Expr::Subquery(s) => s.fmt(f),
+            Expr::Subquery(s) => write!(f, "({})", s),
             Expr::BitInverse(e) => write!(f, "~{}", e),
             Expr::BitXor(l, r) => write!(f, "{} ^ {}", l, r),
             Expr::Mul(l, r) => write!(f, "{} * {}", l, r),
@@ -61,6 +63,8 @@ impl Display for Expr {
             Expr::And(l, r) => write!(f, "{} AND {}", l, r),
             Expr::Or(l, r) => write!(f, "{} OR {}", l, r),
             Expr::In(l, r) => write!(f, "{} IN ({})", l, r),
+            Expr::Exists(s) => write!(f, "EXISTS ({})", s),
+            Expr::NotExists(s) => write!(f, "NOT EXISTS ({})", s),
         }
     }
 }

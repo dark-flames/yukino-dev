@@ -11,9 +11,11 @@ impl Implementor for PrimaryImplementor {
         resolved.fields.iter().find(|f| f.definition.primary_key).map(
             |field| {
                 let entity_name = &resolved.entity_name;
+                let view_name = &resolved.view_name;
                 let column_name = &field.definition.identity_column;
                 let field_name = &field.name;
                 let field_type = &field.ty;
+                let tags = &field.tag_list;
                 quote! {
                     impl yukino::WithPrimaryKey for #entity_name {
                         type Type = #field_type;
@@ -23,6 +25,15 @@ impl Implementor for PrimaryImplementor {
 
                         fn primary_key_name() -> &'static str where Self: Sized {
                             #column_name
+                        }
+                    }
+
+                    impl yukino::view::ViewWithPrimaryKey for #view_name {
+                        type Type = #field_type;
+                        type PrimaryKeyTag = #tags;
+
+                        fn primary_key(&self) -> &yukino::view::ExprViewBoxWithTag<Self::Type, Self::PrimaryKeyTag> {
+                            &self.#field_name
                         }
                     }
                 }

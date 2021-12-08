@@ -1,7 +1,8 @@
 use yukino::*;
 use yukino::Association;
-use yukino::query::{BelongsToQueryResult, ExecutableSelectQuery, Filter};
-use yukino::view::EntityWithView;
+use yukino::operator::{SubqueryExists, VerticalJoin};
+use yukino::query::{BelongsToQueryResult, BelongsToView, ExecutableSelectQuery, Filter, Fold, Map};
+use yukino::view::{EntityWithView, ExprView};
 use yukino_tests::*;
 
 #[test]
@@ -19,11 +20,28 @@ fn test_association_query() {
     let foo = Foo::all()
         .filter(|f| lt!(f.int, 114514));
 
-    let bar = Bar::belonging_to(foo);
+    let bar = Bar::belonging_to_query(foo);
 
     let query = bar.filter(
         |b| eq!(b.name, "test".to_string())
     ).generate_query().0;
+
+    println!("{}", query)
+}
+
+#[test]
+fn test_subquery_from_view() {
+    let query = Foo::all()
+        .filter(|f| lt!(f.int, 114514))
+        .filter(|f| {
+            Bar::belonging_to_view(&f).map(
+                |b| b.name
+            ).exists()
+        }).map(|f| {
+            Bar::belonging_to_view(&f).fold(
+                |b| b.name.join(Some(", "))
+            ).expr_clone()
+        }).generate_query().0;
 
     println!("{}", query)
 }

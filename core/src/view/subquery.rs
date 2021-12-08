@@ -6,6 +6,22 @@ use query_builder::{DatabaseValue, Expr, SelectQuery};
 use crate::err::{RuntimeResult, YukinoError};
 use crate::view::{ExprView, ExprViewBox, ExprViewBoxWithTag, TagsOfValueView, Value, ValueCountOf};
 
+#[derive(Clone)]
+pub struct InSubqueryView {
+    expr: Expr,
+    subquery: SelectQuery,
+}
+
+#[derive(Clone)]
+pub struct ExistsView {
+    subquery: SelectQuery
+}
+
+#[derive(Clone)]
+pub struct NotExistsView {
+    subquery: SelectQuery
+}
+
 // Single column query can be a subquery
 pub trait SubqueryView<T: Value<L=U1>> {
     fn subquery(&self) -> SelectQuery;
@@ -13,12 +29,6 @@ pub trait SubqueryView<T: Value<L=U1>> {
 
 // Single row subquery can be a SingleRowSubquery, it can be use as a ExprView
 pub trait SingleRowSubqueryView<T: Value<L=U1>>: SubqueryView<T> + ExprView<T> {
-}
-
-#[derive(Clone)]
-pub struct InSubqueryView {
-    expr: Expr,
-    subquery: SelectQuery,
 }
 
 impl ExprView<bool> for InSubqueryView {
@@ -41,8 +51,61 @@ impl ExprView<bool> for InSubqueryView {
     }
 }
 
+impl ExprView<bool> for ExistsView {
+    type Tags = TagsOfValueView<bool>;
+
+    fn from_exprs(_exprs: GenericArray<Expr, ValueCountOf<bool>>) -> ExprViewBox<bool> where Self: Sized {
+        unreachable!("ExistsSubqueryView can not be constructed from exprs")
+    }
+
+    fn expr_clone(&self) -> ExprViewBoxWithTag<bool, Self::Tags> {
+        Box::new(self.clone())
+    }
+
+    fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<bool>> {
+        arr![Expr; Expr::Exists(self.subquery.clone())]
+    }
+
+    fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<bool>>) -> RuntimeResult<bool> {
+        (*bool::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
+    }
+}
+
+impl ExprView<bool> for NotExistsView {
+    type Tags = TagsOfValueView<bool>;
+
+    fn from_exprs(_exprs: GenericArray<Expr, ValueCountOf<bool>>) -> ExprViewBox<bool> where Self: Sized {
+        unreachable!("NotExistsSubqueryView can not be constructed from exprs")
+    }
+
+    fn expr_clone(&self) -> ExprViewBoxWithTag<bool, Self::Tags> {
+        Box::new(self.clone())
+    }
+
+    fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<bool>> {
+        arr![Expr; Expr::NotExists(self.subquery.clone())]
+    }
+
+    fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<bool>>) -> RuntimeResult<bool> {
+        (*bool::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
+    }
+}
+
 impl InSubqueryView {
     pub fn create(expr: Expr, subquery: SelectQuery) -> Self {
         Self { expr, subquery }
     }
 }
+
+impl ExistsView {
+    pub fn create(subquery: SelectQuery) -> Self {
+        Self { subquery }
+    }
+}
+
+impl NotExistsView {
+    pub fn create(subquery: SelectQuery) -> Self {
+        Self { subquery }
+    }
+}
+

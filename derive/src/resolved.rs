@@ -29,6 +29,7 @@ pub struct ResolvedField {
     pub view_full_path: TokenStream,
     pub vertical_ty: TokenStream,
     pub vertical_full_path: TokenStream,
+    pub tag_list: TokenStream,
     pub converter_ty: TokenStream,
     pub converter_value_count: usize,
 }

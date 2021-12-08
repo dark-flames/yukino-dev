@@ -43,6 +43,7 @@ impl FieldResolver for BasicFieldResolver {
             view_full_path: ty.view_path(optional),
             vertical_ty: ty.vertical_view_ty(optional),
             vertical_full_path: ty.vertical_view_path(optional),
+            tag_list: ty.tags(optional),
             converter_ty: ty.converter_ty(optional),
             definition: FieldDefinition {
                 name: field.ident.as_ref().unwrap().to_string(),
@@ -168,6 +169,14 @@ impl FieldType {
 
         quote! {
             yukino::view::VerticalExprView::<#ty, yukino::view::TagsOfValueView<#ty>>
+        }
+    }
+
+    pub fn tags(&self, optional: bool) -> TokenStream {
+        let ty = self.field_ty(optional);
+
+        quote! {
+            yukino::view::TagsOfValueView<#ty>
         }
     }
 
