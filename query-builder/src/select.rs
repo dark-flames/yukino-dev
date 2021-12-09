@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display, Formatter, Write};
 
-use crate::{Alias, Expr, Join, QueryBuildState, ToSql};
+use crate::{Alias, AliasedTable, Expr, Join, QueryBuildState, ToSql};
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum Order {
@@ -13,8 +13,7 @@ pub struct Select;
 
 #[derive(Clone, Debug)]
 pub struct SelectFrom {
-    table: String,
-    root_alias: Alias,
+    table: AliasedTable,
     join: Vec<Join>,
     where_clauses: Vec<Expr>,
 }
@@ -47,7 +46,7 @@ pub struct OrderByItem {
     pub order: Order,
 }
 
-pub trait SelectSource: Display + Debug + 'static {
+pub trait SelectSource: ToSql + Display + Debug + 'static {
     fn box_clone(&self) -> Box<dyn SelectSource>;
     fn select(self, items: Vec<SelectItem>) -> SelectQuery
     where
@@ -105,8 +104,10 @@ impl Select {
 impl SelectFrom {
     pub fn create(table: String, root_alias: Alias) -> Self {
         SelectFrom {
-            table,
-            root_alias,
+            table: AliasedTable {
+                table,
+                alias: root_alias
+            },
             join: vec![],
             where_clauses: vec![],
         }
@@ -236,8 +237,8 @@ impl Display for SelectFrom {
         };
         write!(
             f,
-            "FROM {} {} {} {}",
-            self.table, self.root_alias, join_clauses, where_clauses
+            "FROM {} {} {}",
+            self.table, join_clauses, where_clauses
         )
     }
 }
@@ -311,12 +312,6 @@ impl Clone for Box<dyn SelectSource> {
     }
 }
 
-impl ToSql for SelectQuery {
-    fn to_sql(&self, _state: &mut QueryBuildState) -> std::fmt::Result {
-        todo!()
-    }
-}
-
 impl ToSql for Order {
     fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
         match self {
@@ -330,5 +325,76 @@ impl ToSql for OrderByItem {
     fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
         self.expr.to_sql(state)?;
         self.order.to_sql(state)
+    }
+}
+
+impl ToSql for SelectFrom {
+    fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
+        write!(state, "FROM")?;
+
+        self.table.to_sql(state)?;
+
+        self.join.iter().try_for_each(|j| j.to_sql(state))?;
+
+        if !self.where_clauses.is_empty() {
+            write!(state, "WHERE")?;
+
+            state.join(&self.where_clauses, |s| write!(s, "AND"))?;
+        }
+
+
+        Ok(())
+    }
+}
+
+impl ToSql for GroupSelect {
+    fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
+        self.base.to_sql(state)?;
+        if !self.group_by.is_empty() {
+            write!(state, "GROUP BY")?;
+
+            state.join(&self.group_by, |s| write!(s, ","))?;
+
+            if !self.having.is_empty() {
+                write!(state, "HAVING")?;
+                state.join(&self.having, |s| write!(s, "AND"))?;
+            }
+        };
+
+        Ok(())
+    }
+}
+
+impl ToSql for SelectItem {
+    fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
+        self.expr.to_sql(state)?;
+
+        write!(state, "AS {}", self.alias)
+    }
+}
+
+impl ToSql for SelectQuery {
+    fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
+        write!(state, "SELECT")?;
+
+        state.join(&self.select, |s| write!(s, ","))?;
+
+        self.base.to_sql(state)?;
+
+        if !self.order_by.is_empty() {
+            write!(state, "ORDER BY")?;
+
+            state.join(&self.order_by, |s| write!(s, ","))?;
+        }
+
+        if let Some(limit) = &self.limit {
+            write!(state, "LIMIT {}", limit)?;
+        }
+
+        if self.offset != 0 {
+            write!(state, "OFFSET {}", self.offset)?;
+        }
+
+        Ok(())
     }
 }

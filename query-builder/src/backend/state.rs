@@ -1,29 +1,19 @@
 use std::collections::HashMap;
-use std::fmt::{Result, Write};
-use std::marker::PhantomData;
+use std::fmt::{Display, Formatter, Result, Write};
 
-use crate::DatabaseValue;
+use crate::{DatabaseValue, ToSql};
 
 pub type Token = String;
 pub type PlaceHolder = String;
 
 #[derive(Default)]
-pub struct QueryBuildState<'t> {
+pub struct QueryBuildState {
     params: HashMap<usize, DatabaseValue>,
     counter: usize,
-    tokens: Vec<Token>,
-    _marker: PhantomData<&'t u8>
+    tokens: Vec<Token>
 }
 
-impl<'t> QueryBuildState<'t> {
-    pub fn create_static() -> QueryBuildState<'static> {
-        QueryBuildState {
-            params: Default::default(),
-            counter: 0,
-            tokens: vec![],
-            _marker: Default::default()
-        }
-    }
+impl QueryBuildState {
     pub fn create_param(&mut self, v: &DatabaseValue) -> PlaceHolder {
         self.params.insert(self.counter, v.clone());
         let place_holder = format!("${}", self.counter);
@@ -38,25 +28,31 @@ impl<'t> QueryBuildState<'t> {
         write!(self, "{}", place_holder)
     }
 
-    pub fn sub(&'t self) -> QueryBuildState<'t> {
-        QueryBuildState {
-            params: Default::default(),
-            counter: self.counter,
-            tokens: vec![],
-            _marker: Default::default()
-        }
-    }
+    pub fn join<T: ToSql>(&mut self, items: &[T], separator: impl Fn(&mut Self) -> Result) -> Result {
+        let last_index = items.len() - 1;
 
-    pub fn merge(&mut self, state: QueryBuildState) {
-        self.counter = state.counter;
-        self.tokens.extend(state.tokens);
-        self.params.extend(state.params);
+        for (index, item) in items.iter().enumerate() {
+            item.to_sql(self)?;
+
+            if last_index != index {
+                separator(self)?;
+            }
+        }
+
+        Ok(())
     }
 }
 
-impl<'t> Write for QueryBuildState<'t> {
+impl Write for QueryBuildState {
     fn write_str(&mut self, s: &str) -> Result {
         self.tokens.push(s.to_string());
         Ok(())
+    }
+}
+
+impl Display for QueryBuildState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let result = self.tokens.join(" ");
+        Display::fmt(&result, f)
     }
 }

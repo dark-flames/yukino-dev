@@ -80,7 +80,9 @@ impl ToSql for Ident {
 
 impl ToSql for AliasedTable {
     fn to_sql(&self, state: &mut QueryBuildState) -> FmtResult {
-        write!(state, "{} {}", self.table, self.alias)
+        write!(state, "{}", self.table)?;
+
+        self.alias.to_sql(state)
     }
 }
 

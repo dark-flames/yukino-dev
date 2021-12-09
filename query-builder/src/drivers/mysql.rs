@@ -7,14 +7,8 @@ pub fn convert_group_concat(fn_call: &GroupConcatFunctionCall, state: &mut Query
     fn_call.expr.to_sql(state)?;
     if !fn_call.order_by.is_empty() {
         write!(state, "ORDER BY")?;
-        let last_index = fn_call.order_by.len() - 1;
-        for (index, item) in fn_call.order_by.iter().enumerate() {
-            item.to_sql(state)?;
 
-            if index != last_index {
-                write!(state, ",")?;
-            }
-        }
+        state.join(&fn_call.order_by, |s| write!(s, ","))?;
     }
 
     if let Some(separator) = &fn_call.separator {
