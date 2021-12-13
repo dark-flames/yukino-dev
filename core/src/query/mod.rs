@@ -1,11 +1,13 @@
 pub use alias::*;
 pub use assoc::*;
+pub use delete::*;
 pub use exec::*;
 pub use filter::*;
 pub use fold::*;
 pub use group::*;
 pub use map::*;
 pub use sort::*;
+pub use update::*;
 pub use visitor::*;
 
 mod alias;
@@ -17,3 +19,5 @@ mod map;
 mod sort;
 mod visitor;
 mod assoc;
+mod delete;
+mod update;

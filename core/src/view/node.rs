@@ -34,3 +34,9 @@ impl<T: Value, TTags: TagList> Clone for ExprViewBoxWithTag<T, TTags> {
         self.expr_clone()
     }
 }
+
+impl<T: Value> From<T> for ExprViewBox<T> {
+    fn from(v: T) -> Self {
+        v.view()
+    }
+}

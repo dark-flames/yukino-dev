@@ -15,7 +15,7 @@ use crate::view::{
 
 pub type ValueCountOf<T> = <T as Value>::L;
 
-pub trait ValueCount: ArrayLength<Expr> + ArrayLength<DatabaseValue> {}
+pub trait ValueCount: ArrayLength<Expr> + ArrayLength<DatabaseValue> + ArrayLength<String> {}
 
 impl ValueCount for UTerm {}
 

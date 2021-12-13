@@ -1,3 +1,5 @@
+use generic_array::GenericArray;
+
 use interface::{WithPrimaryKey, YukinoEntity};
 use query_builder::Alias;
 
@@ -35,4 +37,11 @@ where <Self as EntityView>::Entity: WithPrimaryKey<Type=Self::Type> {
     type PrimaryKeyTag: TagList;
 
     fn primary_key(&self) -> &ExprViewBoxWithTag<Self::Type, Self::PrimaryKeyTag>;
+}
+
+pub trait FieldMarker {
+    type Entity: EntityWithView;
+    type FieldType: Value;
+
+    fn columns() -> GenericArray<String, <Self::FieldType as Value>::L> where Self: Sized;
 }
