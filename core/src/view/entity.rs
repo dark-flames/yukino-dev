@@ -42,6 +42,9 @@ where <Self as EntityView>::Entity: WithPrimaryKey<Type=Self::Type> {
 pub trait FieldMarker {
     type Entity: EntityWithView;
     type FieldType: Value;
+    type ViewTags: TagList;
 
     fn columns() -> GenericArray<String, <Self::FieldType as Value>::L> where Self: Sized;
+
+    fn view(entity_view: <Self::Entity as EntityWithView>::View) -> ExprViewBoxWithTag<Self::FieldType, Self::ViewTags>;
 }

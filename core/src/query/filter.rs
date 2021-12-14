@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use interface::{Association, WithPrimaryKey};
 use query_builder::{Alias, Expr, OrderByItem, Select, SelectFrom, SelectItem, SelectQuery, SelectSource};
 
-use crate::query::{AliasGenerator, AssociationBuilder, Delete, DeleteQuery, ExecutableSelectQuery, Fold, FoldQueryResult, FoldResult, GroupBy, GroupedQueryResult, GroupResult, Map, MultiRows, QueryResultMap, Sort, SortHelper, SortResult, Update, UpdateQuery};
+use crate::query::{AliasGenerator, AssociationBuilder, Delete, DeleteQuery, ExecutableSelectQuery, Fold, FoldQueryResult, FoldResult, GroupBy, GroupedQueryResult, GroupResult, Map, MultiRows, QueryResultMap, Sort, SortHelper, SortResult, Update, UpdateQueryResult};
 use crate::view::{EntityView, EntityWithView, ExprView, ExprViewBox, ExprViewBoxWithTag, TagList, TagsOfEntity, Value, ViewWithPrimaryKey};
 
 pub struct QueryResultFilter<E: EntityWithView> {
@@ -137,14 +137,14 @@ impl<E: EntityWithView> Delete<E> for SortedQueryResultFilter<E> {
 }
 
 impl<E: EntityWithView> Update<E> for QueryResultFilter<E> {
-    fn update(self) -> UpdateQuery<E> {
-        UpdateQuery::create(self.query)
+    fn update(self) -> UpdateQueryResult<E> {
+        UpdateQueryResult::create(self.query)
     }
 }
 
 impl<E: EntityWithView> Update<E> for SortedQueryResultFilter<E> {
-    fn update(self) -> UpdateQuery<E> {
-        UpdateQuery::create(self.nested.query)
+    fn update(self) -> UpdateQueryResult<E> {
+        UpdateQueryResult::create(self.nested.query)
     }
 }
 

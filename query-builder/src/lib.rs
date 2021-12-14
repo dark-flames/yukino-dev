@@ -4,6 +4,7 @@ pub use function::*;
 pub use ident::*;
 pub use join::*;
 pub use select::*;
+pub use update::*;
 pub use value::*;
 
 mod backend;
@@ -14,3 +15,4 @@ mod ident;
 mod join;
 mod select;
 mod value;
+mod update;
