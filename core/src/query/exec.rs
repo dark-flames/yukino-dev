@@ -1,4 +1,4 @@
-use query_builder::SelectQuery;
+use query_builder::Query;
 
 use crate::view::{ExprViewBoxWithTag, TagList, Value};
 
@@ -9,10 +9,10 @@ pub struct MultiRows;
 
 pub trait ExecuteResultType: Clone {}
 
-pub trait ExecutableSelectQuery<T: Value, TTags: TagList> {
+pub trait Executable<T: Value, TTags: TagList> {
     type ResultType: ExecuteResultType;
 
-    fn generate_query(self) -> (SelectQuery, ExprViewBoxWithTag<T, TTags>);
+    fn generate_query(self) -> (Query, ExprViewBoxWithTag<T, TTags>);
 }
 
 impl ExecuteResultType for SingleRow {}

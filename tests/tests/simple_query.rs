@@ -1,6 +1,6 @@
 use yukino::{bt, eq, lt};
 use yukino::operator::{VerticalAverage, VerticalJoin};
-use yukino::query::{ExecutableSelectQuery, Filter, Fold, GroupBy, GroupFold, Map, Map2, Sort};
+use yukino::query::{Executable, Filter, Fold, GroupBy, GroupFold, Map, Map2, Sort};
 use yukino::view::{EntityWithView, VerticalView};
 use yukino_tests::*;
 

@@ -3,10 +3,10 @@ use std::marker::PhantomData;
 use generic_array::{arr, GenericArray};
 use generic_array::typenum::U1;
 
-use query_builder::{DatabaseValue, Expr, OrderByItem, SelectQuery, SelectSource};
+use query_builder::{DatabaseValue, Expr, OrderByItem, Query, SelectQuery, SelectSource};
 
 use crate::err::{RuntimeResult, YukinoError};
-use crate::query::{AliasGenerator, ExecutableSelectQuery, ExecuteResultType, SingleRow};
+use crate::query::{AliasGenerator, Executable, ExecuteResultType, SingleRow};
 use crate::view::{ExprView, ExprViewBox, ExprViewBoxWithTag, SingleRowSubqueryView, SubqueryView, TagList, Value, ValueCountOf};
 
 #[derive(Clone)]
@@ -56,22 +56,22 @@ impl<R: Value, RTags: TagList, ResultType: ExecuteResultType> QueryResultMap<R, 
     }
 }
 
-impl<R: Value, RTags: TagList, ResultType: ExecuteResultType> ExecutableSelectQuery<R, RTags>
+impl<R: Value, RTags: TagList, ResultType: ExecuteResultType> Executable<R, RTags>
     for QueryResultMap<R, RTags, ResultType>
 {
     type ResultType = ResultType;
 
-    fn generate_query(self) -> (SelectQuery, ExprViewBoxWithTag<R, RTags>) {
+    fn generate_query(self) -> (Query, ExprViewBoxWithTag<R, RTags>) {
         let view = self.view.expr_clone();
         (
-            SelectQuery::create(
+            Query::Select(SelectQuery::create(
                 self.query,
                 self.alias_generator
                     .generate_select_list(self.view.collect_expr()),
                 self.order_by_items,
                 None,
                 0,
-            ),
+            )),
             view,
         )
     }

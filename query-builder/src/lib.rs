@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 pub use backend::*;
 pub use delete::*;
 pub use expr::*;
@@ -54,6 +56,18 @@ impl ToSql for Query {
             Query::Update(u) => u.to_sql(state),
             Query::Delete(d) => d.to_sql(state),
             Query::Insert(i) => i.to_sql(state)
+        }
+    }
+}
+
+impl Display for Query {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        if let Query::Select(s) = self {
+            Display::fmt(s, f)
+        } else {
+            let mut state = QueryBuildState::default();
+            self.to_sql(&mut state)?;
+            Display::fmt(state.to_string().as_str(), f)
         }
     }
 }

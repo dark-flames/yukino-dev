@@ -1,9 +1,9 @@
 use std::marker::PhantomData;
 
 use interface::{Association, WithPrimaryKey};
-use query_builder::{Alias, Expr, OrderByItem, Select, SelectFrom, SelectItem, SelectQuery, SelectSource};
+use query_builder::{Alias, Expr, OrderByItem, Query, Select, SelectFrom, SelectItem, SelectQuery, SelectSource};
 
-use crate::query::{AliasGenerator, AssociationBuilder, Delete, DeleteQueryResult, ExecutableSelectQuery, Fold, FoldQueryResult, FoldResult, GroupBy, GroupedQueryResult, GroupResult, Map, MultiRows, QueryResultMap, Sort, SortHelper, SortResult, Update, UpdateQueryResult};
+use crate::query::{AliasGenerator, AssociationBuilder, Delete, DeleteQueryResult, Executable, Fold, FoldQueryResult, FoldResult, GroupBy, GroupedQueryResult, GroupResult, Map, MultiRows, QueryResultMap, Sort, SortHelper, SortResult, Update, UpdateQueryResult};
 use crate::view::{EntityView, EntityWithView, ExprView, ExprViewBox, ExprViewBoxWithTag, TagList, TagsOfEntity, Value, ViewWithPrimaryKey};
 
 pub struct QueryResultFilter<E: EntityWithView> {
@@ -104,21 +104,21 @@ impl<E: EntityWithView> Sort<E::View> for QueryResultFilter<E> {
     }
 }
 
-impl<E: EntityWithView> ExecutableSelectQuery<E, TagsOfEntity<E>> for QueryResultFilter<E> {
+impl<E: EntityWithView> Executable<E, TagsOfEntity<E>> for QueryResultFilter<E> {
     type ResultType = MultiRows;
 
-    fn generate_query(self) -> (SelectQuery, ExprViewBoxWithTag<E, TagsOfEntity<E>>) {
+    fn generate_query(self) -> (Query, ExprViewBoxWithTag<E, TagsOfEntity<E>>) {
         let view = E::View::pure(&self.root_alias);
 
         (
-            SelectQuery::create(
+            Query::Select(SelectQuery::create(
                 Box::new(self.query),
                 self.alias_generator
                     .generate_select_list(view.collect_expr().into_iter()),
                 vec![],
                 None,
                 0,
-            ),
+            )),
             Box::new(view),
         )
     }
@@ -186,14 +186,14 @@ impl<E: EntityWithView> Map<E::View> for SortedQueryResultFilter<E> {
     }
 }
 
-impl<E: EntityWithView> ExecutableSelectQuery<E, TagsOfEntity<E>> for SortedQueryResultFilter<E> {
+impl<E: EntityWithView> Executable<E, TagsOfEntity<E>> for SortedQueryResultFilter<E> {
     type ResultType = MultiRows;
 
-    fn generate_query(self) -> (SelectQuery, ExprViewBoxWithTag<E, TagsOfEntity<E>>) {
+    fn generate_query(self) -> (Query, ExprViewBoxWithTag<E, TagsOfEntity<E>>) {
         let view = E::View::pure(&self.nested.root_alias);
 
         (
-            SelectQuery::create(
+            Query::Select(SelectQuery::create(
                 Box::new(self.nested.query),
                 self.nested
                     .alias_generator
@@ -201,7 +201,7 @@ impl<E: EntityWithView> ExecutableSelectQuery<E, TagsOfEntity<E>> for SortedQuer
                 vec![],
                 None,
                 0,
-            ),
+            )),
             Box::new(view),
         )
     }

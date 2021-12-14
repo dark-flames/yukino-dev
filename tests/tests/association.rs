@@ -1,7 +1,7 @@
 use yukino::*;
 use yukino::Association;
 use yukino::operator::{SubqueryExists, VerticalJoin};
-use yukino::query::{BelongsToQueryResult, BelongsToView, ExecutableSelectQuery, Filter, Fold, Map};
+use yukino::query::{BelongsToQueryResult, BelongsToView, Executable, Filter, Fold, Map};
 use yukino::view::{EntityWithView, ExprView, SubqueryView};
 use yukino_tests::*;
 

@@ -3,10 +3,10 @@ use std::ops::{Add, Sub};
 use generic_array::{arr, GenericArray};
 use generic_array::typenum::U1;
 
-use query_builder::{DatabaseValue, Expr, SelectQuery, SelectSource};
+use query_builder::{DatabaseValue, Expr, Query, SelectQuery, SelectSource};
 
 use crate::err::{RuntimeResult, YukinoError};
-use crate::query::{AliasGenerator, ExecutableSelectQuery, Map, QueryResultMap};
+use crate::query::{AliasGenerator, Executable, Map, QueryResultMap};
 use crate::query::exec::SingleRow;
 use crate::view::{AggregateViewTag, ConcreteList, ExprView, ExprViewBox, ExprViewBoxWithTag, InList, MergeList, SingleRowSubqueryView, SubqueryView, TagList, TagsOfValueView, Value, ValueCountOf};
 
@@ -51,19 +51,19 @@ impl<View: FoldResult> Map<View> for FoldQueryResult<View> {
     }
 }
 
-impl<View: FoldResult> ExecutableSelectQuery<View::Value, View::Tags> for FoldQueryResult<View> {
+impl<View: FoldResult> Executable<View::Value, View::Tags> for FoldQueryResult<View> {
     type ResultType = SingleRow;
 
-    fn generate_query(self) -> (SelectQuery, ExprViewBoxWithTag<View::Value, View::Tags>) {
+    fn generate_query(self) -> (Query, ExprViewBoxWithTag<View::Value, View::Tags>) {
         (
-            SelectQuery::create(
+            Query::Select(SelectQuery::create(
                 self.query,
                 self.alias_generator
                     .generate_select_list(self.view.collect_fold_expr_vec()),
                 vec![],
                 None,
                 0,
-            ),
+            )),
             self.view.expr_box(),
         )
     }

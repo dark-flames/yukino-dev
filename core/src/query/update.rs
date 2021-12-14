@@ -3,14 +3,14 @@ use std::marker::PhantomData;
 
 use generic_array::ArrayLength;
 
-use query_builder::{AssignmentValue, Expr, OrderByItem, SelectFrom, UpdateQuery};
+use query_builder::{AssignmentValue, Expr, OrderByItem, Query, SelectFrom, UpdateQuery};
 
-use crate::query::{Sort, SortHelper, SortResult};
-use crate::view::{EntityView, EntityWithView, ExprViewBoxWithTag, FieldMarker, TagList, Value};
+use crate::query::{Executable, SingleRow, Sort, SortHelper, SortResult};
+use crate::view::{EntityView, EntityWithView, ExprViewBox, ExprViewBoxWithTag, FieldMarker, TagList, TagsOfValueView, Value};
 
 pub struct UpdateQueryResult<E: EntityWithView> {
     query: UpdateQuery,
-    assign: HashMap<String, AssignmentValue>,
+    assignments: HashMap<String, AssignmentValue>,
     _entity: PhantomData<E>
 }
 
@@ -22,7 +22,7 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
     pub fn create(source: SelectFrom) -> Self {
         UpdateQueryResult {
             query: source.into(),
-            assign: HashMap::new(),
+            assignments: HashMap::new(),
             _entity: PhantomData
         }
     }
@@ -43,7 +43,7 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
         let pairs = FMarker::columns().into_iter().zip(result.collect_expr().into_iter()
             .map(AssignmentValue::Expr));
 
-        self.assign.extend(pairs);
+        self.assignments.extend(pairs);
 
         self
     }
@@ -60,7 +60,7 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
         let pairs = FMarker::columns().into_iter().zip(result.collect_expr().into_iter()
             .map(AssignmentValue::Expr));
 
-        self.assign.extend(pairs);
+        self.assignments.extend(pairs);
 
         self
     }
@@ -68,7 +68,7 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
     pub fn set_default<
         FMarker: FieldMarker<Entity=E>,
     >(mut self) -> Self {
-        self.assign.extend(FMarker::columns().into_iter().map(|name| (name, AssignmentValue::Default)));
+        self.assignments.extend(FMarker::columns().into_iter().map(|name| (name, AssignmentValue::Default)));
 
         self
     }
@@ -89,5 +89,17 @@ impl<E: EntityWithView> Sort<E::View> for UpdateQueryResult<E> {
         self.query.append_order_by(result.order_by_items());
 
         self
+    }
+}
+
+impl<E: EntityWithView> Executable<(), TagsOfValueView<()>> for UpdateQueryResult<E> {
+    type ResultType = SingleRow;
+
+    fn generate_query(mut self) -> (Query, ExprViewBox<()>) {
+        for (column, value) in self.assignments {
+            self.query.set(column, value);
+        }
+
+        (Query::Update(self.query), ().view())
     }
 }
