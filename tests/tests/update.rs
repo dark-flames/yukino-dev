@@ -9,6 +9,8 @@ fn test_update() {
         .filter(|b| lt!(b.int, 114514))
         .filter(|b| bt!(b.int, 1919))
         .update()
+        .set(foo::boolean, false)
+        .set_default(foo::id)
         .set_by(foo::long, |l| l + 1)
         .sort(|f, helper| helper.asc(f.id))
         .limit(20)

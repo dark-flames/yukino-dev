@@ -1,9 +1,5 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
-use std::iter::repeat;
-
-use rand::{distributions::Alphanumeric, Rng, thread_rng};
-use rand::rngs::ThreadRng;
 
 use query_builder::{Alias, Expr, SelectItem};
 
@@ -14,17 +10,13 @@ pub type TableName = &'static str;
 
 #[derive(Clone)]
 pub struct AliasGenerator {
-    rng: ThreadRng,
-    alias: HashMap<AliasName, TableName>,
-    _path: HashMap<(String, String), AliasName>,
+    alias: HashMap<AliasName, TableName>
 }
 
 impl AliasGenerator {
     pub fn create() -> AliasGenerator {
         AliasGenerator {
-            rng: thread_rng(),
-            alias: Default::default(),
-            _path: Default::default(),
+            alias: Default::default()
         }
     }
 
@@ -44,17 +36,15 @@ impl AliasGenerator {
     }
 
     fn generate_alias(&mut self, table_name: &'static str) -> Alias {
+        let mut offset = 1;
         let name = loop {
-            let alias_name: String = repeat(())
-                .map(|()| self.rng.sample(Alphanumeric))
-                .map(char::from)
-                .take(3)
-                .collect();
+            let alias_name: String = format!("{}_{}", table_name, offset);
 
             if let Entry::Vacant(e) = self.alias.entry(alias_name.clone()) {
                 e.insert(table_name);
                 break alias_name;
             }
+            offset += 1;
         };
 
         Alias { name }
