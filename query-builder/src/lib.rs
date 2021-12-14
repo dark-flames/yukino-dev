@@ -1,4 +1,4 @@
-use std::fmt::{Display, Formatter};
+use std::fmt::{Display, Formatter, Write};
 
 pub use backend::*;
 pub use delete::*;
@@ -31,24 +31,6 @@ pub enum Query {
     Insert(InsertQuery)
 }
 
-impl Query {
-    pub fn select() -> Select {
-        Select
-    }
-
-    pub fn update() -> Update {
-        Update
-    }
-
-    pub fn delete() -> Delete {
-        Delete
-    }
-
-    pub fn insert() -> Insert {
-        Insert
-    }
-}
-
 impl ToSql for Query {
     fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
         match self {
@@ -56,7 +38,9 @@ impl ToSql for Query {
             Query::Update(u) => u.to_sql(state),
             Query::Delete(d) => d.to_sql(state),
             Query::Insert(i) => i.to_sql(state)
-        }
+        }?;
+
+        write!(state, ";")
     }
 }
 
