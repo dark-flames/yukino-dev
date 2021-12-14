@@ -35,7 +35,7 @@ pub trait Value: 'static + Clone + Debug {
     where
         Self: Sized,
     {
-        Self::view_from_exprs(Self::converter().serialize(self).unwrap().map(Expr::Lit))
+        Self::view_from_exprs(self.to_database_values().map(Expr::Lit))
     }
 
     fn view_from_exprs(exprs: GenericArray<Expr, Self::L>) -> ExprViewBox<Self>
@@ -43,6 +43,10 @@ pub trait Value: 'static + Clone + Debug {
         Self: Sized,
     {
         Self::ValueExprView::from_exprs(exprs)
+    }
+
+    fn to_database_values(&self) -> GenericArray<DatabaseValue, Self::L> {
+        Self::converter().serialize(self).unwrap()
     }
 }
 

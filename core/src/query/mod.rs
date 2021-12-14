@@ -21,3 +21,4 @@ mod visitor;
 mod assoc;
 mod delete;
 mod update;
+mod insert;

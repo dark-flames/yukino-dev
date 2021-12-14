@@ -1,9 +1,9 @@
 use generic_array::GenericArray;
 
 use interface::{WithPrimaryKey, YukinoEntity};
-use query_builder::Alias;
+use query_builder::{Alias, InsertQuery};
 
-use crate::query::QueryResultFilter;
+use crate::query::{Delete, DeleteQueryResult, QueryResultFilter};
 use crate::view::{ExprView, ExprViewBoxWithTag, TagList, Value, VerticalView};
 
 pub trait EntityView: ExprView<Self::Entity> {
@@ -47,4 +47,18 @@ pub trait FieldMarker {
     fn columns() -> GenericArray<String, <Self::FieldType as Value>::L> where Self: Sized;
 
     fn view(entity_view: <Self::Entity as EntityWithView>::View) -> ExprViewBoxWithTag<Self::FieldType, Self::ViewTags>;
+}
+
+pub trait Identifiable: WithPrimaryKey + EntityWithView {
+    fn get(id: Self::Type) -> QueryResultFilter<Self>;
+}
+
+pub trait Deletable: Identifiable {
+    fn delete(self) -> DeleteQueryResult<Self> {
+        Self::get(self.primary_key().clone()).delete()
+    }
+}
+
+pub trait Insertable: EntityWithView {
+    fn insert(self) -> InsertQuery;
 }

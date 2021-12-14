@@ -1,3 +1,4 @@
+use heck::SnakeCase;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 
@@ -25,6 +26,28 @@ impl Implementor for EntityImplementor {
                 yukino::generic_array::typenum::#type_num
             }
         };
+        let insert_branches: Vec<_> = resolved.fields.iter().map(|field| {
+            let field_name = &field.name;
+            let tmp = format_ident!("{}_tmp", field.name.to_string().to_snake_case());
+            let column_branches: Vec<_> = field.definition.columns.iter().map(|c| {
+                let column_name = &c.name;
+                quote! {
+                    .set(
+                        #column_name.to_string(),
+                        yukino::query_builder::AssignmentValue::Expr(
+                            yukino::query_builder::Expr::Lit(#tmp.next().unwrap())
+                        )
+                    )
+                }
+            }).collect();
+
+            quote! {
+                let mut #tmp = self.#field_name.to_database_values().into_iter();
+
+                result
+                    #(#column_branches)*;
+            }
+        }).collect();
 
         vec![quote! {
             impl yukino::YukinoEntity for #name {
@@ -49,6 +72,17 @@ impl Implementor for EntityImplementor {
                 fn converter() -> yukino::converter::ConverterRef<Self> where Self: Sized {
                     use yukino::converter::Converter;
                     #converter_name::instance()
+                }
+            }
+
+            impl yukino::view::Insertable for #name {
+                fn insert(self) -> yukino::query_builder::InsertQuery {
+                    use yukino::view::Value;
+                    let mut result = yukino::query_builder::Insert::into(#table_name.to_string());
+
+                    #(#insert_branches)*
+
+                    result
                 }
             }
         }]

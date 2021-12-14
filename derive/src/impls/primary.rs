@@ -36,6 +36,16 @@ impl Implementor for PrimaryImplementor {
                             &self.#field_name
                         }
                     }
+
+                    impl yukino::view::Identifiable for #entity_name {
+                        fn get(id: Self::Type) -> yukino::query::QueryResultFilter<Self> {
+                            use yukino::query::Filter;
+                            <Self as yukino::view::EntityWithView>::all()
+                                .filter(|e| yukino::eq!(e.#field_name, id))
+                        }
+                    }
+
+                    impl yukino::view::Deletable for #entity_name {}
                 }
             }
         ).into_iter().collect()
