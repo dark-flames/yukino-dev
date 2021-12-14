@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use interface::{Association, WithPrimaryKey};
 use query_builder::{Alias, Expr, OrderByItem, Select, SelectFrom, SelectItem, SelectQuery, SelectSource};
 
-use crate::query::{AliasGenerator, AssociationBuilder, Delete, DeleteQuery, ExecutableSelectQuery, Fold, FoldQueryResult, FoldResult, GroupBy, GroupedQueryResult, GroupResult, Map, MultiRows, QueryResultMap, Sort, SortHelper, SortResult, Update, UpdateQueryResult};
+use crate::query::{AliasGenerator, AssociationBuilder, Delete, DeleteQueryResult, ExecutableSelectQuery, Fold, FoldQueryResult, FoldResult, GroupBy, GroupedQueryResult, GroupResult, Map, MultiRows, QueryResultMap, Sort, SortHelper, SortResult, Update, UpdateQueryResult};
 use crate::view::{EntityView, EntityWithView, ExprView, ExprViewBox, ExprViewBoxWithTag, TagList, TagsOfEntity, Value, ViewWithPrimaryKey};
 
 pub struct QueryResultFilter<E: EntityWithView> {
@@ -125,14 +125,14 @@ impl<E: EntityWithView> ExecutableSelectQuery<E, TagsOfEntity<E>> for QueryResul
 }
 
 impl<E: EntityWithView> Delete<E> for QueryResultFilter<E> {
-    fn delete(self) -> DeleteQuery<E> {
-        DeleteQuery::create(self.query)
+    fn delete(self) -> DeleteQueryResult<E> {
+        DeleteQueryResult::create(self.query)
     }
 }
 
 impl<E: EntityWithView> Delete<E> for SortedQueryResultFilter<E> {
-    fn delete(self) -> DeleteQuery<E> {
-        DeleteQuery::create(self.nested.query)
+    fn delete(self) -> DeleteQueryResult<E> {
+        DeleteQueryResult::create_with_order(self.nested.query, self.order_by)
     }
 }
 
@@ -144,7 +144,7 @@ impl<E: EntityWithView> Update<E> for QueryResultFilter<E> {
 
 impl<E: EntityWithView> Update<E> for SortedQueryResultFilter<E> {
     fn update(self) -> UpdateQueryResult<E> {
-        UpdateQueryResult::create(self.nested.query)
+        UpdateQueryResult::create_with_orders(self.nested.query, self.order_by)
     }
 }
 

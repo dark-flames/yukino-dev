@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Display, Formatter, Write};
 
-use crate::{Alias, AliasedTable, Expr, Join, QueryBuildState, ToSql, Update, UpdateQuery};
+use crate::{Alias, AliasedTable, Delete, Expr, Join, QueryBuildState, ToSql, Update, UpdateQuery};
+use crate::delete::DeleteQuery;
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum Order {
@@ -402,6 +403,18 @@ impl ToSql for SelectQuery {
 impl From<SelectFrom> for UpdateQuery {
     fn from(s: SelectFrom) -> Self {
         let mut result = Update::from(s.table.table, s.table.alias);
+
+        for where_clause in s.where_clauses {
+            result.and_where(where_clause);
+        }
+
+        result
+    }
+}
+
+impl From<SelectFrom> for DeleteQuery {
+    fn from(s: SelectFrom) -> Self {
+        let mut result = Delete::from(s.table.table, s.table.alias);
 
         for where_clause in s.where_clauses {
             result.and_where(where_clause);
