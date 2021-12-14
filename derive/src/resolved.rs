@@ -11,6 +11,7 @@ pub struct ResolvedEntity {
     pub converter_name: Ident,
     pub fields: Vec<ResolvedField>,
     pub associations: Vec<ResolvedAssociation>,
+    pub marker_mod: Ident
 }
 
 pub struct ResolvedAssociation {
@@ -32,4 +33,5 @@ pub struct ResolvedField {
     pub tag_list: TokenStream,
     pub converter_ty: TokenStream,
     pub converter_value_count: usize,
+    pub field_marker: Ident,
 }

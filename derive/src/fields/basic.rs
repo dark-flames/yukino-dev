@@ -45,6 +45,7 @@ impl FieldResolver for BasicFieldResolver {
             vertical_full_path: ty.vertical_view_path(optional),
             tag_list: ty.tags(optional),
             converter_ty: ty.converter_ty(optional),
+            field_marker: format_ident!("{}", column_name),
             definition: FieldDefinition {
                 name: field.ident.as_ref().unwrap().to_string(),
                 columns: vec![

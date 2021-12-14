@@ -4,7 +4,7 @@ use syn::parse_macro_input;
 
 use crate::entity::EntityResolver;
 use crate::fields::BasicFieldResolver;
-use crate::impls::{AssociationImplementor, ConverterImplementor, EntityImplementor, PrimaryImplementor, ViewImplementor};
+use crate::impls::{AssociationImplementor, ConverterImplementor, EntityImplementor, FieldMarkerImplementor, PrimaryImplementor, ViewImplementor};
 
 mod entity;
 mod fields;
@@ -21,7 +21,8 @@ pub fn derive_entity(tokens: TokenStream) -> TokenStream {
         Box::new(EntityImplementor),
         Box::new(ViewImplementor),
         Box::new(PrimaryImplementor),
-        Box::new(AssociationImplementor)
+        Box::new(AssociationImplementor),
+        Box::new(FieldMarkerImplementor)
     ]);
 
     let result = resolver.get_implements(&item_struct).unwrap_or_else(
