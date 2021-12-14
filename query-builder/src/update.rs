@@ -4,12 +4,12 @@ use crate::{Alias, AliasedTable, Expr, OrderByItem, QueryBuildState, ToSql};
 
 pub struct Update;
 
-pub struct AssignItem {
+pub struct AssignmentItem {
     pub column: String,
-    pub value: AssignValue
+    pub value: AssignmentValue
 }
 
-pub enum AssignValue {
+pub enum AssignmentValue {
     Expr(Expr),
     Default
 }
@@ -19,7 +19,7 @@ pub struct UpdateQuery {
     where_clauses: Vec<Expr>,
     limit: Option<usize>,
     order_by: Vec<OrderByItem>,
-    set: Vec<AssignItem>
+    assignments: Vec<AssignmentItem>
 }
 
 impl Update {
@@ -32,7 +32,7 @@ impl Update {
             where_clauses: vec![],
             limit: None,
             order_by: vec![],
-            set: Default::default()
+            assignments: Default::default()
         }
     }
 }
@@ -42,8 +42,8 @@ impl UpdateQuery {
         &self.from.alias
     }
 
-    pub fn set(&mut self, column: String, value: AssignValue) -> &mut Self {
-        self.set.push(AssignItem {
+    pub fn set(&mut self, column: String, value: AssignmentValue) -> &mut Self {
+        self.assignments.push(AssignmentItem {
             column,
             value
         });
@@ -70,16 +70,16 @@ impl UpdateQuery {
     }
 }
 
-impl ToSql for AssignValue {
+impl ToSql for AssignmentValue {
     fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
         match self {
-            AssignValue::Expr(e) => e.to_sql(state),
-            AssignValue::Default => write!(state, "DEFAULT")
+            AssignmentValue::Expr(e) => e.to_sql(state),
+            AssignmentValue::Default => write!(state, "DEFAULT")
         }
     }
 }
 
-impl ToSql for AssignItem {
+impl ToSql for AssignmentItem {
     fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
         write!(state, "{}=", self.column)?;
         self.value.to_sql(state)
@@ -92,7 +92,7 @@ impl ToSql for UpdateQuery {
 
         self.from.to_sql(state)?;
         write!(state, "SET")?;
-        state.join(&self.set, |s| write!(s, ","))?;
+        state.join(&self.assignments, |s| write!(s, ","))?;
 
         if !self.where_clauses.is_empty() {
             write!(state, "WHERE")?;

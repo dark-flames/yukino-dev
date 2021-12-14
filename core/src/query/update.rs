@@ -3,14 +3,14 @@ use std::marker::PhantomData;
 
 use generic_array::ArrayLength;
 
-use query_builder::{AssignValue, Expr, OrderByItem, SelectFrom, UpdateQuery};
+use query_builder::{AssignmentValue, Expr, OrderByItem, SelectFrom, UpdateQuery};
 
 use crate::query::{Sort, SortHelper, SortResult};
 use crate::view::{EntityView, EntityWithView, ExprViewBoxWithTag, FieldMarker, TagList, Value};
 
 pub struct UpdateQueryResult<E: EntityWithView> {
     query: UpdateQuery,
-    assign: HashMap<String, AssignValue>,
+    assign: HashMap<String, AssignmentValue>,
     _entity: PhantomData<E>
 }
 
@@ -41,7 +41,7 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
     >(mut self, v: V) -> Self where <T as Value>::L: ArrayLength<(String, Expr)> {
         let result = v.into();
         let pairs = FMarker::columns().into_iter().zip(result.collect_expr().into_iter()
-            .map(AssignValue::Expr));
+            .map(AssignmentValue::Expr));
 
         self.assign.extend(pairs);
 
@@ -58,7 +58,7 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
             E::View::pure(self.query.root_alias())
         )).into();
         let pairs = FMarker::columns().into_iter().zip(result.collect_expr().into_iter()
-            .map(AssignValue::Expr));
+            .map(AssignmentValue::Expr));
 
         self.assign.extend(pairs);
 
@@ -68,7 +68,7 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
     pub fn set_default<
         FMarker: FieldMarker<Entity=E>,
     >(mut self) -> Self {
-        self.assign.extend(FMarker::columns().into_iter().map(|name| (name, AssignValue::Default)));
+        self.assign.extend(FMarker::columns().into_iter().map(|name| (name, AssignmentValue::Default)));
 
         self
     }
