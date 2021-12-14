@@ -3,12 +3,14 @@ use generic_array::GenericArray;
 pub use basic::*;
 use query_builder::DatabaseValue;
 pub use tuple::*;
+pub use unit::*;
 
 use crate::err::ConvertError;
 use crate::view::{Value, ValueCountOf};
 
 mod basic;
 mod tuple;
+mod unit;
 
 pub type ConverterRef<T> = &'static dyn Converter<Output = T>;
 
