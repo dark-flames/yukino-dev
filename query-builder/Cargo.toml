@@ -15,6 +15,7 @@ serde = { version = "1.0", optional = true }
 serde_json = { version = "1.0", optional = true }
 sqlx = { version = "0.5.9", features = ["runtime-tokio-native-tls"]}
 thiserror = "1.0"
+generic-array = "0.14.4"
 
 [features]
 default = ["mysql", "json", "data-time"]

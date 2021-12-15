@@ -8,7 +8,6 @@ pub use group::*;
 pub use map::*;
 pub use sort::*;
 pub use update::*;
-pub use visitor::*;
 
 mod alias;
 mod exec;
@@ -17,7 +16,6 @@ mod fold;
 mod group;
 mod map;
 mod sort;
-mod visitor;
 mod assoc;
 mod delete;
 mod update;

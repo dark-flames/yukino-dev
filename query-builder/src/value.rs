@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
+use generic_array::{ArrayLength, GenericArray};
 use serde_json::Value;
-use sqlx::{Decode, Encode, TypeInfo, ValueRef};
+use sqlx::{ColumnIndex, Decode, Encode, Error, FromRow, Row, TypeInfo, ValueRef};
 use sqlx::database::{HasArguments, HasValueRef};
 use sqlx::encode::IsNull;
 use sqlx::error::BoxDynError;
@@ -187,5 +188,33 @@ impl<'q> Encode<'q, MySql> for DatabaseValue
             DatabaseValue::Json(j) => j.encode_by_ref(buf),
             DatabaseValue::Null(_) => IsNull::Yes
         }
+    }
+}
+
+pub struct ResultRow<L: ArrayLength<DatabaseValue>> {
+    values: GenericArray<DatabaseValue, L>
+}
+
+impl<L: ArrayLength<DatabaseValue>> From<GenericArray<DatabaseValue, L>> for ResultRow<L> {
+    fn from(values: GenericArray<DatabaseValue, L>) -> Self {
+        ResultRow { values }
+    }
+}
+
+impl<L: ArrayLength<DatabaseValue>> From<ResultRow<L>> for GenericArray<DatabaseValue, L> {
+    fn from(r: ResultRow<L>) -> Self {
+        r.values
+    }
+}
+
+#[cfg(feature = "mysql")]
+impl<'r, R: Row<Database=MySql>, L: ArrayLength<DatabaseValue>> FromRow<'r, R> for ResultRow<L>
+    where usize: ColumnIndex<R> {
+    fn from_row(row: &'r R) -> Result<Self, Error> {
+        GenericArray::from_exact_iter((0..L::to_usize()).into_iter().map(|index| {
+            row.try_get_unchecked(index)
+        }).collect::<Result<Vec<_>, Error>>()?).ok_or_else(|| Error::Decode(Box::new(
+            ExecuteError::ResultLengthError(L::to_usize(), row.len())
+        ))).map(Into::into)
     }
 }
