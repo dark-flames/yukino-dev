@@ -20,7 +20,6 @@ pub enum FieldType {
     Float,
     Double,
     String,
-    Char,
 }
 
 pub struct BasicFieldResolver;
@@ -66,7 +65,7 @@ impl FieldResolver for BasicFieldResolver {
 
 impl FieldType {
     pub fn from_ty(ty: &Type) -> Option<(Self, bool)> {
-        let branch: [(FieldType, Box<dyn Fn() -> TypeMatchResult>); 11] = [
+        let branch: [(FieldType, Box<dyn Fn() -> TypeMatchResult>); 10] = [
             (FieldType::Bool, Box::new(|| match_optional_ty::<bool>(ty))),
             (FieldType::Short, Box::new(|| match_optional_ty::<i16>(ty))),
             (
@@ -91,8 +90,7 @@ impl FieldType {
                     let str = parse_str("String").unwrap();
                     match_optional_ty_by_param(ty, &str)
                 }),
-            ),
-            (FieldType::Char, Box::new(|| match_optional_ty::<char>(ty))),
+            )
         ];
         branch
             .iter()
@@ -117,7 +115,6 @@ impl FieldType {
             FieldType::Float => "f32",
             FieldType::Double => "f64",
             FieldType::String => "String",
-            FieldType::Char => "char",
         })
             .unwrap();
 
@@ -194,7 +191,6 @@ impl FieldType {
             FieldType::Float => format_ident!("{}FloatConverter", prefix),
             FieldType::Double => format_ident!("{}DoubleConverter", prefix),
             FieldType::String => format_ident!("{}StringConverter", prefix),
-            FieldType::Char => format_ident!("{}CharConverter", prefix),
         };
 
         quote! {
@@ -216,7 +212,6 @@ impl From<&FieldType> for DatabaseType {
             FieldType::Float => DatabaseType::Float,
             FieldType::Double => DatabaseType::Double,
             FieldType::String => DatabaseType::String,
-            FieldType::Char => DatabaseType::Character,
         }
     }
 }

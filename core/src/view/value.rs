@@ -151,5 +151,4 @@ impl_value!(i32, IntConverter, OptionalIntConverter);
 impl_value!(i64, LongConverter, OptionalLongConverter);
 impl_value!(f32, FloatConverter, OptionalFloatConverter);
 impl_value!(f64, DoubleConverter, OptionalDoubleConverter);
-impl_value!(char, CharConverter, OptionalCharConverter);
 impl_value!(String, StringConverter, OptionalStringConverter);

@@ -21,6 +21,5 @@ pub struct Foo {
     pub float: f32,
     pub double: f64,
     pub string: String,
-    pub character: char,
     pub optional: Option<u32>,
 }

@@ -113,7 +113,6 @@ basic_ty_converter!(
 basic_ty_converter!(f32, FloatConverter, Float, FLOAT_CONVERTER);
 basic_ty_converter!(f64, DoubleConverter, Double, DOUBLE_CONVERTER);
 basic_ty_converter!(String, StringConverter, String, STRING_CONVERTER);
-basic_ty_converter!(char, CharConverter, Character, CHAR_CONVERTER);
 optional_basic_ty_converter!(bool, OptionalBoolConverter, Bool, OPTIONAL_BOOL_CONVERTER);
 optional_basic_ty_converter!(
     i16,
@@ -158,10 +157,4 @@ optional_basic_ty_converter!(
     OptionalStringConverter,
     String,
     OPTIONAL_STRING_CONVERTER
-);
-optional_basic_ty_converter!(
-    char,
-    OptionalCharConverter,
-    Character,
-    OPTIONAL_CHAR_CONVERTER
 );

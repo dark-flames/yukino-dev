@@ -76,7 +76,7 @@ pub fn test_boolean() {
     let eq_const = eq!(view.boolean.clone(), false);
     let neq_const = neq!(view.u_int.clone(), 114514);
     let bt_const = bt!(view.string.clone(), "test".to_string());
-    let bte_const = bte!(view.character.clone(), 'c');
+    let bte_const = bte!(view.long.clone(), 1919);
     let lt_const = lt!(view.double.clone(), 114.514);
     let lte_const = lte!(view.float.clone(), 19.19);
 
@@ -85,7 +85,7 @@ pub fn test_boolean() {
     cmp_view(eq_const, "b.boolean == false");
     cmp_view(neq_const, "b.u_int != 114514");
     cmp_view(bt_const, "b.string > \"test\"");
-    cmp_view(bte_const, "b.character >= 'c'");
+    cmp_view(bte_const, "b.long >= 1919");
     cmp_view(lt_const, "b.double < 114.514");
     cmp_view(lte_const, "b.float <= 19.19");
 
@@ -94,7 +94,7 @@ pub fn test_boolean() {
     let eq = eq!(view.boolean.clone(), view.boolean);
     let neq = neq!(view.u_int.clone(), view.u_int);
     let bt = bt!(view.string.clone(), view.string);
-    let bte = bte!(view.character.clone(), view.character);
+    let bte = bte!(view.long.clone(), view.long);
     let lt = lt!(view.double.clone(), view.double);
     let lte = lte!(view.float.clone(), view.float);
 
@@ -103,7 +103,7 @@ pub fn test_boolean() {
     cmp_view(eq, "b.boolean == b.boolean");
     cmp_view(neq, "b.u_int != b.u_int");
     cmp_view(bt, "b.string > b.string");
-    cmp_view(bte, "b.character >= b.character");
+    cmp_view(bte, "b.long >= b.long");
     cmp_view(lt, "b.double < b.double");
     cmp_view(lte, "b.float <= b.float");
 }

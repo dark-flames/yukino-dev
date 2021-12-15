@@ -16,7 +16,6 @@ fn test_insert() {
         float: 0.0,
         double: 0.0,
         string: "".to_string(),
-        character: 'c',
         optional: None
     };
 

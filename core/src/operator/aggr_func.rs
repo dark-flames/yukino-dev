@@ -147,7 +147,7 @@ impl_aggr_fn!(
     VerticalCount,
     count,
     Count,
-    [bool, u16, i16, u32, i32, u64, i64, f32, f64, char, String]
+    [bool, u16, i16, u32, i32, u64, i64, f32, f64, String]
 );
 impl_aggr_fn!(
     ExprCountDistinct,
@@ -157,7 +157,7 @@ impl_aggr_fn!(
     VerticalCountDistinct,
     count_distinct,
     CountDistinct,
-    [bool, u16, i16, u32, i32, u64, i64, f32, f64, char, String]
+    [bool, u16, i16, u32, i32, u64, i64, f32, f64, String]
 );
 impl_aggr_fn!(
     ExprMax,
@@ -165,7 +165,7 @@ impl_aggr_fn!(
     VerticalMax,
     max,
     Max,
-    [u16, i16, u32, i32, u64, i64, f32, f64, char, String]
+    [u16, i16, u32, i32, u64, i64, f32, f64, String]
 );
 impl_aggr_fn!(
     ExprMin,
@@ -173,7 +173,7 @@ impl_aggr_fn!(
     VerticalMin,
     min,
     Min,
-    [u16, i16, u32, i32, u64, i64, f32, f64, char, String]
+    [u16, i16, u32, i32, u64, i64, f32, f64, String]
 );
 
-impl_join_for![bool, u16, i16, u32, i32, u64, i64, f32, f64, char, String];
+impl_join_for![bool, u16, i16, u32, i32, u64, i64, f32, f64, String];
