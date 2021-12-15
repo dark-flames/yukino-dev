@@ -5,7 +5,8 @@ use generic_array::ArrayLength;
 
 use query_builder::{AssignmentValue, Expr, OrderByItem, Query, SelectFrom, UpdateQuery};
 
-use crate::query::{Executable, SingleRow, Sort, SortHelper, SortResult};
+use crate::operator::SortResult;
+use crate::query::{Executable, SingleRow, Sort};
 use crate::view::{EntityView, EntityWithView, ExprViewBox, ExprViewBoxWithTag, FieldMarker, TagList, TagsOfValueView, Value};
 
 pub struct UpdateQueryResult<E: EntityWithView> {
@@ -83,8 +84,8 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
 impl<E: EntityWithView> Sort<E::View> for UpdateQueryResult<E> {
     type Result = UpdateQueryResult<E>;
 
-    fn sort<R: SortResult, F: Fn(E::View, SortHelper) -> R>(mut self, f: F) -> Self::Result {
-        let result = f(E::View::pure(self.query.root_alias()), SortHelper::create());
+    fn sort<R: SortResult, F: Fn(E::View) -> R>(mut self, f: F) -> Self::Result {
+        let result = f(E::View::pure(self.query.root_alias()));
 
         self.query.append_order_by(result.order_by_items());
 

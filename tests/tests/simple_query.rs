@@ -1,5 +1,5 @@
 use yukino::{bt, eq, lt};
-use yukino::operator::{VerticalAverage, VerticalJoin};
+use yukino::operator::{SortOrder, VerticalAverage, VerticalJoin};
 use yukino::query::{Executable, Filter, Fold, GroupBy, GroupFold, Map, Map2, Sort};
 use yukino::view::{EntityWithView, VerticalView};
 use yukino_tests::*;
@@ -44,7 +44,7 @@ fn test_group() {
 fn test_order_by() {
     let query = Foo::all()
         .filter(|b| lt!(b.int, 114514))
-        .sort(|b, helper| helper.asc(b.int))
+        .sort(|b| b.int.asc())
         .generate_query()
         .0;
 
@@ -58,7 +58,7 @@ fn test_group_order_by() {
         .filter(|b| bt!(b.int, 1919))
         .group_by(|b| (b.int, b.short))
         .filter(|(a, _)| eq!(a, 910))
-        .sort(|(a, b), helper| (helper.asc(a), helper.desc(b)))
+        .sort(|(a, b)| (a.asc(), b.desc()))
         .generate_query()
         .0;
 
@@ -72,7 +72,7 @@ fn test_map() {
         .filter(|b| bt!(b.int, 1919))
         .group_by(|b| (b.int, b.short))
         .filter(|(a, _)| eq!(a, 910))
-        .sort(|(a, b), helper| (helper.asc(a), helper.desc(b)))
+        .sort(|(a, b)| (a.asc(), b.desc()))
         .map(|(a, _)| a)
         .generate_query()
         .0;
@@ -87,7 +87,7 @@ fn test_group_fold_map() {
         .filter(|b| bt!(b.int, 1919))
         .group_by(|b| (b.int, b.short))
         .fold_group(|b| {
-            b.sort(|b, helper| helper.asc(b.long))
+            b.sort(|b| b.long.asc())
                 .string
                 .join(Some(", "))
         })

@@ -3,7 +3,8 @@ use std::marker::PhantomData;
 use interface::{Association, WithPrimaryKey};
 use query_builder::{Alias, Expr, OrderByItem, Query, Select, SelectFrom, SelectItem, SelectQuery, SelectSource};
 
-use crate::query::{AliasGenerator, AssociationBuilder, Delete, DeleteQueryResult, Executable, Fold, FoldQueryResult, FoldResult, GroupBy, GroupedQueryResult, GroupResult, Map, MultiRows, QueryResultMap, Sort, SortHelper, SortResult, Update, UpdateQueryResult};
+use crate::operator::SortResult;
+use crate::query::{AliasGenerator, AssociationBuilder, Delete, DeleteQueryResult, Executable, Fold, FoldQueryResult, FoldResult, GroupBy, GroupedQueryResult, GroupResult, Map, MultiRows, QueryResultMap, Sort, Update, UpdateQueryResult};
 use crate::view::{EntityView, EntityWithView, ExprView, ExprViewBox, ExprViewBoxWithTag, TagList, TagsOfEntity, Value, ViewWithPrimaryKey};
 
 pub struct QueryResultFilter<E: EntityWithView> {
@@ -94,8 +95,8 @@ impl<E: EntityWithView> GroupBy<E, E::View> for QueryResultFilter<E> {
 impl<E: EntityWithView> Sort<E::View> for QueryResultFilter<E> {
     type Result = SortedQueryResultFilter<E>;
 
-    fn sort<R: SortResult, F: Fn(E::View, SortHelper) -> R>(self, f: F) -> Self::Result {
-        let result = f(E::View::pure(&self.root_alias), SortHelper::create());
+    fn sort<R: SortResult, F: Fn(E::View) -> R>(self, f: F) -> Self::Result {
+        let result = f(E::View::pure(&self.root_alias));
 
         SortedQueryResultFilter {
             nested: self,

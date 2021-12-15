@@ -2,7 +2,7 @@ use std::ops::{Add, Sub};
 
 use query_builder::OrderByItem;
 
-use crate::query::{SortHelper, SortResult};
+use crate::operator::SortResult;
 use crate::view::{
     ExprViewBoxWithTag, MergeList, TagList, TagsOfValueView, TupleExprView, Value, ValueCountOf,
 };
@@ -27,7 +27,7 @@ pub trait VerticalView<T: Value> {
         f: F,
     ) -> VerticalExprView<R, RTags>;
 
-    fn sort<R: SortResult, F: Fn(Self::RowView, SortHelper) -> R>(self, f: F) -> Self;
+    fn sort<R: SortResult, F: Fn(Self::RowView) -> R>(self, f: F) -> Self;
 }
 
 impl<T: Value, TTags: TagList> VerticalView<T> for VerticalExprView<T, TTags> {
@@ -52,10 +52,10 @@ impl<T: Value, TTags: TagList> VerticalView<T> for VerticalExprView<T, TTags> {
         }
     }
 
-    fn sort<R: SortResult, F: Fn(Self::RowView, SortHelper) -> R>(self, f: F) -> Self {
+    fn sort<R: SortResult, F: Fn(Self::RowView) -> R>(self, f: F) -> Self {
         VerticalExprView {
             expr: self.expr.clone(),
-            order_by: f(self.expr, SortHelper::create()).order_by_items(),
+            order_by: f(self.expr).order_by_items(),
         }
     }
 }
@@ -95,8 +95,8 @@ where
         }
     }
 
-    fn sort<R: SortResult, F: Fn(Self::RowView, SortHelper) -> R>(mut self, f: F) -> Self {
-        let result = f(self.row_view(), SortHelper::create());
+    fn sort<R: SortResult, F: Fn(Self::RowView) -> R>(mut self, f: F) -> Self {
+        let result = f(self.row_view());
         let items = result.order_by_items();
         self.0.order_by = items.clone();
         self.1.order_by = items;

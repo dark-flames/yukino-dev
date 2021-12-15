@@ -1,6 +1,7 @@
 pub use aggr_func::*;
 pub use boolean::*;
 pub use numeric::*;
+pub use order::*;
 pub use subquery::*;
 pub use tuple::*;
 
@@ -9,3 +10,4 @@ mod boolean;
 mod numeric;
 mod tuple;
 mod subquery;
+mod order;

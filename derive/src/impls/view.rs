@@ -199,9 +199,9 @@ impl Implementor for ViewImplementor {
                     )
                 }
 
-                fn sort<R: yukino::query::SortResult, F: Fn(Self::RowView, yukino::query::SortHelper) -> R>(mut self, f: F) -> Self {
-                    use yukino::query::SortResult;
-                    let result = f(self.row_view(), yukino::query::SortHelper::create());
+                fn sort<R: yukino::operator::SortResult, F: Fn(Self::RowView) -> R>(mut self, f: F) -> Self {
+                    use yukino::operator::SortResult;
+                    let result = f(self.row_view());
                     self._order_by = result.order_by_items();
                     self
                 }

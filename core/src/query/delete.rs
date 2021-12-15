@@ -2,7 +2,8 @@ use std::marker::PhantomData;
 
 use query_builder::{DeleteQuery, OrderByItem, Query, SelectFrom};
 
-use crate::query::{Executable, SingleRow, Sort, SortHelper, SortResult};
+use crate::operator::SortResult;
+use crate::query::{Executable, SingleRow, Sort};
 use crate::view::{EntityView, EntityWithView, ExprViewBox, TagsOfValueView, Value};
 
 pub struct DeleteQueryResult<E: EntityWithView> {
@@ -40,8 +41,8 @@ impl<E: EntityWithView> DeleteQueryResult<E> {
 impl<E: EntityWithView> Sort<E::View> for DeleteQueryResult<E> {
     type Result = DeleteQueryResult<E>;
 
-    fn sort<R: SortResult, F: Fn(E::View, SortHelper) -> R>(mut self, f: F) -> Self::Result {
-        let result = f(E::View::pure(self.query.root_alias()), SortHelper::create());
+    fn sort<R: SortResult, F: Fn(E::View) -> R>(mut self, f: F) -> Self::Result {
+        let result = f(E::View::pure(self.query.root_alias()));
 
         self.query.append_order_by(result.order_by_items());
 

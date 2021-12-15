@@ -1,4 +1,5 @@
 use yukino::{bt, lt};
+use yukino::operator::SortOrder;
 use yukino::query::{Executable, Filter, Sort, Update};
 use yukino::view::EntityWithView;
 use yukino_tests::*;
@@ -12,7 +13,7 @@ fn test_update() {
         .set(foo::boolean, false)
         .set_default(foo::id)
         .set_by(foo::long, |l| l + 1)
-        .sort(|f, helper| helper.asc(f.id))
+        .sort(|f| f.id.asc())
         .limit(20)
         .generate_query().0;
 
