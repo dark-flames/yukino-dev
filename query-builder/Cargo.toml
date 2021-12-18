@@ -10,17 +10,15 @@ interface = { package = "yukino-interface", path = "../interface", version = "0.
 iroha = "0.1.7"
 quote = "1.0"
 proc-macro2 = "1.0"
-time = { version = "0.3.5", optional = true }
-serde = { version = "1.0", optional = true }
-serde_json = { version = "1.0", optional = true }
-sqlx = { version = "0.5.9", features = ["runtime-tokio-native-tls"]}
+time = { version = "0.3.5" }
+serde = { version = "1.0" }
+serde_json = { version = "1.0" }
+sqlx = { version = "0.5.9", features = ["runtime-async-std-native-tls", "json", "time"]}
 thiserror = "1.0"
 generic-array = "0.14.4"
 
 [features]
-default = ["mysql", "json", "data-time"]
+default = ["mysql"]
 mysql = [ "sqlx/mysql" ]
 pgsql = [ "sqlx/postgres" ]
 sqlite = [ "sqlx/sqlite" ]
-json = ["serde_json", "serde", "sqlx/json"]
-data-time = ["time", "sqlx/time"]

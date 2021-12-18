@@ -1,5 +1,6 @@
-use iroha::ToTokens;
 use std::fmt::{Display, Formatter};
+
+use iroha::ToTokens;
 
 #[derive(Copy, Clone, ToTokens, Debug, Eq, PartialEq, Hash)]
 #[Iroha(mod_path = "yukino")]
@@ -14,15 +15,10 @@ pub enum DatabaseType {
     Float,
     Double,
     Binary,
-    #[cfg(any(feature = "data-time"))]
     Time,
-    #[cfg(any(feature = "data-time"))]
     Date,
-    #[cfg(any(feature = "data-time"))]
     DateTime,
-    Character,
     String,
-    #[cfg(any(feature = "json"))]
     Json,
 }
 

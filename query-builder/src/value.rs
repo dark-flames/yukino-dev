@@ -3,13 +3,12 @@ use std::fmt::{Display, Formatter};
 
 use generic_array::{ArrayLength, GenericArray};
 use serde_json::Value;
-use sqlx::{ColumnIndex, Decode, Encode, Error, FromRow, Row, TypeInfo, ValueRef};
-use sqlx::database::{HasArguments, HasValueRef};
-use sqlx::encode::IsNull;
+use sqlx::{Arguments, ColumnIndex, Database, Decode, Encode, Error, FromRow, Row, Type, TypeInfo, ValueRef};
+use sqlx::database::HasValueRef;
 use sqlx::error::BoxDynError;
 #[cfg(feature = "mysql")]
 use sqlx::MySql;
-use time::{Date, PrimitiveDateTime, Time};
+use sqlx::types::time::{Date, PrimitiveDateTime, Time};
 
 use interface::DatabaseType;
 
@@ -34,18 +33,18 @@ pub enum DatabaseValue {
 
     Binary(Binary),
 
-    #[cfg(any(feature = "data-time"))]
     Time(Time),
-    #[cfg(any(feature = "data-time"))]
     Date(Date),
-    #[cfg(any(feature = "data-time"))]
     DateTime(PrimitiveDateTime),
 
     String(String),
 
-    #[cfg(any(feature = "json"))]
     Json(Value),
     Null(DatabaseType),
+}
+
+pub trait AppendToArgs<'q, DB: Database> {
+    fn append_to<A: Arguments<'q, Database=DB>>(self, args: &mut A);
 }
 
 impl Display for DatabaseValue {
@@ -84,14 +83,10 @@ impl From<&DatabaseValue> for DatabaseType {
             DatabaseValue::Float(_) => DatabaseType::Float,
             DatabaseValue::Double(_) => DatabaseType::Double,
             DatabaseValue::Binary(_) => DatabaseType::Binary,
-            #[cfg(any(feature = "data-time"))]
             DatabaseValue::Time(_) => DatabaseType::Time,
-            #[cfg(any(feature = "data-time"))]
             DatabaseValue::Date(_) => DatabaseType::Date,
-            #[cfg(any(feature = "data-time"))]
             DatabaseValue::DateTime(_) => DatabaseType::DateTime,
             DatabaseValue::String(_) => DatabaseType::String,
-            #[cfg(any(feature = "json"))]
             DatabaseValue::Json(_) => DatabaseType::Json,
             DatabaseValue::Null(ty) => *ty,
         }
@@ -101,6 +96,82 @@ impl From<&DatabaseValue> for DatabaseType {
 impl ToSql for DatabaseValue {
     fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
         state.append_param(self)
+    }
+}
+
+
+
+impl<'q, DB: Database> AppendToArgs<'q, DB> for  DatabaseValue
+where bool: Encode<'q, DB> + Type<DB>,
+    Option<bool>: Encode<'q, DB> + Type<DB>,
+    u16: Encode<'q, DB> + Type<DB>,
+    Option<u16>: Encode<'q, DB> + Type<DB>,
+    i16: Encode<'q, DB> + Type<DB>,
+    Option<i16>: Encode<'q, DB> + Type<DB>,
+    u32: Encode<'q, DB> + Type<DB>,
+    Option<u32>: Encode<'q, DB> + Type<DB>,
+    i32: Encode<'q, DB> + Type<DB>,
+    Option<i32>: Encode<'q, DB> + Type<DB>,
+    u64: Encode<'q, DB> + Type<DB>,
+    Option<u64>: Encode<'q, DB> + Type<DB>,
+    i64: Encode<'q, DB> + Type<DB>,
+    Option<i64>: Encode<'q, DB> + Type<DB>,
+    f32: Encode<'q, DB> + Type<DB>,
+    Option<f32>: Encode<'q, DB> + Type<DB>,
+    f64: Encode<'q, DB> + Type<DB>,
+    Option<f64>: Encode<'q, DB> + Type<DB>,
+    Time: Encode<'q, DB> + Type<DB>,
+    Option<Time>: Encode<'q, DB> + Type<DB>,
+    Date: Encode<'q, DB> + Type<DB>,
+    Option<Date>: Encode<'q, DB> + Type<DB>,
+    PrimitiveDateTime: Encode<'q, DB> + Type<DB>,
+    Option<PrimitiveDateTime>: Encode<'q, DB> + Type<DB>,
+    Value: Encode<'q, DB> + Type<DB>,
+    Option<Value>: Encode<'q, DB> + Type<DB>,
+    String: Encode<'q, DB> + Type<DB>,
+    Option<String>: Encode<'q, DB> + Type<DB>,
+    Binary: Encode<'q, DB> + Type<DB>,
+    Option<Binary>: Encode<'q, DB> + Type<DB>, {
+    fn append_to<A: Arguments<'q, Database=DB>>(self, args: &mut A) {
+        match self {
+            DatabaseValue::Bool(b) => args.add(b),
+            DatabaseValue::SmallInteger(i) => args.add(i),
+            DatabaseValue::UnsignedSmallInteger(i) => args.add(i),
+            DatabaseValue::Integer(i) => args.add(i),
+            DatabaseValue::UnsignedInteger(i) => args.add(i),
+            DatabaseValue::BigInteger(i) => args.add(i),
+            DatabaseValue::UnsignedBigInteger(i) => args.add(i),
+            DatabaseValue::Float(f) => args.add(f),
+            DatabaseValue::Double(f) => args.add(f),
+            DatabaseValue::Binary(b) => args.add(b),
+            DatabaseValue::Time(t) => args.add(t),
+            DatabaseValue::Date(t) => args.add(t),
+            DatabaseValue::DateTime(t) => args.add(t),
+            DatabaseValue::String(s) => args.add(s),
+            DatabaseValue::Json(j) => args.add(j),
+            DatabaseValue::Null(t) => {
+                fn null_of<T>() -> Option<T> {
+                    None
+                }
+                match t {
+                    DatabaseType::Bool => args.add(null_of::<i16>()),
+                    DatabaseType::SmallInteger => args.add(null_of::<i16>()),
+                    DatabaseType::UnsignedSmallInteger => args.add(null_of::<u16>()),
+                    DatabaseType::Integer => args.add(null_of::<i32>()),
+                    DatabaseType::UnsignedInteger => args.add(null_of::<u32>()),
+                    DatabaseType::BigInteger => args.add(null_of::<i64>()),
+                    DatabaseType::UnsignedBigInteger => args.add(null_of::<u64>()),
+                    DatabaseType::Float => args.add(null_of::<f32>()),
+                    DatabaseType::Double => args.add(null_of::<f64>()),
+                    DatabaseType::Binary => args.add(null_of::<Binary>()),
+                    DatabaseType::Time => args.add(null_of::<Time>()),
+                    DatabaseType::Date => args.add(null_of::<Date>()),
+                    DatabaseType::DateTime => args.add(null_of::<PrimitiveDateTime>()),
+                    DatabaseType::String => args.add(null_of::<String>()),
+                    DatabaseType::Json => args.add(null_of::<Value>()),
+                }
+            }
+        }
     }
 }
 
@@ -147,46 +218,6 @@ impl<'r> Decode<'r, MySql> for DatabaseValue
             ("VARCHAR", false) => String::decode(value).map(DatabaseValue::String),
             ("VARCHAR", true) => Ok(DatabaseValue::Null(DatabaseType::String)),
             (_, _) => Err(Box::new(ExecuteError::DecodeError("Unsupported DB type".to_string())))
-        }
-    }
-}
-
-#[cfg(feature = "mysql")]
-impl<'q> Encode<'q, MySql> for DatabaseValue
-    where bool: Encode<'q, MySql>,
-          u16: Encode<'q, MySql>,
-          i16: Encode<'q, MySql>,
-          u32: Encode<'q, MySql>,
-          i32: Encode<'q, MySql>,
-          u64: Encode<'q, MySql>,
-          i64: Encode<'q, MySql>,
-          f32: Encode<'q, MySql>,
-          f64: Encode<'q, MySql>,
-          Time: Encode<'q, MySql>,
-          Date: Encode<'q, MySql>,
-          PrimitiveDateTime: Encode<'q, MySql>,
-          Value: Encode<'q, MySql>,
-          String: Encode<'q, MySql>,
-          Binary: Encode<'q, MySql>
-{
-    fn encode_by_ref(&self, buf: &mut <MySql as HasArguments<'q>>::ArgumentBuffer) -> IsNull {
-        match self {
-            DatabaseValue::Bool(b) => b.encode_by_ref(buf),
-            DatabaseValue::SmallInteger(i) => i.encode_by_ref(buf),
-            DatabaseValue::UnsignedSmallInteger(i) => i.encode_by_ref(buf),
-            DatabaseValue::Integer(i) => i.encode_by_ref(buf),
-            DatabaseValue::UnsignedInteger(i) => i.encode_by_ref(buf),
-            DatabaseValue::BigInteger(i) => i.encode_by_ref(buf),
-            DatabaseValue::UnsignedBigInteger(i) => i.encode_by_ref(buf),
-            DatabaseValue::Float(f) => f.encode_by_ref(buf),
-            DatabaseValue::Double(f) => f.encode_by_ref(buf),
-            DatabaseValue::Binary(b) => b.encode_by_ref(buf),
-            DatabaseValue::Time(t) => t.encode_by_ref(buf),
-            DatabaseValue::Date(t) => t.encode_by_ref(buf),
-            DatabaseValue::DateTime(t) => t.encode_by_ref(buf),
-            DatabaseValue::String(s) => s.encode_by_ref(buf),
-            DatabaseValue::Json(j) => j.encode_by_ref(buf),
-            DatabaseValue::Null(_) => IsNull::Yes
         }
     }
 }
