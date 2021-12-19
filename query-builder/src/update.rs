@@ -9,10 +9,16 @@ pub struct AssignmentItem {
     pub value: AssignmentValue
 }
 
+unsafe impl Send for AssignmentItem {}
+unsafe impl Sync for AssignmentItem {}
+
 pub enum AssignmentValue {
     Expr(Expr),
     Default
 }
+
+unsafe impl Send for AssignmentValue {}
+unsafe impl Sync for AssignmentValue {}
 
 pub struct UpdateQuery {
     from: AliasedTable,
@@ -21,6 +27,9 @@ pub struct UpdateQuery {
     order_by: Vec<OrderByItem>,
     assignments: Vec<AssignmentItem>
 }
+
+unsafe impl Send for UpdateQuery {}
+unsafe impl Sync for UpdateQuery {}
 
 impl Update {
     pub fn from(table: String, alias: Alias) -> UpdateQuery {

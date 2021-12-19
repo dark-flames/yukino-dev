@@ -9,6 +9,9 @@ pub enum Query {
     Insert(InsertQuery)
 }
 
+unsafe impl Send for Query {}
+unsafe impl Sync for Query {}
+
 impl ToSql for Query {
     fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
         match self {

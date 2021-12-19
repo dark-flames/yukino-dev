@@ -23,7 +23,7 @@ impl<N: ValueCount> ValueCount for UInt<N, B0> {}
 
 impl<N: ValueCount> ValueCount for UInt<N, B1> {}
 
-pub trait Value: 'static + Clone + Debug {
+pub trait Value: 'static + Clone + Debug + Send + Sync {
     type L: ValueCount;
     type ValueExprView: ExprView<Self>;
 

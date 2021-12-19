@@ -35,6 +35,7 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
         result
     }
 
+    #[must_use]
     pub fn set<
         FMarker: FieldMarker<Entity=E, FieldType=T>,
         T: Value,  Tags: TagList,
@@ -49,6 +50,7 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
         self
     }
 
+    #[must_use]
     pub fn set_by<
         FMarker: FieldMarker<Entity=E, FieldType=T>,
         T: Value,  Tags: TagList,
@@ -66,6 +68,7 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
         self
     }
 
+    #[must_use]
     pub fn set_default<
         FMarker: FieldMarker<Entity=E>,
     >(mut self, _m: FMarker) -> Self {
@@ -74,6 +77,7 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
         self
     }
 
+    #[must_use]
     pub fn limit(mut self, l: usize) -> Self {
         self.query.limit(l);
 

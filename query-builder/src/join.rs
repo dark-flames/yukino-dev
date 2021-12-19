@@ -9,12 +9,18 @@ pub enum JoinType {
     RightJoin,
 }
 
+unsafe impl Send for JoinType {}
+unsafe impl Sync for JoinType {}
+
 #[derive(Clone, Debug)]
 pub struct Join {
     pub ty: JoinType,
     pub table: AliasedTable,
     pub on: Expr,
 }
+
+unsafe impl Send for Join {}
+unsafe impl Sync for Join {}
 
 impl Display for JoinType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

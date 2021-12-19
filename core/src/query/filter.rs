@@ -20,12 +20,14 @@ pub struct SortedQueryResultFilter<E: EntityWithView> {
 }
 
 pub trait Filter<View> {
+    #[must_use]
     fn filter<F, R: Into<ExprViewBox<bool>>>(self, f: F) -> Self
     where
         F: Fn(View) -> R;
 }
 
 pub trait Filter2<View1, View2> {
+    #[must_use]
     fn filter<F, R: Into<ExprViewBox<bool>>>(self, f: F) -> Self
     where
         F: Fn(View1, View2) -> R;

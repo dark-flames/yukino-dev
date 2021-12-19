@@ -18,5 +18,13 @@ thiserror = "1.0"
 unzip3 = "1.0.0"
 generic-array = "0.14.4"
 rand = "0.8.4"
+sqlx = { version = "0.5.9", features = ["runtime-tokio-rustls", "json", "time"]}
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1.52"
+futures = "0.3"
 
 [features]
+default = [ "mysql" ]
+mysql = [ "sqlx/mysql" ]
+pgsql = [ "sqlx/postgres" ]
+sqlite = [ "sqlx/sqlite" ]

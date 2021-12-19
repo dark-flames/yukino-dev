@@ -47,7 +47,7 @@ pub struct OrderByItem {
     pub order: Order,
 }
 
-pub trait SelectSource: ToSql + Display + Debug + 'static {
+pub trait SelectSource: ToSql + Display + Debug + 'static + Send + Sync {
     fn box_clone(&self) -> Box<dyn SelectSource>;
     fn select(self, items: Vec<SelectItem>) -> SelectQuery
     where
@@ -141,6 +141,12 @@ impl GroupSelect {
         self
     }
 }
+
+unsafe impl Send for SelectFrom {}
+unsafe impl Sync for SelectFrom {}
+
+unsafe impl Send for GroupSelect {}
+unsafe impl Sync for GroupSelect {}
 
 impl SelectSource for SelectFrom {
     fn box_clone(&self) -> Box<dyn SelectSource> {

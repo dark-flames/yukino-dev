@@ -11,6 +11,9 @@ pub struct DeleteQuery {
     limit: Option<usize>
 }
 
+unsafe impl Send for DeleteQuery {}
+unsafe impl Sync for DeleteQuery {}
+
 impl Delete {
     pub fn from(table: String, alias: Alias) -> DeleteQuery {
         DeleteQuery {

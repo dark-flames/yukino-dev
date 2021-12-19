@@ -27,6 +27,7 @@ pub trait VerticalView<T: Value> {
         f: F,
     ) -> VerticalExprView<R, RTags>;
 
+    #[must_use]
     fn sort<R: SortResult, F: Fn(Self::RowView) -> R>(self, f: F) -> Self;
 }
 

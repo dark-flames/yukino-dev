@@ -31,6 +31,7 @@ impl<E: EntityWithView> DeleteQueryResult<E> {
         result
     }
 
+    #[must_use]
     pub fn limit(mut self, l: usize) -> Self {
         self.query.limit(l);
 

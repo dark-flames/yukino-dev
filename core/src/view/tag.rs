@@ -37,13 +37,13 @@ pub struct BitMapSegment<U: BitMap, B: Bool>(PhantomData<(U, B)>);
 
 pub trait TagList: BitMap<L = Len<EmptyTagList>> {}
 
-pub trait BitMap: 'static {
+pub trait BitMap: 'static + Send + Sync {
     type L: Usize;
 }
 
 pub trait Usize: 'static {}
 
-pub trait Bool: 'static {}
+pub trait Bool: 'static + Send + Sync {}
 
 pub trait And<R: Bool> {
     type Result: Bool;

@@ -9,6 +9,10 @@ pub struct InsertQuery {
     assignments: Vec<AssignmentItem>
 }
 
+
+unsafe impl Send for InsertQuery {}
+unsafe impl Sync for InsertQuery {}
+
 impl Insert {
     pub fn into(table: String) -> InsertQuery {
         InsertQuery {

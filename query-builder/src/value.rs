@@ -6,8 +6,6 @@ use serde_json::Value;
 use sqlx::{Arguments, ColumnIndex, Database, Decode, Encode, Error, FromRow, Row, Type, TypeInfo, ValueRef};
 use sqlx::database::HasValueRef;
 use sqlx::error::BoxDynError;
-#[cfg(feature = "mysql")]
-use sqlx::MySql;
 use sqlx::types::time::{Date, PrimitiveDateTime, Time};
 
 use interface::DatabaseType;
@@ -70,6 +68,8 @@ impl Display for DatabaseValue {
     }
 }
 
+impl Unpin for DatabaseValue {}
+
 impl From<&DatabaseValue> for DatabaseType {
     fn from(database_value: &DatabaseValue) -> Self {
         match database_value {
@@ -98,8 +98,6 @@ impl ToSql for DatabaseValue {
         state.append_param(self)
     }
 }
-
-
 
 impl<'q, DB: Database> AppendToArgs<'q, DB> for  DatabaseValue
 where bool: Encode<'q, DB> + Type<DB>,
@@ -176,20 +174,20 @@ where bool: Encode<'q, DB> + Type<DB>,
 }
 
 #[cfg(feature = "mysql")]
-impl<'r> Decode<'r, MySql> for DatabaseValue
-    where bool: Decode<'r, MySql>,
-        u16: Decode<'r, MySql>,
-        i16: Decode<'r, MySql>,
-        u32: Decode<'r, MySql>,
-        i32: Decode<'r, MySql>,
-        u64: Decode<'r, MySql>,
-        i64: Decode<'r, MySql>,
-        f32: Decode<'r, MySql>,
-        f64: Decode<'r, MySql>,
-        Value: Decode<'r, MySql>,
-        String: Decode<'r, MySql>
+impl<'r, DB: Database> Decode<'r, DB> for DatabaseValue
+    where bool: Decode<'r, DB>,
+        u16: Decode<'r, DB>,
+        i16: Decode<'r, DB>,
+        u32: Decode<'r, DB>,
+        i32: Decode<'r, DB>,
+        u64: Decode<'r, DB>,
+        i64: Decode<'r, DB>,
+        f32: Decode<'r, DB>,
+        f64: Decode<'r, DB>,
+        Value: Decode<'r, DB>,
+        String: Decode<'r, DB>
 {
-    fn decode(value: <MySql as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
+    fn decode(value: <DB as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
         let type_info = value.type_info();
 
         match (type_info.name(), type_info.is_null()) {
@@ -238,9 +236,8 @@ impl<L: ArrayLength<DatabaseValue>> From<ResultRow<L>> for GenericArray<Database
     }
 }
 
-#[cfg(feature = "mysql")]
-impl<'r, R: Row<Database=MySql>, L: ArrayLength<DatabaseValue>> FromRow<'r, R> for ResultRow<L>
-    where usize: ColumnIndex<R> {
+impl<'r, DB: Database, R: Row<Database=DB>, L: ArrayLength<DatabaseValue>> FromRow<'r, R> for ResultRow<L>
+    where usize: ColumnIndex<R>, DatabaseValue: Decode<'r, DB> {
     fn from_row(row: &'r R) -> Result<Self, Error> {
         GenericArray::from_exact_iter((0..L::to_usize()).into_iter().map(|index| {
             row.try_get_unchecked(index)

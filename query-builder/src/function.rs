@@ -16,11 +16,17 @@ pub enum AggregateFunction {
     Min,
 }
 
+unsafe impl Send for AggregateFunction {}
+unsafe impl Sync for AggregateFunction {}
+
 #[derive(Clone, Debug, Copy)]
 pub enum SubqueryFunction {
     Any,
     All
 }
+
+unsafe impl Send for SubqueryFunction {}
+unsafe impl Sync for SubqueryFunction {}
 
 #[derive(Clone, Debug, Copy)]
 pub enum Function {
@@ -28,11 +34,14 @@ pub enum Function {
     Subquery(SubqueryFunction),
 }
 
-pub trait AggregateFunctionCall: 'static + Display + FunctionCall {
+unsafe impl Send for Function {}
+unsafe impl Sync for Function {}
+
+pub trait AggregateFunctionCall: 'static + Display + FunctionCall + Sync + Send {
     fn clone_aggr_fn_box(&self) -> Box<dyn AggregateFunctionCall>;
 }
 
-pub trait FunctionCall: 'static + Display + Debug + ToSql {
+pub trait FunctionCall: 'static + Display + Debug + ToSql + Sync + Send {
     fn clone_box(&self) -> Box<dyn FunctionCall>;
 }
 
@@ -42,6 +51,9 @@ pub struct NormalAggregateFunctionCall {
     pub param: Expr,
 }
 
+unsafe impl Send for NormalAggregateFunctionCall {}
+unsafe impl Sync for NormalAggregateFunctionCall {}
+
 #[derive(Clone, Debug)]
 pub struct GroupConcatFunctionCall {
     pub expr: Expr,
@@ -49,11 +61,17 @@ pub struct GroupConcatFunctionCall {
     pub separator: Option<String>,
 }
 
+unsafe impl Send for GroupConcatFunctionCall  {}
+unsafe impl Sync for GroupConcatFunctionCall {}
+
 #[derive(Clone, Debug)]
 pub struct SubqueryFunctionCall {
     pub function: SubqueryFunction,
     pub subquery: SelectQuery
 }
+
+unsafe impl Send for SubqueryFunctionCall {}
+unsafe impl Sync for SubqueryFunctionCall {}
 
 impl Display for NormalAggregateFunctionCall {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

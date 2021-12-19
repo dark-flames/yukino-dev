@@ -10,7 +10,7 @@ use crate::query::{AliasGenerator, Executable, Map, QueryResultMap};
 use crate::query::exec::SingleRow;
 use crate::view::{AggregateViewTag, ConcreteList, ExprView, ExprViewBox, ExprViewBoxWithTag, InList, MergeList, SingleRowSubqueryView, SubqueryView, TagList, TagsOfValueView, Value, ValueCountOf};
 
-pub trait FoldResult: 'static + Clone {
+pub trait FoldResult: 'static + Clone + Send + Sync {
     type Value: Value;
     type Tags: TagList;
     fn collect_fold_expr_vec(&self) -> Vec<Expr>;

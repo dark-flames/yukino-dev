@@ -18,6 +18,13 @@ pub struct AliasedTable {
     pub alias: Alias,
 }
 
+unsafe impl Send for Ident {}
+unsafe impl Sync for Ident {}
+unsafe impl Send for Alias {}
+unsafe impl Sync for Alias {}
+unsafe impl Send for AliasedTable {}
+unsafe impl Sync for AliasedTable {}
+
 impl Alias {
     pub fn create_ident(&self, column: &str) -> Ident {
         let mut ident = self.single_seg_ident();
