@@ -65,3 +65,6 @@ pub trait FetchMulti<T: Value, TTags: TagList>: Executable<T, TTags, ResultType=
         ).collect()
     }
 }
+
+impl<T: Value, TTags: TagList, E: Executable<T, TTags, ResultType = SingleRow>> FetchOne<T, TTags> for E {}
+impl<T: Value, TTags: TagList, E: Executable<T, TTags, ResultType = MultiRows>> FetchMulti<T, TTags> for E {}
