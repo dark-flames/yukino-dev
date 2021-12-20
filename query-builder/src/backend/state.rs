@@ -3,6 +3,7 @@ use std::fmt::{Display, Formatter, Result, Write};
 
 use sqlx::Database;
 use sqlx::database::HasArguments;
+use sqlx::query::QueryAs;
 
 use crate::{AppendToArgs, DatabaseValue, ToSql};
 
@@ -49,17 +50,16 @@ impl QueryBuildState {
         Ok(())
     }
 
-    pub fn args<'q, DB: Database>(self) -> <DB as HasArguments<'q>>::Arguments
+    pub fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
     where
         DatabaseValue: AppendToArgs<'q, DB>,
     {
-        let mut result = DB::Arguments::default();
-
-        for (_, value) in self.params.into_iter() {
-            value.append_to(&mut result);
-        }
-
-        result
+        self.params
+            .into_iter()
+            .fold(query, |q, (_, param)| param.bind_on(q))
     }
 }
 

@@ -1,9 +1,9 @@
 use async_trait::async_trait;
-use generic_array::{ArrayLength, GenericArray};
-use sqlx::{Database, Error, Executor, FromRow, IntoArguments, query_as_with};
-use sqlx::database::HasArguments;
+use generic_array::ArrayLength;
+use sqlx::{Database, Error, Executor, FromRow, MySql, query_as};
+use sqlx::query::QueryAs;
 
-use query_builder::{AppendToArgs, DatabaseValue, Query, QueryBuildState, ToSql};
+use query_builder::{AppendToArgs, DatabaseValue, Query, QueryBuildState, ResultRow, ToSql};
 
 use crate::view::{ExprViewBoxWithTag, TagList, Value, ValueCountOf};
 
@@ -25,26 +25,26 @@ impl ExecuteResultType for MultiRows {}
 
 #[async_trait]
 pub trait FetchOne<T: Value, TTags: TagList>: Executable<T, TTags, ResultType = SingleRow> {
-    async fn exec<'c, 'e, DB: Database, E: 'e + Executor<'e, Database = DB>>(
+    async fn exec<'c, 'e, E: 'e + Executor<'c, Database = MySql>>(
         self,
         executor: E,
     ) -> Result<T, Error>
     where
         Self: Sized,
-        DatabaseValue: for<'q> AppendToArgs<'q, DB>,
-        for<'q> <DB as HasArguments<'q>>::Arguments: IntoArguments<'q, DB>,
+        DatabaseValue: for<'q> AppendToArgs<'q, MySql>,
         <ValueCountOf<T> as ArrayLength<DatabaseValue>>::ArrayType: Unpin,
-        GenericArray<DatabaseValue, ValueCountOf<T>>: for<'r> FromRow<'r, DB::Row>,
+        ResultRow<ValueCountOf<T>>: for<'r> FromRow<'r, <MySql as Database>::Row>,
     {
         let (query, view) = self.generate_query();
         let mut state = QueryBuildState::default();
         query.to_sql(&mut state).unwrap();
         let query = state.to_string();
-        let args = state.args::<DB>();
-        let result: GenericArray<DatabaseValue, ValueCountOf<T>> =
-            query_as_with(&query, args).fetch_one(executor).await?;
+        let query_as: QueryAs<MySql, ResultRow<ValueCountOf<T>>, _> = query_as(&query);
+        let query_as = state.bind_args(query_as);
+        let result = query_as.fetch_one(executor).await?;
 
-        view.eval(&result).map_err(|e| Error::Decode(Box::new(e)))
+        let arr = result.into();
+        view.eval(&arr).map_err(|e| Error::Decode(Box::new(e)))
     }
 }
 
@@ -52,28 +52,29 @@ pub trait FetchOne<T: Value, TTags: TagList>: Executable<T, TTags, ResultType = 
 pub trait FetchMulti<T: Value, TTags: TagList>:
     Executable<T, TTags, ResultType = MultiRows>
 {
-    async fn exec<'c, 'e, DB: Database, E: 'e + Executor<'e, Database = DB>>(
+    async fn exec<'c, 'e, E: 'e + Executor<'c, Database = MySql>>(
         self,
         executor: E,
     ) -> Result<Vec<T>, Error>
     where
         Self: Sized,
-        DatabaseValue: for<'q> AppendToArgs<'q, DB>,
-        for<'q> <DB as HasArguments<'q>>::Arguments: IntoArguments<'q, DB>,
+        DatabaseValue: for<'q> AppendToArgs<'q, MySql>,
         <ValueCountOf<T> as ArrayLength<DatabaseValue>>::ArrayType: Unpin,
-        GenericArray<DatabaseValue, ValueCountOf<T>>: for<'r> FromRow<'r, DB::Row>,
+        ResultRow<ValueCountOf<T>>: for<'r> FromRow<'r, <MySql as Database>::Row>,
     {
         let (query, view) = self.generate_query();
         let mut state = QueryBuildState::default();
         query.to_sql(&mut state).unwrap();
         let query = state.to_string();
-        let args = state.args::<DB>();
-        let result: Vec<GenericArray<DatabaseValue, ValueCountOf<T>>> =
-            query_as_with(&query, args).fetch_all(executor).await?;
-
+        let query_as: QueryAs<MySql, ResultRow<ValueCountOf<T>>, _> = query_as(&query);
+        let query_as = state.bind_args(query_as);
+        let result = query_as.fetch_all(executor).await?;
         result
             .into_iter()
-            .map(|r| view.eval(&r).map_err(|e| Error::Decode(Box::new(e))))
+            .map(|r| {
+                let arr = r.into();
+                view.eval(&arr).map_err(|e| Error::Decode(Box::new(e)))
+            })
             .collect()
     }
 }

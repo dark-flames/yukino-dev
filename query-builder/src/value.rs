@@ -3,11 +3,10 @@ use std::fmt::{Display, Formatter};
 
 use generic_array::{ArrayLength, GenericArray};
 use serde_json::Value;
-use sqlx::{
-    Arguments, ColumnIndex, Database, Decode, Encode, Error, FromRow, Row, Type, TypeInfo, ValueRef,
-};
-use sqlx::database::HasValueRef;
+use sqlx::{ColumnIndex, Database, Decode, Encode, Error, FromRow, Row, Type, TypeInfo, ValueRef};
+use sqlx::database::{HasArguments, HasValueRef};
 use sqlx::error::BoxDynError;
+use sqlx::query::QueryAs;
 use sqlx::types::time::{Date, PrimitiveDateTime, Time};
 
 use interface::DatabaseType;
@@ -44,7 +43,10 @@ pub enum DatabaseValue {
 }
 
 pub trait AppendToArgs<'q, DB: Database> {
-    fn append_to<A: Arguments<'q, Database = DB>>(self, args: &mut A);
+    fn bind_on<O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments>::Arguments>;
 }
 
 impl Display for DatabaseValue {
@@ -134,43 +136,46 @@ where
     Binary: Encode<'q, DB> + Type<DB>,
     Option<Binary>: Encode<'q, DB> + Type<DB>,
 {
-    fn append_to<A: Arguments<'q, Database = DB>>(self, args: &mut A) {
+    fn bind_on<O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
         match self {
-            DatabaseValue::Bool(b) => args.add(b),
-            DatabaseValue::SmallInteger(i) => args.add(i),
-            DatabaseValue::UnsignedSmallInteger(i) => args.add(i),
-            DatabaseValue::Integer(i) => args.add(i),
-            DatabaseValue::UnsignedInteger(i) => args.add(i),
-            DatabaseValue::BigInteger(i) => args.add(i),
-            DatabaseValue::UnsignedBigInteger(i) => args.add(i),
-            DatabaseValue::Float(f) => args.add(f),
-            DatabaseValue::Double(f) => args.add(f),
-            DatabaseValue::Binary(b) => args.add(b),
-            DatabaseValue::Time(t) => args.add(t),
-            DatabaseValue::Date(t) => args.add(t),
-            DatabaseValue::DateTime(t) => args.add(t),
-            DatabaseValue::String(s) => args.add(s),
-            DatabaseValue::Json(j) => args.add(j),
+            DatabaseValue::Bool(b) => query.bind(b),
+            DatabaseValue::SmallInteger(i) => query.bind(i),
+            DatabaseValue::UnsignedSmallInteger(i) => query.bind(i),
+            DatabaseValue::Integer(i) => query.bind(i),
+            DatabaseValue::UnsignedInteger(i) => query.bind(i),
+            DatabaseValue::BigInteger(i) => query.bind(i),
+            DatabaseValue::UnsignedBigInteger(i) => query.bind(i),
+            DatabaseValue::Float(f) => query.bind(f),
+            DatabaseValue::Double(f) => query.bind(f),
+            DatabaseValue::Binary(b) => query.bind(b),
+            DatabaseValue::Time(t) => query.bind(t),
+            DatabaseValue::Date(t) => query.bind(t),
+            DatabaseValue::DateTime(t) => query.bind(t),
+            DatabaseValue::String(s) => query.bind(s),
+            DatabaseValue::Json(j) => query.bind(j),
             DatabaseValue::Null(t) => {
                 fn null_of<T>() -> Option<T> {
                     None
                 }
                 match t {
-                    DatabaseType::Bool => args.add(null_of::<i16>()),
-                    DatabaseType::SmallInteger => args.add(null_of::<i16>()),
-                    DatabaseType::UnsignedSmallInteger => args.add(null_of::<u16>()),
-                    DatabaseType::Integer => args.add(null_of::<i32>()),
-                    DatabaseType::UnsignedInteger => args.add(null_of::<u32>()),
-                    DatabaseType::BigInteger => args.add(null_of::<i64>()),
-                    DatabaseType::UnsignedBigInteger => args.add(null_of::<u64>()),
-                    DatabaseType::Float => args.add(null_of::<f32>()),
-                    DatabaseType::Double => args.add(null_of::<f64>()),
-                    DatabaseType::Binary => args.add(null_of::<Binary>()),
-                    DatabaseType::Time => args.add(null_of::<Time>()),
-                    DatabaseType::Date => args.add(null_of::<Date>()),
-                    DatabaseType::DateTime => args.add(null_of::<PrimitiveDateTime>()),
-                    DatabaseType::String => args.add(null_of::<String>()),
-                    DatabaseType::Json => args.add(null_of::<Value>()),
+                    DatabaseType::Bool => query.bind(null_of::<i16>()),
+                    DatabaseType::SmallInteger => query.bind(null_of::<i16>()),
+                    DatabaseType::UnsignedSmallInteger => query.bind(null_of::<u16>()),
+                    DatabaseType::Integer => query.bind(null_of::<i32>()),
+                    DatabaseType::UnsignedInteger => query.bind(null_of::<u32>()),
+                    DatabaseType::BigInteger => query.bind(null_of::<i64>()),
+                    DatabaseType::UnsignedBigInteger => query.bind(null_of::<u64>()),
+                    DatabaseType::Float => query.bind(null_of::<f32>()),
+                    DatabaseType::Double => query.bind(null_of::<f64>()),
+                    DatabaseType::Binary => query.bind(null_of::<Binary>()),
+                    DatabaseType::Time => query.bind(null_of::<Time>()),
+                    DatabaseType::Date => query.bind(null_of::<Date>()),
+                    DatabaseType::DateTime => query.bind(null_of::<PrimitiveDateTime>()),
+                    DatabaseType::String => query.bind(null_of::<String>()),
+                    DatabaseType::Json => query.bind(null_of::<Value>()),
                 }
             }
         }
