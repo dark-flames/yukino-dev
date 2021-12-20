@@ -1,5 +1,4 @@
-use yukino::query::Executable;
-use yukino::view::Insertable;
+use yukino::prelude::*;
 use yukino_tests::Foo;
 
 #[test]

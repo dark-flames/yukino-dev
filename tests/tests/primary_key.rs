@@ -1,5 +1,4 @@
-use yukino::query::Executable;
-use yukino::view::{Deletable, Identifiable};
+use yukino::prelude::*;
 use yukino::WithPrimaryKey;
 use yukino_tests::*;
 

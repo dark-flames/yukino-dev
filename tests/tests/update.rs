@@ -1,7 +1,4 @@
-use yukino::{bt, lt};
-use yukino::operator::SortOrder;
-use yukino::query::{Executable, Filter, Sort, Update};
-use yukino::view::EntityWithView;
+use yukino::prelude::*;
 use yukino_tests::*;
 
 #[test]

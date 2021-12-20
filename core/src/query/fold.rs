@@ -10,7 +10,8 @@ use crate::query::{AliasGenerator, Executable, Map, QueryResultMap};
 use crate::query::exec::SingleRow;
 use crate::view::{
     AggregateViewTag, ConcreteList, ExprView, ExprViewBox, ExprViewBoxWithTag, InList, MergeList,
-    SingleRowSubqueryView, SubqueryView, TagList, TagsOfValueView, Value, ValueCountOf,
+    SingleRowSubqueryView, SubqueryIntoView, SubqueryView, TagList, TagsOfValueView, Value,
+    ValueCountOf,
 };
 
 pub trait FoldResult: 'static + Clone + Send + Sync {
@@ -123,6 +124,12 @@ impl<T: Value<L = U1>, View: FoldResult<Value = T>> ExprView<T> for FoldQueryRes
 impl<T: Value<L = U1>, View: FoldResult<Value = T>> SingleRowSubqueryView<T>
     for FoldQueryResult<View>
 {
+}
+
+impl<T: Value<L = U1>, View: FoldResult<Value = T>> SubqueryIntoView<T> for FoldQueryResult<View> {
+    fn as_expr(&self) -> ExprViewBox<T> {
+        T::view_from_exprs(arr![Expr; Expr::Subquery(self.subquery())])
+    }
 }
 
 impl<T1: Value, T1Tags: TagList> FoldResult for ExprViewBoxWithTag<T1, T1Tags>

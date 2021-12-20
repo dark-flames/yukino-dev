@@ -1,6 +1,6 @@
-use yukino::{and, bt, bte, eq, lt, lte, neq, or};
+use yukino::prelude::*;
 use yukino::query_builder::Alias;
-use yukino::view::*;
+use yukino::view::{EntityView, ExprViewBox, Value};
 use yukino_tests::*;
 
 pub fn cmp_view<T: Value>(view: ExprViewBox<T>, query: &str) {

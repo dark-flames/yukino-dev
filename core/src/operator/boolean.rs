@@ -6,8 +6,8 @@ use generic_array::typenum::U1;
 use query_builder::Expr;
 
 use crate::view::{
-    AnyTagExprView, AnyTagsValue, ConcreteList, ExprViewBoxWithTag, IntoView, MergeList,
-    SingleExprView, SubqueryFnCallView, TagList, TagsOfValueView, Value,
+    AnyTagExprView, AnyTagsValue, ConcreteList, ExprViewBoxWithTag, MergeList, SingleExprView,
+    SubqueryFnCallView, SubqueryIntoView, TagList, TagsOfValueView, Value,
 };
 
 pub trait ExprNot: Value + Not {
@@ -102,7 +102,7 @@ macro_rules! impl_comparator_for_subquery_fn_call {
             >;
 
             fn $view_op_method(self, rhs: SubqueryFnCallView<R>) -> Self::Output {
-                L::$expr_op_method(self, rhs.into_expr_view())
+                L::$expr_op_method(self, rhs.as_expr())
             }
         }
 
@@ -117,7 +117,7 @@ macro_rules! impl_comparator_for_subquery_fn_call {
             >;
 
             fn $view_op_method(self, rhs: ExprViewBoxWithTag<R, RTags>) -> Self::Output {
-                L::$expr_op_method(self.into_expr_view(), rhs)
+                L::$expr_op_method(self.as_expr(), rhs)
             }
         }
 
@@ -132,7 +132,7 @@ macro_rules! impl_comparator_for_subquery_fn_call {
             >;
 
             fn $view_op_method(self, rhs: SubqueryFnCallView<R>) -> Self::Output {
-                L::$expr_op_method(self.into_expr_view(), rhs.into_expr_view())
+                L::$expr_op_method(self.as_expr(), rhs.as_expr())
             }
         }
     };

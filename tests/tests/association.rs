@@ -1,8 +1,6 @@
-use yukino::*;
 use yukino::Association;
-use yukino::operator::{SubqueryExists, VerticalJoin};
-use yukino::query::{BelongsToQueryResult, BelongsToView, Executable, Filter, Fold, Map};
-use yukino::view::{EntityWithView, ExprView, SubqueryView};
+use yukino::prelude::*;
+use yukino::view::SubqueryIntoView;
 use yukino_tests::*;
 
 #[test]
@@ -37,7 +35,7 @@ fn test_subquery_from_view() {
         .map(|f| {
             Bar::belonging_to_view(&f)
                 .fold(|b| b.name.join(Some(", ")))
-                .expr_clone()
+                .as_expr()
         })
         .generate_query()
         .0;
@@ -58,7 +56,7 @@ fn test_subquery_fn() {
         .map(|f| {
             Bar::belonging_to_view(&f)
                 .fold(|b| b.name.join(Some(", ")))
-                .expr_clone()
+                .as_expr()
         })
         .generate_query()
         .0;

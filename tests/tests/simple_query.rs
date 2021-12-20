@@ -1,7 +1,4 @@
-use yukino::{bt, eq, lt};
-use yukino::operator::{SortOrder, VerticalAverage, VerticalJoin};
-use yukino::query::{Executable, Filter, Fold, GroupBy, GroupFold, Map, Map2, Sort};
-use yukino::view::{EntityWithView, VerticalView};
+use yukino::prelude::*;
 use yukino_tests::*;
 
 #[test]

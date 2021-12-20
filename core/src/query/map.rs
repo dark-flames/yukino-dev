@@ -8,8 +8,8 @@ use query_builder::{DatabaseValue, Expr, OrderByItem, Query, SelectQuery, Select
 use crate::err::{RuntimeResult, YukinoError};
 use crate::query::{AliasGenerator, Executable, ExecuteResultType, SingleRow};
 use crate::view::{
-    ExprView, ExprViewBox, ExprViewBoxWithTag, SingleRowSubqueryView, SubqueryView, TagList, Value,
-    ValueCountOf,
+    ExprView, ExprViewBox, ExprViewBoxWithTag, SingleRowSubqueryView, SubqueryIntoView,
+    SubqueryView, TagList, Value, ValueCountOf,
 };
 
 #[derive(Clone)]
@@ -120,6 +120,12 @@ impl<T: Value<L = U1>, TTags: TagList> ExprView<T> for QueryResultMap<T, TTags, 
 
     fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<T>>) -> RuntimeResult<T> {
         (*T::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
+    }
+}
+
+impl<T: Value<L = U1>, TTags: TagList> SubqueryIntoView<T> for QueryResultMap<T, TTags, SingleRow> {
+    fn as_expr(&self) -> ExprViewBox<T> {
+        T::view_from_exprs(arr![Expr; Expr::Subquery(self.subquery())])
     }
 }
 

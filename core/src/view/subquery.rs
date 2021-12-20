@@ -63,10 +63,13 @@ pub trait SubqueryView<T: Value<L = U1>> {
 }
 
 // Single row subquery can be a SingleRowSubquery, it can be use as a ExprView
-pub trait SingleRowSubqueryView<T: Value<L = U1>>: SubqueryView<T> + ExprView<T> {}
+pub trait SingleRowSubqueryView<T: Value<L = U1>>:
+    SubqueryView<T> + ExprView<T> + SubqueryIntoView<T>
+{
+}
 
-pub(crate) trait IntoView<T: Value> {
-    fn into_expr_view(self) -> ExprViewBox<T>;
+pub trait SubqueryIntoView<T: Value> {
+    fn as_expr(&self) -> ExprViewBox<T>;
 }
 
 impl ExprView<bool> for InSubqueryView {
@@ -168,8 +171,8 @@ impl<T: Value<L = U1>> SubqueryFnCallView<T> {
     }
 }
 
-impl<T: Value<L = U1>> IntoView<T> for SubqueryFnCallView<T> {
-    fn into_expr_view(self) -> ExprViewBox<T> {
+impl<T: Value<L = U1>> SubqueryIntoView<T> for SubqueryFnCallView<T> {
+    fn as_expr(&self) -> ExprViewBox<T> {
         T::view_from_exprs(arr![Expr; Expr::FunctionCall(self.fn_call.clone_box())])
     }
 }
