@@ -11,7 +11,7 @@ pub struct ResolvedEntity {
     pub converter_name: Ident,
     pub fields: Vec<ResolvedField>,
     pub associations: Vec<ResolvedAssociation>,
-    pub marker_mod: Ident
+    pub marker_mod: Ident,
 }
 
 pub struct ResolvedAssociation {

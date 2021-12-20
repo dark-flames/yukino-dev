@@ -16,124 +16,92 @@ pub struct EntityResolver {
 impl EntityResolver {
     pub fn create(
         field_resolvers: Vec<Box<dyn FieldResolver>>,
-        implementors: Vec<Box<dyn Implementor>>) -> Self {
+        implementors: Vec<Box<dyn Implementor>>,
+    ) -> Self {
         EntityResolver {
             field_resolvers,
-            implementors
+            implementors,
         }
     }
 
     pub fn resolve(&self, ast: &ItemStruct) -> Result<ResolvedEntity> {
         let entity_name = ast.ident.clone();
-        let table_name = ast.attrs.iter().find(
-            |attr| attr.path.is_ident("name")
-        ).map(|attr| {
-            attr.parse_args::<LitStr>().map(|lit| lit.value())
-        }).unwrap_or_else(|| {
-            Ok(ast.ident.to_string().to_snake_case())
-        })?;
+        let table_name = ast
+            .attrs
+            .iter()
+            .find(|attr| attr.path.is_ident("name"))
+            .map(|attr| attr.parse_args::<LitStr>().map(|lit| lit.value()))
+            .unwrap_or_else(|| Ok(ast.ident.to_string().to_snake_case()))?;
 
         let fields = if let Fields::Named(name_fields) = &ast.fields {
-            name_fields.named.iter().map(
-                |field| self.field_resolvers.iter().find(
-                    |resolver| resolver.can_resolve(field)
-                ).ok_or_else(
-                    || Error::new_spanned(
-                        field,
-                        "Cannot find a field resolver for this field"
-                    )
-                ).and_then(
-                    |resolver| resolver.resolve_field(field)
-                )
-            ).collect::<Result<Vec<_>>>()
+            name_fields
+                .named
+                .iter()
+                .map(|field| {
+                    self.field_resolvers
+                        .iter()
+                        .find(|resolver| resolver.can_resolve(field))
+                        .ok_or_else(|| {
+                            Error::new_spanned(field, "Cannot find a field resolver for this field")
+                        })
+                        .and_then(|resolver| resolver.resolve_field(field))
+                })
+                .collect::<Result<Vec<_>>>()
         } else {
-            return Err(Error::new_spanned(
-                ast,
-                "Expected named fields"
-            ))
+            return Err(Error::new_spanned(ast, "Expected named fields"));
         }?;
 
-        let associations = ast.attrs.iter().filter(
-            |attr| attr.path.is_ident("belongs_to")
-        ).map(|attr| {
-            match attr.parse_meta()? {
+        let associations = ast
+            .attrs
+            .iter()
+            .filter(|attr| attr.path.is_ident("belongs_to"))
+            .map(|attr| match attr.parse_meta()? {
                 Meta::List(l) => {
                     let mut iter = l.nested.iter();
-                    let ref_entity_path = iter.next().ok_or_else(
-                        || Error::new_spanned(
-                            attr,
-                            "Expected referenced entity path"
-                        )
-                    ).and_then(
-                        |meta| {
-                            match meta {
-                                NestedMeta::Meta(Meta::Path(p)) => {
-                                    Ok(p.clone())
-                                }
-                                _ => {
-                                    Err(Error::new_spanned(
-                                        attr,
-                                        "Expected referenced entity path"
-                                    ))
-                                }
-                            }
-                        }
-                    )?;
+                    let ref_entity_path = iter
+                        .next()
+                        .ok_or_else(|| Error::new_spanned(attr, "Expected referenced entity path"))
+                        .and_then(|meta| match meta {
+                            NestedMeta::Meta(Meta::Path(p)) => Ok(p.clone()),
+                            _ => Err(Error::new_spanned(attr, "Expected referenced entity path")),
+                        })?;
 
-                    let foreign_key = iter.next().ok_or_else(
-                        || Error::new_spanned(
-                            attr,
-                            "Expected foreign key"
-                        )
-                    ).and_then(
-                        |meta| {
-                            match meta {
-                                NestedMeta::Meta(Meta::Path(p)) => {
-                                    Ok(p.get_ident().ok_or_else(
-                                        || Error::new_spanned(
-                                            attr,
-                                            "Expected foreign key"
-                                        )
-                                    )?.clone())
-                                }
-                                _ => {
-                                    Err(Error::new_spanned(
-                                        attr,
-                                        "Expected foreign key1"
-                                    ))
-                                }
-                            }
-                        }
-                    )?;
+                    let foreign_key = iter
+                        .next()
+                        .ok_or_else(|| Error::new_spanned(attr, "Expected foreign key"))
+                        .and_then(|meta| match meta {
+                            NestedMeta::Meta(Meta::Path(p)) => Ok(p
+                                .get_ident()
+                                .ok_or_else(|| Error::new_spanned(attr, "Expected foreign key"))?
+                                .clone()),
+                            _ => Err(Error::new_spanned(attr, "Expected foreign key1")),
+                        })?;
 
-                    fields.iter().find(|f| f.name == foreign_key).ok_or_else(
-                        || Error::new_spanned(
-                            attr,
-                            "Cannot find a field with this name"
-                        )
-                    ).map(
-                        |field| ResolvedAssociation {
+                    fields
+                        .iter()
+                        .find(|f| f.name == foreign_key)
+                        .ok_or_else(|| {
+                            Error::new_spanned(attr, "Cannot find a field with this name")
+                        })
+                        .map(|field| ResolvedAssociation {
                             ref_entity_path,
                             foreign_key,
                             column_name: field.definition.identity_column.clone(),
-                            ty: field.ty.clone()
-                        }
-                    )
+                            ty: field.ty.clone(),
+                        })
                 }
-                _ => {
-                    Err(Error::new_spanned(
-                        attr,
-                        "`belongs_to` attribute must be a list"
-                    ))
-                }
-            }
-        }).collect::<Result<Vec<_>>>()?;
+                _ => Err(Error::new_spanned(
+                    attr,
+                    "`belongs_to` attribute must be a list",
+                )),
+            })
+            .collect::<Result<Vec<_>>>()?;
 
         if fields.iter().filter(|f| f.definition.primary_key).count() > 1 {
             return Err(Error::new_spanned(
                 ast,
-                "Only one field can be marked as primary key"
-            ))
+                "Only one field can be marked as primary key",
+            ));
         }
 
         Ok(ResolvedEntity {
@@ -144,16 +112,17 @@ impl EntityResolver {
             marker_mod: format_ident!("{}", entity_name.to_string().to_snake_case()),
             entity_name,
             fields,
-            associations
+            associations,
         })
     }
 
     pub fn get_implements(&self, ast: &ItemStruct) -> Result<TokenStream> {
-        let implements: Vec<_> = self.resolve(ast).map(
-            |entity| self.implementors.iter().flat_map(
-                |implementor| implementor.get_implements(&entity)
-            ).collect()
-        )?;
+        let implements: Vec<_> = self.resolve(ast).map(|entity| {
+            self.implementors
+                .iter()
+                .flat_map(|implementor| implementor.get_implements(&entity))
+                .collect()
+        })?;
 
         Ok(quote! {
             #(#implements)*

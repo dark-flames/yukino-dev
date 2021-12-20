@@ -79,7 +79,7 @@ impl ToSql for Ident {
             if index != last_index {
                 write!(state, ".")?;
             }
-        };
+        }
 
         Ok(())
     }

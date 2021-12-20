@@ -9,8 +9,10 @@ pub struct AssociationImplementor;
 impl Implementor for AssociationImplementor {
     fn get_implements(&self, resolved: &ResolvedEntity) -> Vec<TokenStream> {
         let entity_name = &resolved.entity_name;
-        resolved.associations.iter().map(
-            |assoc| {
+        resolved
+            .associations
+            .iter()
+            .map(|assoc| {
                 let target_entity_name = &assoc.ref_entity_path;
                 let ty = &assoc.ty;
                 let field_name = &assoc.foreign_key;
@@ -27,7 +29,7 @@ impl Implementor for AssociationImplementor {
                         }
                     }
                 }
-            }
-        ).collect()
+            })
+            .collect()
     }
 }

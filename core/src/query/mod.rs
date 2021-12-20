@@ -10,13 +10,13 @@ pub use sort::*;
 pub use update::*;
 
 mod alias;
+mod assoc;
+mod delete;
 mod exec;
 mod filter;
 mod fold;
 mod group;
+mod insert;
 mod map;
 mod sort;
-mod assoc;
-mod delete;
 mod update;
-mod insert;

@@ -11,9 +11,8 @@ impl Implementor for ConverterImplementor {
         let entity_name = &resolved.entity_name;
         let name = &resolved.converter_name;
         let last_index = resolved.fields.len() - 1;
-        let (deserialize_tmp, deserialize_branches, serialize_tmp, serialize) = resolved.fields.iter()
-            .enumerate()
-            .fold(
+        let (deserialize_tmp, deserialize_branches, serialize_tmp, serialize) =
+            resolved.fields.iter().enumerate().fold(
                 (
                     vec![],
                     vec![],

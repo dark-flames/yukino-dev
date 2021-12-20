@@ -12,7 +12,8 @@ fn test_delete() {
         .sort(|f| f.id.asc())
         .delete()
         .limit(10)
-        .generate_query().0;
+        .generate_query()
+        .0;
 
     println!("{}", query);
 }

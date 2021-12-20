@@ -8,7 +8,7 @@ use crate::view::{EntityView, EntityWithView, ExprViewBox, TagsOfValueView, Valu
 
 pub struct DeleteQueryResult<E: EntityWithView> {
     query: DeleteQuery,
-    _entity: PhantomData<E>
+    _entity: PhantomData<E>,
 }
 
 pub trait Delete<E: EntityWithView> {
@@ -19,7 +19,7 @@ impl<E: EntityWithView> DeleteQueryResult<E> {
     pub fn create(source: SelectFrom) -> Self {
         DeleteQueryResult {
             query: source.into(),
-            _entity: PhantomData
+            _entity: PhantomData,
         }
     }
 

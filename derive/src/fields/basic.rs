@@ -5,7 +5,9 @@ use syn::{Field, parse_str, Result, Type};
 
 use interface::{ColumnDefinition, DatabaseType, FieldDefinition};
 
-use crate::fields::{FieldResolver, match_optional_ty, match_optional_ty_by_param, TypeMatchResult};
+use crate::fields::{
+    FieldResolver, match_optional_ty, match_optional_ty_by_param, TypeMatchResult,
+};
 use crate::resolved::ResolvedField;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -32,7 +34,10 @@ impl FieldResolver for BasicFieldResolver {
     fn resolve_field(&self, field: &Field) -> Result<ResolvedField> {
         let (ty, optional) = FieldType::from_ty(&field.ty).unwrap();
         let column_name = field.ident.as_ref().unwrap().to_string().to_snake_case();
-        let auto_increment = field.attrs.iter().any(|attr| attr.path.is_ident("auto_increment"));
+        let auto_increment = field
+            .attrs
+            .iter()
+            .any(|attr| attr.path.is_ident("auto_increment"));
         let primary_key = field.attrs.iter().any(|attr| attr.path.is_ident("id"));
         Ok(ResolvedField {
             name: field.ident.clone().unwrap(),
@@ -47,18 +52,16 @@ impl FieldResolver for BasicFieldResolver {
             field_marker: format_ident!("{}", column_name),
             definition: FieldDefinition {
                 name: field.ident.as_ref().unwrap().to_string(),
-                columns: vec![
-                    ColumnDefinition {
-                        name: column_name.clone(),
-                        ty: (&ty).into(),
-                        optional,
-                        auto_increment
-                    }
-                ],
+                columns: vec![ColumnDefinition {
+                    name: column_name.clone(),
+                    ty: (&ty).into(),
+                    optional,
+                    auto_increment,
+                }],
                 identity_column: column_name,
-                primary_key
+                primary_key,
             },
-            converter_value_count: 1
+            converter_value_count: 1,
         })
     }
 }
@@ -90,7 +93,7 @@ impl FieldType {
                     let str = parse_str("String").unwrap();
                     match_optional_ty_by_param(ty, &str)
                 }),
-            )
+            ),
         ];
         branch
             .iter()
@@ -116,7 +119,7 @@ impl FieldType {
             FieldType::Double => "f64",
             FieldType::String => "String",
         })
-            .unwrap();
+        .unwrap();
 
         if optional {
             quote! {

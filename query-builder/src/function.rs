@@ -22,7 +22,7 @@ unsafe impl Sync for AggregateFunction {}
 #[derive(Clone, Debug, Copy)]
 pub enum SubqueryFunction {
     Any,
-    All
+    All,
 }
 
 unsafe impl Send for SubqueryFunction {}
@@ -61,13 +61,13 @@ pub struct GroupConcatFunctionCall {
     pub separator: Option<String>,
 }
 
-unsafe impl Send for GroupConcatFunctionCall  {}
+unsafe impl Send for GroupConcatFunctionCall {}
 unsafe impl Sync for GroupConcatFunctionCall {}
 
 #[derive(Clone, Debug)]
 pub struct SubqueryFunctionCall {
     pub function: SubqueryFunction,
-    pub subquery: SelectQuery
+    pub subquery: SelectQuery,
 }
 
 unsafe impl Send for SubqueryFunctionCall {}

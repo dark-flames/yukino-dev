@@ -23,4 +23,3 @@ impl Display for RuntimeError {
 }
 
 impl StdError for RuntimeError {}
-

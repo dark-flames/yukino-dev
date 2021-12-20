@@ -7,12 +7,15 @@ use query_builder::{AssignmentValue, Expr, OrderByItem, Query, SelectFrom, Updat
 
 use crate::operator::SortResult;
 use crate::query::{Executable, SingleRow, Sort};
-use crate::view::{EntityView, EntityWithView, ExprViewBox, ExprViewBoxWithTag, FieldMarker, TagList, TagsOfValueView, Value};
+use crate::view::{
+    EntityView, EntityWithView, ExprViewBox, ExprViewBoxWithTag, FieldMarker, TagList,
+    TagsOfValueView, Value,
+};
 
 pub struct UpdateQueryResult<E: EntityWithView> {
     query: UpdateQuery,
     assignments: HashMap<String, AssignmentValue>,
-    _entity: PhantomData<E>
+    _entity: PhantomData<E>,
 }
 
 pub trait Update<E: EntityWithView> {
@@ -24,7 +27,7 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
         UpdateQueryResult {
             query: source.into(),
             assignments: HashMap::new(),
-            _entity: PhantomData
+            _entity: PhantomData,
         }
     }
 
@@ -37,13 +40,22 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
 
     #[must_use]
     pub fn set<
-        FMarker: FieldMarker<Entity=E, FieldType=T>,
-        T: Value,  Tags: TagList,
-        V: Into<ExprViewBoxWithTag<T, Tags>>
-    >(mut self, _m: FMarker, v: V) -> Self where <T as Value>::L: ArrayLength<(String, Expr)> {
+        FMarker: FieldMarker<Entity = E, FieldType = T>,
+        T: Value,
+        Tags: TagList,
+        V: Into<ExprViewBoxWithTag<T, Tags>>,
+    >(
+        mut self,
+        _m: FMarker,
+        v: V,
+    ) -> Self
+    where
+        <T as Value>::L: ArrayLength<(String, Expr)>,
+    {
         let result = v.into();
-        let pairs = FMarker::columns().into_iter().zip(result.collect_expr().into_iter()
-            .map(AssignmentValue::Expr));
+        let pairs = FMarker::columns()
+            .into_iter()
+            .zip(result.collect_expr().into_iter().map(AssignmentValue::Expr));
 
         self.assignments.extend(pairs);
 
@@ -52,16 +64,20 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
 
     #[must_use]
     pub fn set_by<
-        FMarker: FieldMarker<Entity=E, FieldType=T>,
-        T: Value,  Tags: TagList,
+        FMarker: FieldMarker<Entity = E, FieldType = T>,
+        T: Value,
+        Tags: TagList,
         V: Into<ExprViewBoxWithTag<T, Tags>>,
-        F: Fn(ExprViewBoxWithTag<T, FMarker::ViewTags>) -> V
-    >(mut self, _m: FMarker, f: F) -> Self {
-        let result = f(FMarker::view(
-            E::View::pure(self.query.root_alias())
-        )).into();
-        let pairs = FMarker::columns().into_iter().zip(result.collect_expr().into_iter()
-            .map(AssignmentValue::Expr));
+        F: Fn(ExprViewBoxWithTag<T, FMarker::ViewTags>) -> V,
+    >(
+        mut self,
+        _m: FMarker,
+        f: F,
+    ) -> Self {
+        let result = f(FMarker::view(E::View::pure(self.query.root_alias()))).into();
+        let pairs = FMarker::columns()
+            .into_iter()
+            .zip(result.collect_expr().into_iter().map(AssignmentValue::Expr));
 
         self.assignments.extend(pairs);
 
@@ -69,10 +85,12 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
     }
 
     #[must_use]
-    pub fn set_default<
-        FMarker: FieldMarker<Entity=E>,
-    >(mut self, _m: FMarker) -> Self {
-        self.assignments.extend(FMarker::columns().into_iter().map(|name| (name, AssignmentValue::Default)));
+    pub fn set_default<FMarker: FieldMarker<Entity = E>>(mut self, _m: FMarker) -> Self {
+        self.assignments.extend(
+            FMarker::columns()
+                .into_iter()
+                .map(|name| (name, AssignmentValue::Default)),
+        );
 
         self
     }

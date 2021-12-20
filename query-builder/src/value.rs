@@ -3,7 +3,9 @@ use std::fmt::{Display, Formatter};
 
 use generic_array::{ArrayLength, GenericArray};
 use serde_json::Value;
-use sqlx::{Arguments, ColumnIndex, Database, Decode, Encode, Error, FromRow, Row, Type, TypeInfo, ValueRef};
+use sqlx::{
+    Arguments, ColumnIndex, Database, Decode, Encode, Error, FromRow, Row, Type, TypeInfo, ValueRef,
+};
 use sqlx::database::HasValueRef;
 use sqlx::error::BoxDynError;
 use sqlx::types::time::{Date, PrimitiveDateTime, Time};
@@ -42,7 +44,7 @@ pub enum DatabaseValue {
 }
 
 pub trait AppendToArgs<'q, DB: Database> {
-    fn append_to<A: Arguments<'q, Database=DB>>(self, args: &mut A);
+    fn append_to<A: Arguments<'q, Database = DB>>(self, args: &mut A);
 }
 
 impl Display for DatabaseValue {
@@ -99,8 +101,9 @@ impl ToSql for DatabaseValue {
     }
 }
 
-impl<'q, DB: Database> AppendToArgs<'q, DB> for  DatabaseValue
-where bool: Encode<'q, DB> + Type<DB>,
+impl<'q, DB: Database> AppendToArgs<'q, DB> for DatabaseValue
+where
+    bool: Encode<'q, DB> + Type<DB>,
     Option<bool>: Encode<'q, DB> + Type<DB>,
     u16: Encode<'q, DB> + Type<DB>,
     Option<u16>: Encode<'q, DB> + Type<DB>,
@@ -129,8 +132,9 @@ where bool: Encode<'q, DB> + Type<DB>,
     String: Encode<'q, DB> + Type<DB>,
     Option<String>: Encode<'q, DB> + Type<DB>,
     Binary: Encode<'q, DB> + Type<DB>,
-    Option<Binary>: Encode<'q, DB> + Type<DB>, {
-    fn append_to<A: Arguments<'q, Database=DB>>(self, args: &mut A) {
+    Option<Binary>: Encode<'q, DB> + Type<DB>,
+{
+    fn append_to<A: Arguments<'q, Database = DB>>(self, args: &mut A) {
         match self {
             DatabaseValue::Bool(b) => args.add(b),
             DatabaseValue::SmallInteger(i) => args.add(i),
@@ -175,17 +179,18 @@ where bool: Encode<'q, DB> + Type<DB>,
 
 #[cfg(feature = "mysql")]
 impl<'r, DB: Database> Decode<'r, DB> for DatabaseValue
-    where bool: Decode<'r, DB>,
-        u16: Decode<'r, DB>,
-        i16: Decode<'r, DB>,
-        u32: Decode<'r, DB>,
-        i32: Decode<'r, DB>,
-        u64: Decode<'r, DB>,
-        i64: Decode<'r, DB>,
-        f32: Decode<'r, DB>,
-        f64: Decode<'r, DB>,
-        Value: Decode<'r, DB>,
-        String: Decode<'r, DB>
+where
+    bool: Decode<'r, DB>,
+    u16: Decode<'r, DB>,
+    i16: Decode<'r, DB>,
+    u32: Decode<'r, DB>,
+    i32: Decode<'r, DB>,
+    u64: Decode<'r, DB>,
+    i64: Decode<'r, DB>,
+    f32: Decode<'r, DB>,
+    f64: Decode<'r, DB>,
+    Value: Decode<'r, DB>,
+    String: Decode<'r, DB>,
 {
     fn decode(value: <DB as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
         let type_info = value.type_info();
@@ -193,8 +198,12 @@ impl<'r, DB: Database> Decode<'r, DB> for DatabaseValue
         match (type_info.name(), type_info.is_null()) {
             ("BOOLEAN", false) => bool::decode(value).map(DatabaseValue::Bool),
             ("BOOLEAN", true) => Ok(DatabaseValue::Null(DatabaseType::Bool)),
-            ("SMALLINT UNSIGNED", false) => u16::decode(value).map(DatabaseValue::UnsignedSmallInteger),
-            ("SMALLINT UNSIGNED", true) => Ok(DatabaseValue::Null(DatabaseType::UnsignedSmallInteger)),
+            ("SMALLINT UNSIGNED", false) => {
+                u16::decode(value).map(DatabaseValue::UnsignedSmallInteger)
+            }
+            ("SMALLINT UNSIGNED", true) => {
+                Ok(DatabaseValue::Null(DatabaseType::UnsignedSmallInteger))
+            }
             ("SMALLINT", false) => i16::decode(value).map(DatabaseValue::SmallInteger),
             ("SMALLINT", true) => Ok(DatabaseValue::Null(DatabaseType::SmallInteger)),
             ("INT UNSIGNED", false) => u32::decode(value).map(DatabaseValue::UnsignedInteger),
@@ -215,13 +224,15 @@ impl<'r, DB: Database> Decode<'r, DB> for DatabaseValue
             ("TEXT", true) => Ok(DatabaseValue::Null(DatabaseType::String)),
             ("VARCHAR", false) => String::decode(value).map(DatabaseValue::String),
             ("VARCHAR", true) => Ok(DatabaseValue::Null(DatabaseType::String)),
-            (_, _) => Err(Box::new(ExecuteError::DecodeError("Unsupported DB type".to_string())))
+            (_, _) => Err(Box::new(ExecuteError::DecodeError(
+                "Unsupported DB type".to_string(),
+            ))),
         }
     }
 }
 
 pub struct ResultRow<L: ArrayLength<DatabaseValue>> {
-    values: GenericArray<DatabaseValue, L>
+    values: GenericArray<DatabaseValue, L>,
 }
 
 impl<L: ArrayLength<DatabaseValue>> From<GenericArray<DatabaseValue, L>> for ResultRow<L> {
@@ -236,13 +247,25 @@ impl<L: ArrayLength<DatabaseValue>> From<ResultRow<L>> for GenericArray<Database
     }
 }
 
-impl<'r, DB: Database, R: Row<Database=DB>, L: ArrayLength<DatabaseValue>> FromRow<'r, R> for ResultRow<L>
-    where usize: ColumnIndex<R>, DatabaseValue: Decode<'r, DB> {
+impl<'r, DB: Database, R: Row<Database = DB>, L: ArrayLength<DatabaseValue>> FromRow<'r, R>
+    for ResultRow<L>
+where
+    usize: ColumnIndex<R>,
+    DatabaseValue: Decode<'r, DB>,
+{
     fn from_row(row: &'r R) -> Result<Self, Error> {
-        GenericArray::from_exact_iter((0..L::to_usize()).into_iter().map(|index| {
-            row.try_get_unchecked(index)
-        }).collect::<Result<Vec<_>, Error>>()?).ok_or_else(|| Error::Decode(Box::new(
-            ExecuteError::ResultLengthError(L::to_usize(), row.len())
-        ))).map(Into::into)
+        GenericArray::from_exact_iter(
+            (0..L::to_usize())
+                .into_iter()
+                .map(|index| row.try_get_unchecked(index))
+                .collect::<Result<Vec<_>, Error>>()?,
+        )
+        .ok_or_else(|| {
+            Error::Decode(Box::new(ExecuteError::ResultLengthError(
+                L::to_usize(),
+                row.len(),
+            )))
+        })
+        .map(Into::into)
     }
 }

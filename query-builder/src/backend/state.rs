@@ -13,7 +13,7 @@ pub type PlaceHolder = String;
 pub struct QueryBuildState {
     params: HashMap<usize, DatabaseValue>,
     counter: usize,
-    tokens: Vec<Token>
+    tokens: Vec<Token>,
 }
 
 impl QueryBuildState {
@@ -31,7 +31,11 @@ impl QueryBuildState {
         write!(self, "{}", place_holder)
     }
 
-    pub fn join<T: ToSql>(&mut self, items: &[T], separator: impl Fn(&mut Self) -> Result) -> Result {
+    pub fn join<T: ToSql>(
+        &mut self,
+        items: &[T],
+        separator: impl Fn(&mut Self) -> Result,
+    ) -> Result {
         let last_index = items.len() - 1;
 
         for (index, item) in items.iter().enumerate() {
@@ -45,7 +49,10 @@ impl QueryBuildState {
         Ok(())
     }
 
-    pub fn args<'q, DB: Database>(self) -> <DB as HasArguments<'q>>::Arguments where DatabaseValue: AppendToArgs<'q, DB> {
+    pub fn args<'q, DB: Database>(self) -> <DB as HasArguments<'q>>::Arguments
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
         let mut result = DB::Arguments::default();
 
         for (_, value) in self.params.into_iter() {

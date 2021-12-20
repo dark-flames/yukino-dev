@@ -7,17 +7,20 @@ use query_builder::Expr;
 
 use crate::view::{
     AnyTagExprView, AnyTagsValue, ConcreteList, ExprViewBoxWithTag, IntoView, MergeList,
-    SingleExprView, SubqueryFnCallView, TagList, TagsOfValueView, Value
+    SingleExprView, SubqueryFnCallView, TagList, TagsOfValueView, Value,
 };
 
 pub trait ExprNot: Value + Not {
-    fn expr_not<Tags: TagList>(e: ExprViewBoxWithTag<Self, Tags>) -> ExprViewBoxWithTag<bool, Tags>;
+    fn expr_not<Tags: TagList>(e: ExprViewBoxWithTag<Self, Tags>)
+        -> ExprViewBoxWithTag<bool, Tags>;
 }
 
 impl ExprNot for bool {
-    fn expr_not<Tags: TagList>(e: ExprViewBoxWithTag<Self, Tags>) -> ExprViewBoxWithTag<bool, Tags> {
+    fn expr_not<Tags: TagList>(
+        e: ExprViewBoxWithTag<Self, Tags>,
+    ) -> ExprViewBoxWithTag<bool, Tags> {
         SingleExprView::<bool, Tags>::from_exprs_with_tags(
-            arr![Expr; Expr::Not(Box::new(e.collect_expr().into_iter().next().unwrap()))]
+            arr![Expr; Expr::Not(Box::new(e.collect_expr().into_iter().next().unwrap()))],
         )
     }
 }
@@ -88,36 +91,45 @@ macro_rules! impl_comparator_for_subquery_fn_call {
         $expr_op_method: ident
     ) => {
         impl<
-            L: Value + $expr_op_trait<R>,
-            R: Value<L=U1>,
-            LTags: TagList + MergeList<TagsOfValueView<R>>,
-        > $view_op_trait<SubqueryFnCallView<R>> for ExprViewBoxWithTag<L, LTags> {
-            type Output = ExprViewBoxWithTag<bool, <L as $expr_op_trait<R>>::ResultTags<LTags, TagsOfValueView<R>>>;
+                L: Value + $expr_op_trait<R>,
+                R: Value<L = U1>,
+                LTags: TagList + MergeList<TagsOfValueView<R>>,
+            > $view_op_trait<SubqueryFnCallView<R>> for ExprViewBoxWithTag<L, LTags>
+        {
+            type Output = ExprViewBoxWithTag<
+                bool,
+                <L as $expr_op_trait<R>>::ResultTags<LTags, TagsOfValueView<R>>,
+            >;
 
             fn $view_op_method(self, rhs: SubqueryFnCallView<R>) -> Self::Output {
                 L::$expr_op_method(self, rhs.into_expr_view())
             }
         }
 
-        impl<
-            L: Value<L=U1> + $expr_op_trait<R>,
-            R: Value,
-            RTags: TagList,
-        > $view_op_trait<ExprViewBoxWithTag<R, RTags>> for SubqueryFnCallView<L>
-            where TagsOfValueView<L>: MergeList<RTags> {
-            type Output = ExprViewBoxWithTag<bool, <L as $expr_op_trait<R>>::ResultTags<TagsOfValueView<L>, RTags>>;
+        impl<L: Value<L = U1> + $expr_op_trait<R>, R: Value, RTags: TagList>
+            $view_op_trait<ExprViewBoxWithTag<R, RTags>> for SubqueryFnCallView<L>
+        where
+            TagsOfValueView<L>: MergeList<RTags>,
+        {
+            type Output = ExprViewBoxWithTag<
+                bool,
+                <L as $expr_op_trait<R>>::ResultTags<TagsOfValueView<L>, RTags>,
+            >;
 
             fn $view_op_method(self, rhs: ExprViewBoxWithTag<R, RTags>) -> Self::Output {
                 L::$expr_op_method(self.into_expr_view(), rhs)
             }
         }
 
-        impl<
-            L: Value<L=U1> + $expr_op_trait<R>,
-            R: Value<L=U1>,
-        > $view_op_trait<SubqueryFnCallView<R>> for SubqueryFnCallView<L>
-            where TagsOfValueView<L>: MergeList<TagsOfValueView<R>> {
-            type Output = ExprViewBoxWithTag<bool, <L as $expr_op_trait<R>>::ResultTags<TagsOfValueView<L>, TagsOfValueView<R>>>;
+        impl<L: Value<L = U1> + $expr_op_trait<R>, R: Value<L = U1>>
+            $view_op_trait<SubqueryFnCallView<R>> for SubqueryFnCallView<L>
+        where
+            TagsOfValueView<L>: MergeList<TagsOfValueView<R>>,
+        {
+            type Output = ExprViewBoxWithTag<
+                bool,
+                <L as $expr_op_trait<R>>::ResultTags<TagsOfValueView<L>, TagsOfValueView<R>>,
+            >;
 
             fn $view_op_method(self, rhs: SubqueryFnCallView<R>) -> Self::Output {
                 L::$expr_op_method(self.into_expr_view(), rhs.into_expr_view())

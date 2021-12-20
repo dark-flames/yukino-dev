@@ -8,8 +8,8 @@ pub struct SortItem<T: Value, TTags: TagList> {
 }
 
 impl<T: Value, TTags: TagList> SortResult for SortItem<T, TTags>
-    where
-        OrdViewTag: InList<TTags>,
+where
+    OrdViewTag: InList<TTags>,
 {
     fn order_by_items(&self) -> Vec<OrderByItem> {
         self.expr
@@ -30,19 +30,20 @@ pub trait SortOrder<T: Value, TTags: TagList> {
 }
 
 impl<T: Value, TTags: TagList> SortOrder<T, TTags> for ExprViewBoxWithTag<T, TTags>
-    where OrdViewTag: InList<TTags>
+where
+    OrdViewTag: InList<TTags>,
 {
     fn asc(self) -> SortItem<T, TTags> {
         SortItem {
             expr: self,
-            order: Order::Asc
+            order: Order::Asc,
         }
     }
 
     fn desc(self) -> SortItem<T, TTags> {
         SortItem {
             expr: self,
-            order: Order::Desc
+            order: Order::Desc,
         }
     }
 }

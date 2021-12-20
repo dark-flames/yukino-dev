@@ -6,7 +6,7 @@ pub enum Query {
     Select(SelectQuery),
     Update(UpdateQuery),
     Delete(DeleteQuery),
-    Insert(InsertQuery)
+    Insert(InsertQuery),
 }
 
 unsafe impl Send for Query {}
@@ -18,7 +18,7 @@ impl ToSql for Query {
             Query::Select(s) => s.to_sql(state),
             Query::Update(u) => u.to_sql(state),
             Query::Delete(d) => d.to_sql(state),
-            Query::Insert(i) => i.to_sql(state)
+            Query::Insert(i) => i.to_sql(state),
         }?;
 
         write!(state, ";")

@@ -24,80 +24,98 @@ impl Implementor for ViewImplementor {
             pure_branches,
             vertical_fields,
             to_vertical_branches,
-        ) = resolved.fields.iter()
-            .enumerate()
-            .fold(
-                (vec![], vec![], quote! {yukino::generic_array::arr![yukino::query_builder::Expr;]}, vec![], vec![], vec![], vec![], vec![], vec![]),
-                |(mut fields, mut tmp, rst, mut expr_tmp, mut expr_branch, mut clone, mut pure, mut vertical_fields, mut vertical_branches), (index, f)| {
-                    let field_name = &f.name;
-                    let field_value_count = {
-                        let type_num = format_ident!("U{}", f.converter_value_count);
-                        quote! {
-                            yukino::generic_array::typenum::#type_num
-                        }
-                    };
-                    let view_path = &f.view_full_path;
-                    let vertical_view_path = &f.vertical_full_path;
-                    let view_ty = &f.view_ty;
-                    let vertical_view_ty = &f.vertical_ty;
-                    let view = &f.view_construct;
-                    fields.push(quote! {
-                        pub #field_name: #view_ty
-                    });
-                    tmp.push(quote! {
-                        let #field_name = self.#field_name.collect_expr()
-                    });
-
-                    if index == last_index {
-                        expr_tmp.push(quote! {
-                            let (#field_name, _) = yukino::generic_array::sequence::Split::<
-                                _, #field_value_count
-                            >::split(rest)
-                        });
-                    } else {
-                        expr_tmp.push(quote! {
-                            let (#field_name, rest) =  yukino::generic_array::sequence::Split::<
-                                _, #field_value_count
-                            >::split(rest)
-                        });
+        ) = resolved.fields.iter().enumerate().fold(
+            (
+                vec![],
+                vec![],
+                quote! {yukino::generic_array::arr![yukino::query_builder::Expr;]},
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+            ),
+            |(
+                mut fields,
+                mut tmp,
+                rst,
+                mut expr_tmp,
+                mut expr_branch,
+                mut clone,
+                mut pure,
+                mut vertical_fields,
+                mut vertical_branches,
+            ),
+             (index, f)| {
+                let field_name = &f.name;
+                let field_value_count = {
+                    let type_num = format_ident!("U{}", f.converter_value_count);
+                    quote! {
+                        yukino::generic_array::typenum::#type_num
                     }
+                };
+                let view_path = &f.view_full_path;
+                let vertical_view_path = &f.vertical_full_path;
+                let view_ty = &f.view_ty;
+                let vertical_view_ty = &f.vertical_ty;
+                let view = &f.view_construct;
+                fields.push(quote! {
+                    pub #field_name: #view_ty
+                });
+                tmp.push(quote! {
+                    let #field_name = self.#field_name.collect_expr()
+                });
 
-                    expr_branch.push(quote! {
-                        #field_name: #view_path::from_exprs(#field_name)
+                if index == last_index {
+                    expr_tmp.push(quote! {
+                        let (#field_name, _) = yukino::generic_array::sequence::Split::<
+                            _, #field_value_count
+                        >::split(rest)
                     });
-
-                    clone.push(quote! {
-                        #field_name: self.#field_name.clone()
+                } else {
+                    expr_tmp.push(quote! {
+                        let (#field_name, rest) =  yukino::generic_array::sequence::Split::<
+                            _, #field_value_count
+                        >::split(rest)
                     });
-
-                    pure.push(quote! {
-                        #field_name: #view
-                    });
-
-                    vertical_fields.push(quote! {
-                        pub #field_name: #vertical_view_ty
-                    });
-
-                    vertical_branches.push(quote! {
-                        #field_name: #vertical_view_path::create(self.#field_name, vec![])
-                    });
-
-
-                    (
-                        fields,
-                        tmp,
-                        quote! {
-                             yukino::generic_array::sequence::Concat::concat(#rst, #field_name)
-                        },
-                        expr_tmp,
-                        expr_branch,
-                        clone,
-                        pure,
-                        vertical_fields,
-                        vertical_branches
-                    )
                 }
-            );
+
+                expr_branch.push(quote! {
+                    #field_name: #view_path::from_exprs(#field_name)
+                });
+
+                clone.push(quote! {
+                    #field_name: self.#field_name.clone()
+                });
+
+                pure.push(quote! {
+                    #field_name: #view
+                });
+
+                vertical_fields.push(quote! {
+                    pub #field_name: #vertical_view_ty
+                });
+
+                vertical_branches.push(quote! {
+                    #field_name: #vertical_view_path::create(self.#field_name, vec![])
+                });
+
+                (
+                    fields,
+                    tmp,
+                    quote! {
+                         yukino::generic_array::sequence::Concat::concat(#rst, #field_name)
+                    },
+                    expr_tmp,
+                    expr_branch,
+                    clone,
+                    pure,
+                    vertical_fields,
+                    vertical_branches,
+                )
+            },
+        );
 
         vec![quote! {
             #[derive(Clone)]

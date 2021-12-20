@@ -7,7 +7,10 @@ use query_builder::{DatabaseValue, Expr, OrderByItem, Query, SelectQuery, Select
 
 use crate::err::{RuntimeResult, YukinoError};
 use crate::query::{AliasGenerator, Executable, ExecuteResultType, SingleRow};
-use crate::view::{ExprView, ExprViewBox, ExprViewBoxWithTag, SingleRowSubqueryView, SubqueryView, TagList, Value, ValueCountOf};
+use crate::view::{
+    ExprView, ExprViewBox, ExprViewBoxWithTag, SingleRowSubqueryView, SubqueryView, TagList, Value,
+    ValueCountOf,
+};
 
 #[derive(Clone)]
 pub struct QueryResultMap<R: Value, RTags: TagList, ResultType: ExecuteResultType> {
@@ -77,7 +80,9 @@ impl<R: Value, RTags: TagList, ResultType: ExecuteResultType> Executable<R, RTag
     }
 }
 
-impl<T: Value<L=U1>, TTags: TagList, ResultType: ExecuteResultType> SubqueryView<T> for QueryResultMap<T, TTags, ResultType> {
+impl<T: Value<L = U1>, TTags: TagList, ResultType: ExecuteResultType> SubqueryView<T>
+    for QueryResultMap<T, TTags, ResultType>
+{
     fn subquery(&self) -> SelectQuery {
         SelectQuery::create(
             self.query.clone(),
@@ -90,15 +95,18 @@ impl<T: Value<L=U1>, TTags: TagList, ResultType: ExecuteResultType> SubqueryView
     }
 }
 
-impl<T: Value<L=U1>, TTags: TagList> ExprView<T> for QueryResultMap<T, TTags, SingleRow> {
+impl<T: Value<L = U1>, TTags: TagList> ExprView<T> for QueryResultMap<T, TTags, SingleRow> {
     type Tags = TTags;
 
-    fn from_exprs(_exprs: GenericArray<Expr, ValueCountOf<T>>) -> ExprViewBox<T> where Self: Sized {
+    fn from_exprs(_exprs: GenericArray<Expr, ValueCountOf<T>>) -> ExprViewBox<T>
+    where
+        Self: Sized,
+    {
         unreachable!("QueryResultMap::from_exprs should never be called")
     }
 
     fn expr_clone(&self) -> ExprViewBoxWithTag<T, Self::Tags> {
-        Box::new(QueryResultMap ::create(
+        Box::new(QueryResultMap::create(
             self.query.clone(),
             self.order_by_items.clone(),
             self.view.expr_clone(),
@@ -115,5 +123,7 @@ impl<T: Value<L=U1>, TTags: TagList> ExprView<T> for QueryResultMap<T, TTags, Si
     }
 }
 
-impl<T: Value<L=U1>, TTags: TagList> SingleRowSubqueryView<T> for QueryResultMap<T, TTags, SingleRow> {
+impl<T: Value<L = U1>, TTags: TagList> SingleRowSubqueryView<T>
+    for QueryResultMap<T, TTags, SingleRow>
+{
 }

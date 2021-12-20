@@ -17,7 +17,8 @@ impl Implementor for EntityImplementor {
         let value_count = {
             let type_num = format_ident!(
                 "U{}",
-                resolved.fields
+                resolved
+                    .fields
                     .iter()
                     .fold(0, |c, i| c + i.converter_value_count)
             );
@@ -26,28 +27,37 @@ impl Implementor for EntityImplementor {
                 yukino::generic_array::typenum::#type_num
             }
         };
-        let insert_branches: Vec<_> = resolved.fields.iter().map(|field| {
-            let field_name = &field.name;
-            let tmp = format_ident!("{}_tmp", field.name.to_string().to_snake_case());
-            let column_branches: Vec<_> = field.definition.columns.iter().map(|c| {
-                let column_name = &c.name;
+        let insert_branches: Vec<_> = resolved
+            .fields
+            .iter()
+            .map(|field| {
+                let field_name = &field.name;
+                let tmp = format_ident!("{}_tmp", field.name.to_string().to_snake_case());
+                let column_branches: Vec<_> = field
+                    .definition
+                    .columns
+                    .iter()
+                    .map(|c| {
+                        let column_name = &c.name;
+                        quote! {
+                            .set(
+                                #column_name.to_string(),
+                                yukino::query_builder::AssignmentValue::Expr(
+                                    yukino::query_builder::Expr::Lit(#tmp.next().unwrap())
+                                )
+                            )
+                        }
+                    })
+                    .collect();
+
                 quote! {
-                    .set(
-                        #column_name.to_string(),
-                        yukino::query_builder::AssignmentValue::Expr(
-                            yukino::query_builder::Expr::Lit(#tmp.next().unwrap())
-                        )
-                    )
+                    let mut #tmp = self.#field_name.to_database_values().into_iter();
+
+                    result
+                        #(#column_branches)*;
                 }
-            }).collect();
-
-            quote! {
-                let mut #tmp = self.#field_name.to_database_values().into_iter();
-
-                result
-                    #(#column_branches)*;
-            }
-        }).collect();
+            })
+            .collect();
 
         vec![quote! {
             impl yukino::YukinoEntity for #name {

@@ -9,12 +9,12 @@ pub use view::*;
 
 use crate::resolved::ResolvedEntity;
 
+mod association;
 mod converter;
 mod entity;
-mod view;
-mod primary;
-mod association;
 mod marker;
+mod primary;
+mod view;
 
 pub trait Implementor {
     fn get_implements(&self, resolved: &ResolvedEntity) -> Vec<TokenStream>;

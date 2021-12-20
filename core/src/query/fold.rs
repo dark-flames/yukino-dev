@@ -8,7 +8,10 @@ use query_builder::{DatabaseValue, Expr, Query, SelectQuery, SelectSource};
 use crate::err::{RuntimeResult, YukinoError};
 use crate::query::{AliasGenerator, Executable, Map, QueryResultMap};
 use crate::query::exec::SingleRow;
-use crate::view::{AggregateViewTag, ConcreteList, ExprView, ExprViewBox, ExprViewBoxWithTag, InList, MergeList, SingleRowSubqueryView, SubqueryView, TagList, TagsOfValueView, Value, ValueCountOf};
+use crate::view::{
+    AggregateViewTag, ConcreteList, ExprView, ExprViewBox, ExprViewBoxWithTag, InList, MergeList,
+    SingleRowSubqueryView, SubqueryView, TagList, TagsOfValueView, Value, ValueCountOf,
+};
 
 pub trait FoldResult: 'static + Clone + Send + Sync {
     type Value: Value;
@@ -77,7 +80,7 @@ pub trait Fold2<View1, View2> {
     fn fold<RV: FoldResult, F: Fn(View1, View2) -> RV>(self, f: F) -> FoldQueryResult<RV>;
 }
 
-impl<T: Value<L=U1>, View: FoldResult<Value=T>> SubqueryView<T> for FoldQueryResult<View> {
+impl<T: Value<L = U1>, View: FoldResult<Value = T>> SubqueryView<T> for FoldQueryResult<View> {
     fn subquery(&self) -> SelectQuery {
         SelectQuery::create(
             self.query.clone(),
@@ -90,10 +93,13 @@ impl<T: Value<L=U1>, View: FoldResult<Value=T>> SubqueryView<T> for FoldQueryRes
     }
 }
 
-impl<T: Value<L=U1>, View: FoldResult<Value=T>> ExprView<T> for FoldQueryResult<View> {
+impl<T: Value<L = U1>, View: FoldResult<Value = T>> ExprView<T> for FoldQueryResult<View> {
     type Tags = View::Tags;
 
-    fn from_exprs(_exprs: GenericArray<Expr, ValueCountOf<T>>) -> ExprViewBox<T> where Self: Sized {
+    fn from_exprs(_exprs: GenericArray<Expr, ValueCountOf<T>>) -> ExprViewBox<T>
+    where
+        Self: Sized,
+    {
         unreachable!("FoldQueryResult can't be constructed from Exprs")
     }
 
@@ -114,7 +120,10 @@ impl<T: Value<L=U1>, View: FoldResult<Value=T>> ExprView<T> for FoldQueryResult<
     }
 }
 
-impl<T: Value<L=U1>, View: FoldResult<Value=T>> SingleRowSubqueryView<T> for FoldQueryResult<View> {}
+impl<T: Value<L = U1>, View: FoldResult<Value = T>> SingleRowSubqueryView<T>
+    for FoldQueryResult<View>
+{
+}
 
 impl<T1: Value, T1Tags: TagList> FoldResult for ExprViewBoxWithTag<T1, T1Tags>
 where
@@ -159,4 +168,3 @@ where
         self.into()
     }
 }
-

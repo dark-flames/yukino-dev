@@ -32,7 +32,9 @@ pub trait EntityWithView: YukinoEntity + Value {
 }
 
 pub trait ViewWithPrimaryKey: EntityView
-where <Self as EntityView>::Entity: WithPrimaryKey<Type=Self::Type> {
+where
+    <Self as EntityView>::Entity: WithPrimaryKey<Type = Self::Type>,
+{
     type Type;
     type PrimaryKeyTag: TagList;
 
@@ -44,9 +46,13 @@ pub trait FieldMarker {
     type FieldType: Value;
     type ViewTags: TagList;
 
-    fn columns() -> GenericArray<String, <Self::FieldType as Value>::L> where Self: Sized;
+    fn columns() -> GenericArray<String, <Self::FieldType as Value>::L>
+    where
+        Self: Sized;
 
-    fn view(entity_view: <Self::Entity as EntityWithView>::View) -> ExprViewBoxWithTag<Self::FieldType, Self::ViewTags>;
+    fn view(
+        entity_view: <Self::Entity as EntityWithView>::View,
+    ) -> ExprViewBoxWithTag<Self::FieldType, Self::ViewTags>;
 }
 
 pub trait Identifiable: WithPrimaryKey + EntityWithView {

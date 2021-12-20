@@ -6,9 +6,8 @@ pub struct Insert;
 
 pub struct InsertQuery {
     table: String,
-    assignments: Vec<AssignmentItem>
+    assignments: Vec<AssignmentItem>,
 }
-
 
 unsafe impl Send for InsertQuery {}
 unsafe impl Sync for InsertQuery {}
@@ -17,17 +16,14 @@ impl Insert {
     pub fn into(table: String) -> InsertQuery {
         InsertQuery {
             table,
-            assignments: vec![]
+            assignments: vec![],
         }
     }
 }
 
 impl InsertQuery {
     pub fn set(&mut self, column: String, value: AssignmentValue) -> &mut Self {
-        self.assignments.push(AssignmentItem {
-            column,
-            value
-        });
+        self.assignments.push(AssignmentItem { column, value });
 
         self
     }

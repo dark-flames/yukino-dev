@@ -10,13 +10,13 @@ pub type TableName = &'static str;
 
 #[derive(Clone)]
 pub struct AliasGenerator {
-    alias: HashMap<AliasName, TableName>
+    alias: HashMap<AliasName, TableName>,
 }
 
 impl AliasGenerator {
     pub fn create() -> AliasGenerator {
         AliasGenerator {
-            alias: Default::default()
+            alias: Default::default(),
         }
     }
 

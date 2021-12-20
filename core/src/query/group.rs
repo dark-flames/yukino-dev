@@ -5,8 +5,8 @@ use query_builder::{Alias, Expr, GroupSelect, OrderByItem, Query, SelectQuery};
 
 use crate::operator::SortResult;
 use crate::query::{
-    AliasGenerator, Executable, Filter, Filter2, Fold, Fold2, FoldQueryResult,
-    FoldResult, Map, Map2, MultiRows, QueryResultMap, Sort, Sort2,
+    AliasGenerator, Executable, Filter, Filter2, Fold, Fold2, FoldQueryResult, FoldResult, Map,
+    Map2, MultiRows, QueryResultMap, Sort, Sort2,
 };
 use crate::view::{
     ConcreteList, EntityView, EntityViewTag, EntityWithView, ExprViewBox, ExprViewBoxWithTag,
@@ -169,14 +169,8 @@ impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Sort2<View
 {
     type Result = SortedGroupedQueryResult<View, AggregateView, E>;
 
-    fn sort<R: SortResult, F: Fn(View, AggregateView) -> R>(
-        self,
-        f: F,
-    ) -> Self::Result {
-        let result = f(
-            self.view.clone(),
-            self.aggregate.clone()
-        );
+    fn sort<R: SortResult, F: Fn(View, AggregateView) -> R>(self, f: F) -> Self::Result {
+        let result = f(self.view.clone(), self.aggregate.clone());
 
         SortedGroupedQueryResult {
             nested: self,

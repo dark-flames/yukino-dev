@@ -10,15 +10,15 @@ impl Implementor for FieldMarkerImplementor {
     fn get_implements(&self, resolved: &ResolvedEntity) -> Vec<TokenStream> {
         let marker_mod = &resolved.marker_mod;
         let entity_name = &resolved.entity_name;
-        let markers: Vec<_> = resolved.fields.iter().map(
-            |f| {
+        let markers: Vec<_> = resolved
+            .fields
+            .iter()
+            .map(|f| {
                 let marker_name = &f.field_marker;
                 let ty = &f.ty;
                 let view_tags = &f.tag_list;
                 let fields_name = &f.name;
-                let columns: Vec<_> = f.definition.columns.iter().map(
-                    |d| &d.name
-                ).collect();
+                let columns: Vec<_> = f.definition.columns.iter().map(|d| &d.name).collect();
                 quote! {
                     pub struct #marker_name;
 
@@ -40,8 +40,8 @@ impl Implementor for FieldMarkerImplementor {
                         }
                     }
                 }
-            }
-        ).collect();
+            })
+            .collect();
 
         vec![quote! {
             pub mod #marker_mod {

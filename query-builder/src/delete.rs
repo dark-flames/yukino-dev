@@ -8,7 +8,7 @@ pub struct DeleteQuery {
     from: AliasedTable,
     where_clauses: Vec<Expr>,
     order_by: Vec<OrderByItem>,
-    limit: Option<usize>
+    limit: Option<usize>,
 }
 
 unsafe impl Send for DeleteQuery {}
@@ -20,7 +20,7 @@ impl Delete {
             from: AliasedTable { table, alias },
             where_clauses: vec![],
             order_by: vec![],
-            limit: None
+            limit: None,
         }
     }
 }

@@ -6,7 +6,7 @@ pub struct Update;
 
 pub struct AssignmentItem {
     pub column: String,
-    pub value: AssignmentValue
+    pub value: AssignmentValue,
 }
 
 unsafe impl Send for AssignmentItem {}
@@ -14,7 +14,7 @@ unsafe impl Sync for AssignmentItem {}
 
 pub enum AssignmentValue {
     Expr(Expr),
-    Default
+    Default,
 }
 
 unsafe impl Send for AssignmentValue {}
@@ -25,7 +25,7 @@ pub struct UpdateQuery {
     where_clauses: Vec<Expr>,
     limit: Option<usize>,
     order_by: Vec<OrderByItem>,
-    assignments: Vec<AssignmentItem>
+    assignments: Vec<AssignmentItem>,
 }
 
 unsafe impl Send for UpdateQuery {}
@@ -34,14 +34,11 @@ unsafe impl Sync for UpdateQuery {}
 impl Update {
     pub fn from(table: String, alias: Alias) -> UpdateQuery {
         UpdateQuery {
-            from: AliasedTable {
-                table,
-                alias
-            },
+            from: AliasedTable { table, alias },
             where_clauses: vec![],
             limit: None,
             order_by: vec![],
-            assignments: Default::default()
+            assignments: Default::default(),
         }
     }
 }
@@ -52,10 +49,7 @@ impl UpdateQuery {
     }
 
     pub fn set(&mut self, column: String, value: AssignmentValue) -> &mut Self {
-        self.assignments.push(AssignmentItem {
-            column,
-            value
-        });
+        self.assignments.push(AssignmentItem { column, value });
 
         self
     }
@@ -83,7 +77,7 @@ impl ToSql for AssignmentValue {
     fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
         match self {
             AssignmentValue::Expr(e) => e.to_sql(state),
-            AssignmentValue::Default => write!(state, "DEFAULT")
+            AssignmentValue::Default => write!(state, "DEFAULT"),
         }
     }
 }

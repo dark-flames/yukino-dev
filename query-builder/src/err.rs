@@ -9,7 +9,7 @@ pub enum ExecuteError {
     #[error("QueryBuildError:{0}")]
     QueryBuildError(String),
     #[error("QueryError:{0}")]
-    QueryError(String)
+    QueryError(String),
 }
 
 unsafe impl Sync for ExecuteError {}

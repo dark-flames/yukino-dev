@@ -17,7 +17,7 @@ fn test_parse_primary_key() {
         float: 0.0,
         double: 0.0,
         string: "".to_string(),
-        optional: None
+        optional: None,
     };
 
     assert_eq!(Foo::primary_key_name(), "id");
@@ -45,7 +45,7 @@ fn test_delete() {
         float: 0.0,
         double: 0.0,
         string: "".to_string(),
-        optional: None
+        optional: None,
     };
 
     let query = test.delete().generate_query().0;

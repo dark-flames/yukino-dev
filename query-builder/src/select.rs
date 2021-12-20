@@ -107,7 +107,7 @@ impl SelectFrom {
         SelectFrom {
             table: AliasedTable {
                 table,
-                alias: root_alias
+                alias: root_alias,
             },
             join: vec![],
             where_clauses: vec![],
@@ -242,11 +242,7 @@ impl Display for SelectFrom {
                     .join(" AND ")
             )
         };
-        write!(
-            f,
-            "FROM {} {} {}",
-            self.table, join_clauses, where_clauses
-        )
+        write!(f, "FROM {} {} {}", self.table, join_clauses, where_clauses)
     }
 }
 
@@ -348,7 +344,6 @@ impl ToSql for SelectFrom {
 
             state.join(&self.where_clauses, |s| write!(s, "AND"))?;
         }
-
 
         Ok(())
     }
