@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fmt::{Display, Formatter, Result, Write};
 
 use sqlx::Database;
@@ -12,18 +11,15 @@ pub type PlaceHolder = String;
 
 #[derive(Default)]
 pub struct QueryBuildState {
-    params: HashMap<usize, DatabaseValue>,
-    counter: usize,
+    params: Vec<DatabaseValue>,
     tokens: Vec<Token>,
 }
 
 impl QueryBuildState {
     pub fn create_param(&mut self, v: &DatabaseValue) -> PlaceHolder {
-        self.params.insert(self.counter, v.clone());
-        let place_holder = format!("${}", self.counter);
-        self.counter += 1;
+        self.params.push(v.clone());
 
-        place_holder
+        "?".to_string()
     }
 
     pub fn append_param(&mut self, v: &DatabaseValue) -> Result {
@@ -59,7 +55,7 @@ impl QueryBuildState {
     {
         self.params
             .into_iter()
-            .fold(query, |q, (_, param)| param.bind_on(q))
+            .fold(query, |q, param| param.bind_on(q))
     }
 }
 

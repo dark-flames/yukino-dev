@@ -24,13 +24,21 @@ impl AliasGenerator {
         self.generate_alias(E::table_name())
     }
 
-    pub fn generate_select_list(&self, exprs: impl IntoIterator<Item = Expr>) -> Vec<SelectItem> {
+    pub fn generate_select_list(
+        &self,
+        exprs: impl IntoIterator<Item = Expr>,
+        with_alias: bool,
+    ) -> Vec<SelectItem> {
         exprs
             .into_iter()
             .enumerate()
             .map(|(index, expr)| SelectItem {
                 expr,
-                alias: format!("result_{}", index),
+                alias: if with_alias {
+                    Some(format!("result_{}", index))
+                } else {
+                    None
+                },
             })
             .collect()
     }

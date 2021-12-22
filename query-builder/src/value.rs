@@ -7,6 +7,7 @@ use sqlx::{ColumnIndex, Database, Decode, Encode, Error, FromRow, Row, Type, Typ
 use sqlx::database::{HasArguments, HasValueRef};
 use sqlx::error::BoxDynError;
 use sqlx::query::QueryAs;
+use sqlx::types::Decimal;
 use sqlx::types::time::{Date, PrimitiveDateTime, Time};
 
 use interface::DatabaseType;
@@ -29,6 +30,7 @@ pub enum DatabaseValue {
 
     Float(f32),
     Double(f64),
+    Decimal(Decimal),
 
     Binary(Binary),
 
@@ -61,6 +63,7 @@ impl Display for DatabaseValue {
             DatabaseValue::UnsignedBigInteger(v) => v.fmt(f),
             DatabaseValue::Float(v) => v.fmt(f),
             DatabaseValue::Double(v) => v.fmt(f),
+            DatabaseValue::Decimal(v) => v.fmt(f),
             DatabaseValue::Binary(_) => write!(f, "BinaryData"),
             DatabaseValue::Time(v) => v.fmt(f),
             DatabaseValue::Date(v) => v.fmt(f),
@@ -86,6 +89,7 @@ impl From<&DatabaseValue> for DatabaseType {
             DatabaseValue::UnsignedBigInteger(_) => DatabaseType::UnsignedBigInteger,
             DatabaseValue::Float(_) => DatabaseType::Float,
             DatabaseValue::Double(_) => DatabaseType::Double,
+            DatabaseValue::Decimal(_) => DatabaseType::Decimal,
             DatabaseValue::Binary(_) => DatabaseType::Binary,
             DatabaseValue::Time(_) => DatabaseType::Time,
             DatabaseValue::Date(_) => DatabaseType::Date,
@@ -123,6 +127,8 @@ where
     Option<f32>: Encode<'q, DB> + Type<DB>,
     f64: Encode<'q, DB> + Type<DB>,
     Option<f64>: Encode<'q, DB> + Type<DB>,
+    Decimal: Encode<'q, DB> + Type<DB>,
+    Option<Decimal>: Encode<'q, DB> + Type<DB>,
     Time: Encode<'q, DB> + Type<DB>,
     Option<Time>: Encode<'q, DB> + Type<DB>,
     Date: Encode<'q, DB> + Type<DB>,
@@ -150,6 +156,7 @@ where
             DatabaseValue::UnsignedBigInteger(i) => query.bind(i),
             DatabaseValue::Float(f) => query.bind(f),
             DatabaseValue::Double(f) => query.bind(f),
+            DatabaseValue::Decimal(f) => query.bind(f),
             DatabaseValue::Binary(b) => query.bind(b),
             DatabaseValue::Time(t) => query.bind(t),
             DatabaseValue::Date(t) => query.bind(t),
@@ -171,6 +178,7 @@ where
                     DatabaseType::Float => query.bind(null_of::<f32>()),
                     DatabaseType::Double => query.bind(null_of::<f64>()),
                     DatabaseType::Binary => query.bind(null_of::<Binary>()),
+                    DatabaseType::Decimal => query.bind(null_of::<Decimal>()),
                     DatabaseType::Time => query.bind(null_of::<Time>()),
                     DatabaseType::Date => query.bind(null_of::<Date>()),
                     DatabaseType::DateTime => query.bind(null_of::<PrimitiveDateTime>()),
@@ -194,13 +202,12 @@ where
     i64: Decode<'r, DB>,
     f32: Decode<'r, DB>,
     f64: Decode<'r, DB>,
+    Decimal: Decode<'r, DB>,
     Value: Decode<'r, DB>,
     String: Decode<'r, DB>,
 {
     fn decode(value: <DB as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
-        let type_info = value.type_info();
-
-        match (type_info.name(), type_info.is_null()) {
+        match (value.type_info().name(), value.is_null()) {
             ("BOOLEAN", false) => bool::decode(value).map(DatabaseValue::Bool),
             ("BOOLEAN", true) => Ok(DatabaseValue::Null(DatabaseType::Bool)),
             ("SMALLINT UNSIGNED", false) => {
@@ -217,21 +224,26 @@ where
             ("INT", true) => Ok(DatabaseValue::Null(DatabaseType::Integer)),
             ("BIGINT UNSIGNED", false) => u64::decode(value).map(DatabaseValue::UnsignedBigInteger),
             ("BIGINT UNSIGNED", true) => Ok(DatabaseValue::Null(DatabaseType::UnsignedBigInteger)),
-            ("BIG INT", false) => i64::decode(value).map(DatabaseValue::BigInteger),
-            ("BIG INT", true) => Ok(DatabaseValue::Null(DatabaseType::BigInteger)),
+            ("BIGINT", false) => i64::decode(value).map(DatabaseValue::BigInteger),
+            ("BIGINT", true) => Ok(DatabaseValue::Null(DatabaseType::BigInteger)),
             ("FLOAT", false) => f32::decode(value).map(DatabaseValue::Float),
             ("FLOAT", true) => Ok(DatabaseValue::Null(DatabaseType::Float)),
             ("DOUBLE", false) => f64::decode(value).map(DatabaseValue::Double),
             ("DOUBLE", true) => Ok(DatabaseValue::Null(DatabaseType::Double)),
+            ("DECIMAL", false) => Decimal::decode(value).map(DatabaseValue::Decimal),
+            ("DECIMAL", true) => Ok(DatabaseValue::Null(DatabaseType::Decimal)),
             ("JSON", false) => Value::decode(value).map(DatabaseValue::Json),
             ("JSON", true) => Ok(DatabaseValue::Null(DatabaseType::Json)),
             ("TEXT", false) => String::decode(value).map(DatabaseValue::String),
             ("TEXT", true) => Ok(DatabaseValue::Null(DatabaseType::String)),
+            ("LONGTEXT", false) => String::decode(value).map(DatabaseValue::String),
+            ("LONGTEXT", true) => Ok(DatabaseValue::Null(DatabaseType::String)),
             ("VARCHAR", false) => String::decode(value).map(DatabaseValue::String),
             ("VARCHAR", true) => Ok(DatabaseValue::Null(DatabaseType::String)),
-            (_, _) => Err(Box::new(ExecuteError::DecodeError(
-                "Unsupported DB type".to_string(),
-            ))),
+            (t, _) => Err(Box::new(ExecuteError::DecodeError(format!(
+                "Unsupported DB type {}",
+                t
+            )))),
         }
     }
 }
@@ -255,14 +267,22 @@ impl<L: ArrayLength<DatabaseValue>> From<ResultRow<L>> for GenericArray<Database
 impl<'r, DB: Database, R: Row<Database = DB>, L: ArrayLength<DatabaseValue>> FromRow<'r, R>
     for ResultRow<L>
 where
-    usize: ColumnIndex<R>,
+    for<'n> &'n str: ColumnIndex<R>,
     DatabaseValue: Decode<'r, DB>,
 {
     fn from_row(row: &'r R) -> Result<Self, Error> {
         GenericArray::from_exact_iter(
             (0..L::to_usize())
                 .into_iter()
-                .map(|index| row.try_get_unchecked(index))
+                .map(|index| {
+                    let name = format!("result_{}", index);
+                    let value_ref = row.try_get_raw(name.as_str()).unwrap();
+                    let result = DatabaseValue::decode(value_ref)
+                        .map_err(Error::Decode)
+                        .unwrap();
+
+                    Ok(result)
+                })
                 .collect::<Result<Vec<_>, Error>>()?,
         )
         .ok_or_else(|| {

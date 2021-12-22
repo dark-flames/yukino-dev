@@ -6,6 +6,7 @@ use crate::drivers::{convert_group_concat, convert_normal_aggregate_fn_call, con
 #[derive(Clone, Debug, Copy)]
 pub enum AggregateFunction {
     Average,
+    Sum,
     BitAnd,
     BitOr,
     BitXor,
@@ -77,6 +78,7 @@ impl Display for NormalAggregateFunctionCall {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self.function {
             AggregateFunction::Average => write!(f, "AVG({})", self.param),
+            AggregateFunction::Sum => write!(f, "Sum({})", self.param),
             AggregateFunction::BitAnd => write!(f, "BIT_AND({})", self.param),
             AggregateFunction::BitOr => write!(f, "BIT_OR({})", self.param),
             AggregateFunction::BitXor => write!(f, "BIT_XOR({})", self.param),

@@ -84,7 +84,8 @@ impl ToSql for AssignmentValue {
 
 impl ToSql for AssignmentItem {
     fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
-        write!(state, "{}=", self.column)?;
+        let column = format!("`{}`", self.column);
+        write!(state, "{}=", column)?;
         self.value.to_sql(state)
     }
 }

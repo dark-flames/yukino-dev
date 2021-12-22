@@ -202,7 +202,7 @@ impl<View: GroupResult, E: EntityWithView> Executable<View::Value, View::Tags>
             Query::Select(SelectQuery::create(
                 Box::new(self.query),
                 self.alias_generator
-                    .generate_select_list(self.view.collect_expr_vec()),
+                    .generate_select_list(self.view.collect_expr_vec(), true),
                 vec![],
                 None,
                 0,
@@ -245,6 +245,7 @@ where
                         .collect_expr_vec()
                         .into_iter()
                         .chain(self.aggregate.collect_fold_expr_vec()),
+                    true,
                 ),
                 vec![],
                 None,
@@ -326,7 +327,7 @@ impl<View: GroupResult, E: EntityWithView> Executable<View::Value, View::Tags>
                 Box::new(self.nested.query),
                 self.nested
                     .alias_generator
-                    .generate_select_list(self.nested.view.collect_expr_vec()),
+                    .generate_select_list(self.nested.view.collect_expr_vec(), true),
                 self.order_by,
                 None,
                 0,
@@ -362,6 +363,7 @@ where
                         .collect_expr_vec()
                         .into_iter()
                         .chain(self.nested.aggregate.collect_fold_expr_vec()),
+                    true,
                 ),
                 vec![],
                 None,

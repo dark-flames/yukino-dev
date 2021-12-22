@@ -18,7 +18,9 @@ pub fn convert_group_concat(
     }
 
     if let Some(separator) = &fn_call.separator {
-        write!(state, "SEPARATOR {}", separator)?
+        write!(state, "SEPARATOR")?;
+        let sp = format!("'{}'", separator);
+        state.write_str(&sp)?;
     }
 
     write!(state, ")")
@@ -40,6 +42,7 @@ pub fn convert_normal_aggregate_fn_call(
 ) -> Result {
     match &fn_call.function {
         AggregateFunction::Average => write!(state, "AVG"),
+        AggregateFunction::Sum => write!(state, "SUM"),
         AggregateFunction::BitAnd => write!(state, "BIT_AND"),
         AggregateFunction::BitOr => write!(state, "BIT_OR"),
         AggregateFunction::BitXor => write!(state, "BIT_XOR"),

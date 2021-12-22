@@ -13,7 +13,7 @@ pub mod prelude {
     pub use crate::operator::{
         InSubquery, SortOrder, SubqueryExists, VerticalAverage, VerticalBitAnd, VerticalBitOr,
         VerticalBitXor, VerticalCount, VerticalCountDistinct, VerticalJoin, VerticalMax,
-        VerticalMin,
+        VerticalMin, VerticalSum,
     };
     pub use crate::query::{
         BelongsToQueryResult, BelongsToView, Delete, Executable, FetchMulti, FetchOne, Filter,

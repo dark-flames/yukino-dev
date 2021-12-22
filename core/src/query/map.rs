@@ -70,7 +70,7 @@ impl<R: Value, RTags: TagList, ResultType: ExecuteResultType> Executable<R, RTag
             Query::Select(SelectQuery::create(
                 self.query,
                 self.alias_generator
-                    .generate_select_list(self.view.collect_expr()),
+                    .generate_select_list(self.view.collect_expr(), true),
                 self.order_by_items,
                 None,
                 0,
@@ -87,7 +87,7 @@ impl<T: Value<L = U1>, TTags: TagList, ResultType: ExecuteResultType> SubqueryVi
         SelectQuery::create(
             self.query.clone(),
             self.alias_generator
-                .generate_select_list(self.view.collect_expr()),
+                .generate_select_list(self.view.collect_expr(), false),
             self.order_by_items.clone(),
             None,
             0,

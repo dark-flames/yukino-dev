@@ -1,7 +1,5 @@
 use yukino::Entity;
 
-pub mod meeting;
-
 #[derive(Entity, Debug, Clone)]
 #[belongs_to(Foo, foo_id)]
 pub struct Bar {

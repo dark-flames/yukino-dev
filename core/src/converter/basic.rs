@@ -1,6 +1,7 @@
 use generic_array::{arr, GenericArray};
 use generic_array::typenum::U1;
 use iroha::ToTokens;
+use sqlx::types::Decimal;
 
 use interface::DatabaseType;
 use query_builder::DatabaseValue;
@@ -10,7 +11,7 @@ use crate::err::ConvertError;
 use crate::view::ValueCountOf;
 
 macro_rules! basic_ty_converter {
-    ($field_type:ty, $name:ident, $enum_variant:ident, $static: ident) => {
+    ($field_type:ty, $name:ident, $enum_variant:ident) => {
         #[derive(ToTokens, Clone)]
         #[Iroha(mod_path = "yukino::converter::basic")]
         pub struct $name;
@@ -29,10 +30,9 @@ macro_rules! basic_ty_converter {
                 &self,
             ) -> Deserializer<Self::Output> {
                 Box::new(|v| {
-                    if let DatabaseValue::$enum_variant(nested) = v.iter().next().unwrap() {
-                        Ok(nested.clone())
-                    } else {
-                        Err(ConvertError::UnexpectedValueType)
+                    match v.iter().next().unwrap() {
+                        DatabaseValue::$enum_variant(nested) => Ok(nested.clone()),
+                        _ => Err(ConvertError::UnexpectedValueType)
                     }
                 })
             }
@@ -49,7 +49,7 @@ macro_rules! basic_ty_converter {
 }
 
 macro_rules! optional_basic_ty_converter {
-    ($field_type:ty, $name:ident, $enum_variant:ident, $static: ident) => {
+    ($field_type:ty, $name:ident, $enum_variant:ident) => {
         #[derive(ToTokens, Clone)]
         #[Iroha(mod_path = "yukino::converter::basic")]
         pub struct $name;
@@ -88,73 +88,25 @@ macro_rules! optional_basic_ty_converter {
         }
     };
 }
-basic_ty_converter!(bool, BoolConverter, Bool, BOOL_CONVERTER);
-basic_ty_converter!(i16, ShortConverter, SmallInteger, SHORT_CONVERTER);
-basic_ty_converter!(
-    u16,
-    UnsignedShortConverter,
-    UnsignedSmallInteger,
-    UNSIGNED_SHORT_CONVERTER
-);
-basic_ty_converter!(i32, IntConverter, Integer, INT_CONVERTER);
-basic_ty_converter!(
-    u32,
-    UnsignedIntConverter,
-    UnsignedInteger,
-    UNSIGNED_CONVERTER
-);
-basic_ty_converter!(i64, LongConverter, BigInteger, LONG_CONVERTER);
-basic_ty_converter!(
-    u64,
-    UnsignedLongConverter,
-    UnsignedBigInteger,
-    UNSIGNED_LONG_CONVERTER
-);
-basic_ty_converter!(f32, FloatConverter, Float, FLOAT_CONVERTER);
-basic_ty_converter!(f64, DoubleConverter, Double, DOUBLE_CONVERTER);
-basic_ty_converter!(String, StringConverter, String, STRING_CONVERTER);
-optional_basic_ty_converter!(bool, OptionalBoolConverter, Bool, OPTIONAL_BOOL_CONVERTER);
-optional_basic_ty_converter!(
-    i16,
-    OptionalShortConverter,
-    SmallInteger,
-    OPTIONAL_SHORT_CONVERTER
-);
-optional_basic_ty_converter!(
-    u16,
-    OptionalUnsignedShortConverter,
-    UnsignedSmallInteger,
-    OPTIONAL_UNSIGNED_SHORT_CONVERTER
-);
-optional_basic_ty_converter!(i32, OptionalIntConverter, Integer, OPTIONAL_INT_CONVERTER);
-optional_basic_ty_converter!(
-    u32,
-    OptionalUnsignedIntConverter,
-    UnsignedInteger,
-    OPTIONAL_UNSIGNED_CONVERTER
-);
-optional_basic_ty_converter!(
-    i64,
-    OptionalLongConverter,
-    BigInteger,
-    OPTIONAL_LONG_CONVERTER
-);
-optional_basic_ty_converter!(
-    u64,
-    OptionalUnsignedLongConverter,
-    UnsignedBigInteger,
-    OPTIONAL_UNSIGNED_LONG_CONVERTER
-);
-optional_basic_ty_converter!(f32, OptionalFloatConverter, Float, OPTIONAL_FLOAT_CONVERTER);
-optional_basic_ty_converter!(
-    f64,
-    OptionalDoubleConverter,
-    Double,
-    OPTIONAL_DOUBLE_CONVERTER
-);
-optional_basic_ty_converter!(
-    String,
-    OptionalStringConverter,
-    String,
-    OPTIONAL_STRING_CONVERTER
-);
+basic_ty_converter!(bool, BoolConverter, Bool);
+basic_ty_converter!(i16, ShortConverter, SmallInteger);
+basic_ty_converter!(u16, UnsignedShortConverter, UnsignedSmallInteger);
+basic_ty_converter!(i32, IntConverter, Integer);
+basic_ty_converter!(u32, UnsignedIntConverter, UnsignedInteger);
+basic_ty_converter!(i64, LongConverter, BigInteger);
+basic_ty_converter!(u64, UnsignedLongConverter, UnsignedBigInteger);
+basic_ty_converter!(f32, FloatConverter, Float);
+basic_ty_converter!(f64, DoubleConverter, Double);
+basic_ty_converter!(Decimal, DecimalConverter, Decimal);
+basic_ty_converter!(String, StringConverter, String);
+optional_basic_ty_converter!(bool, OptionalBoolConverter, Bool);
+optional_basic_ty_converter!(i16, OptionalShortConverter, SmallInteger);
+optional_basic_ty_converter!(u16, OptionalUnsignedShortConverter, UnsignedSmallInteger);
+optional_basic_ty_converter!(i32, OptionalIntConverter, Integer);
+optional_basic_ty_converter!(u32, OptionalUnsignedIntConverter, UnsignedInteger);
+optional_basic_ty_converter!(i64, OptionalLongConverter, BigInteger);
+optional_basic_ty_converter!(u64, OptionalUnsignedLongConverter, UnsignedBigInteger);
+optional_basic_ty_converter!(f32, OptionalFloatConverter, Float);
+optional_basic_ty_converter!(f64, OptionalDoubleConverter, Double);
+optional_basic_ty_converter!(Decimal, OptionalDecimalConverter, Decimal);
+optional_basic_ty_converter!(String, OptionalStringConverter, String);

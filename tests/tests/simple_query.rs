@@ -13,7 +13,7 @@ fn test_fold() {
     let query = Foo::all()
         .filter(|b| lt!(b.int, 114514))
         .filter(|b| bt!(b.int, 1919))
-        .fold(|b| b.int.average() * 2)
+        .fold(|b| b.int.average())
         .generate_query()
         .0;
 

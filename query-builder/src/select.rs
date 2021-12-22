@@ -38,7 +38,7 @@ pub struct SelectQuery {
 #[derive(Clone, Debug)]
 pub struct SelectItem {
     pub expr: Expr,
-    pub alias: String,
+    pub alias: Option<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -212,7 +212,13 @@ impl Display for Order {
 
 impl Display for SelectItem {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} AS {}", self.expr, self.alias)
+        write!(f, "{}", self.expr)?;
+
+        if let Some(alias) = &self.alias {
+            write!(f, "AS {}", alias)?;
+        }
+
+        Ok(())
     }
 }
 
@@ -371,7 +377,11 @@ impl ToSql for SelectItem {
     fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
         self.expr.to_sql(state)?;
 
-        write!(state, "AS {}", self.alias)
+        if let Some(alias) = &self.alias {
+            write!(state, "AS {}", alias)?;
+        }
+
+        Ok(())
     }
 }
 

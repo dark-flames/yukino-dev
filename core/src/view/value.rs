@@ -4,6 +4,7 @@ use std::marker::PhantomData;
 use generic_array::{arr, ArrayLength, functional::FunctionalSequence, GenericArray};
 use generic_array::typenum::{U1, UInt, UTerm};
 use generic_array::typenum::bit::{B0, B1};
+use sqlx::types::Decimal;
 
 use query_builder::{DatabaseValue, Expr};
 
@@ -151,4 +152,5 @@ impl_value!(i32, IntConverter, OptionalIntConverter);
 impl_value!(i64, LongConverter, OptionalLongConverter);
 impl_value!(f32, FloatConverter, OptionalFloatConverter);
 impl_value!(f64, DoubleConverter, OptionalDoubleConverter);
+impl_value!(Decimal, DecimalConverter, OptionalDecimalConverter);
 impl_value!(String, StringConverter, OptionalStringConverter);

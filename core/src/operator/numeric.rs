@@ -1,6 +1,7 @@
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
 
 use generic_array::arr;
+use sqlx::types::Decimal;
 
 use query_builder::Expr;
 
@@ -86,13 +87,13 @@ macro_rules! impl_ops {
 }
 
 impl_ops!(+, ExprAdd, expr_add, Add, add, Add, impl_add, [
-    u16, i16, u32, i32, u64, i64, f32, f64]);
+    u16, i16, u32, i32, u64, i64, f32, f64, Decimal]);
 impl_ops!(-, ExprSub, expr_sub, Sub, sub, Sub, impl_sub, [
-    u16, i16, u32, i32, u64, i64, f32, f64]);
+    u16, i16, u32, i32, u64, i64, f32, f64, Decimal]);
 impl_ops!(*, ExprMul, expr_mul, Mul, mul, Mul, impl_mul, [
-    u16, i16, u32, i32, u64, i64, f32, f64]);
+    u16, i16, u32, i32, u64, i64, f32, f64, Decimal]);
 impl_ops!(/, ExprDiv, expr_div, Div, div, Div, impl_div, [
-    u16, i16, u32, i32, u64, i64, f32, f64]);
+    u16, i16, u32, i32, u64, i64, f32, f64, Decimal]);
 impl_ops!(%, ExprRem, expr_rem, Rem, rem, Rem, impl_rem, [
     u16, i16, u32, i32, u64, i64]);
 impl_ops!(<<, ExprLeftShift, expr_left_shift, Shl, shl, LeftShift,

@@ -14,6 +14,7 @@ pub enum DatabaseType {
     UnsignedBigInteger,
     Float,
     Double,
+    Decimal,
     Binary,
     Time,
     Date,

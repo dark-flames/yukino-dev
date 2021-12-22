@@ -63,7 +63,7 @@ impl<View: FoldResult> Executable<View::Value, View::Tags> for FoldQueryResult<V
             Query::Select(SelectQuery::create(
                 self.query,
                 self.alias_generator
-                    .generate_select_list(self.view.collect_fold_expr_vec()),
+                    .generate_select_list(self.view.collect_fold_expr_vec(), true),
                 vec![],
                 None,
                 0,
@@ -86,7 +86,7 @@ impl<T: Value<L = U1>, View: FoldResult<Value = T>> SubqueryView<T> for FoldQuer
         SelectQuery::create(
             self.query.clone(),
             self.alias_generator
-                .generate_select_list(self.view.collect_fold_expr_vec()),
+                .generate_select_list(self.view.collect_fold_expr_vec(), false),
             vec![],
             None,
             0,

@@ -1,3 +1,5 @@
+use sqlx::types::Decimal;
+
 use query_builder::{
     AggregateFunction, GroupConcatFunctionCall, NormalAggregateFunctionCall, OrderByItem,
 };
@@ -12,14 +14,14 @@ pub trait ExprJoin {
         expr: ExprViewBoxWithTag<Self, TTags>,
         order_by_items: Vec<OrderByItem>,
         separator: Option<&str>,
-    ) -> ExprViewBoxWithTag<String, AddTag<TagsOfValueView<String>, AggregateViewTag>>;
+    ) -> ExprViewBoxWithTag<Option<String>, AddTag<TagsOfValueView<Option<String>>, AggregateViewTag>>;
 }
 
 pub trait VerticalJoin {
     fn join(
         self,
         separator: Option<&str>,
-    ) -> ExprViewBoxWithTag<String, AddTag<TagsOfValueView<String>, AggregateViewTag>>;
+    ) -> ExprViewBoxWithTag<Option<String>, AddTag<TagsOfValueView<Option<String>>, AggregateViewTag>>;
 }
 
 impl<T: Value + ExprJoin, TTags: TagList + SetBit<OffsetOfTag<AggregateViewTag>, True>> VerticalJoin
@@ -28,7 +30,8 @@ impl<T: Value + ExprJoin, TTags: TagList + SetBit<OffsetOfTag<AggregateViewTag>,
     fn join(
         self,
         separator: Option<&str>,
-    ) -> ExprViewBoxWithTag<String, AddTag<TagsOfValueView<String>, AggregateViewTag>> {
+    ) -> ExprViewBoxWithTag<Option<String>, AddTag<TagsOfValueView<Option<String>>, AggregateViewTag>>
+    {
         T::expr_join(self.expr, self.order_by, separator)
     }
 }
@@ -41,9 +44,9 @@ macro_rules! impl_join_for {
                     expr: ExprViewBoxWithTag<Self, TTags>,
                     order_by_items: Vec<OrderByItem>,
                     separator: Option<&str>,
-                ) -> ExprViewBoxWithTag<String, AddTag<TagsOfValueView<String>, AggregateViewTag>>
+                ) -> ExprViewBoxWithTag<Option<String>, AddTag<TagsOfValueView<Option<String>>, AggregateViewTag>>
                 {
-                    Box::new(AggregateViewItem::<String, TagsOfValueView<String>>::from_agg_fn_call(GroupConcatFunctionCall {
+                    Box::new(AggregateViewItem::<Option<String>, TagsOfValueView<Option<String>>>::from_agg_fn_call(GroupConcatFunctionCall {
                         expr: expr.collect_expr().into_iter().next().unwrap(),
                         order_by: order_by_items,
                         separator: separator.map(ToString::to_string),
@@ -103,17 +106,29 @@ macro_rules! impl_aggr_fn {
         impl_aggr_fn!(@internal $trait_name, $trait_method, $return_ty, $return_tags, $vertical_trait, $vertical_method, $return_ty, $variant, [$($ty),*]);
     };
     ($trait_name: ident, $trait_method: ident, $vertical_trait: ident, $vertical_method: ident, $variant: ident, [$($ty: ty),*]) => {
-        impl_aggr_fn!(@internal $trait_name, $trait_method, Self, TTags, $vertical_trait, $vertical_method, T, $variant, [$($ty),*]);
+        impl_aggr_fn!(@internal $trait_name, $trait_method, Option<Self>, TTags, $vertical_trait, $vertical_method, Option<T>, $variant, [$($ty),*]);
     };
 }
 
 impl_aggr_fn!(
     ExprAverage,
     expr_average,
+    Option<Decimal>,
+    TagsOfValueView<Option<Decimal>>,
     VerticalAverage,
     average,
     Average,
-    [u16, i16, u32, i32, u64, i64, f32, f64]
+    [u16, i16, u32, i32, u64, i64, f32, f64, Decimal]
+);
+impl_aggr_fn!(
+    ExprSum,
+    expr_sum,
+    Option<Decimal>,
+    TagsOfValueView<Option<Decimal>>,
+    VerticalSum,
+    sum,
+    Sum,
+    [u16, i16, u32, i32, u64, i64, f32, f64, Decimal]
 );
 impl_aggr_fn!(
     ExprBitAnd,
@@ -147,7 +162,7 @@ impl_aggr_fn!(
     VerticalCount,
     count,
     Count,
-    [bool, u16, i16, u32, i32, u64, i64, f32, f64, String]
+    [bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]
 );
 impl_aggr_fn!(
     ExprCountDistinct,
@@ -157,7 +172,7 @@ impl_aggr_fn!(
     VerticalCountDistinct,
     count_distinct,
     CountDistinct,
-    [bool, u16, i16, u32, i32, u64, i64, f32, f64, String]
+    [bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]
 );
 impl_aggr_fn!(
     ExprMax,
@@ -165,7 +180,7 @@ impl_aggr_fn!(
     VerticalMax,
     max,
     Max,
-    [u16, i16, u32, i32, u64, i64, f32, f64, String]
+    [u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]
 );
 impl_aggr_fn!(
     ExprMin,
@@ -173,7 +188,7 @@ impl_aggr_fn!(
     VerticalMin,
     min,
     Min,
-    [u16, i16, u32, i32, u64, i64, f32, f64, String]
+    [u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]
 );
 
-impl_join_for![bool, u16, i16, u32, i32, u64, i64, f32, f64, String];
+impl_join_for![bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String];

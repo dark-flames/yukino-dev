@@ -126,7 +126,7 @@ impl<E: EntityWithView> Executable<E, TagsOfEntity<E>> for QueryResultFilter<E> 
             Query::Select(SelectQuery::create(
                 Box::new(self.query),
                 self.alias_generator
-                    .generate_select_list(view.collect_expr().into_iter()),
+                    .generate_select_list(view.collect_expr().into_iter(), true),
                 vec![],
                 None,
                 0,
@@ -207,7 +207,7 @@ impl<E: EntityWithView> Executable<E, TagsOfEntity<E>> for SortedQueryResultFilt
                 Box::new(self.nested.query),
                 self.nested
                     .alias_generator
-                    .generate_select_list(view.collect_expr()),
+                    .generate_select_list(view.collect_expr(), true),
                 vec![],
                 None,
                 0,
@@ -230,7 +230,7 @@ where
             expr: self
                 .root_alias
                 .create_ident_expr(Parent::primary_key_name()),
-            alias: "".to_string(), // todo: optional
+            alias: Some("result_0".to_string()),
         }]);
 
         let mut result = Children::all();

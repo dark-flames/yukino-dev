@@ -75,7 +75,8 @@ impl ToSql for Ident {
     fn to_sql(&self, state: &mut QueryBuildState) -> FmtResult {
         let last_index = self.seg.len() - 1;
         for (index, item) in self.seg.iter().enumerate() {
-            write!(state, "`{}`", item)?;
+            let ident_seg = format!("`{}`", item);
+            state.write_str(&ident_seg)?;
             if index != last_index {
                 write!(state, ".")?;
             }
@@ -95,6 +96,7 @@ impl ToSql for AliasedTable {
 
 impl ToSql for Alias {
     fn to_sql(&self, state: &mut QueryBuildState) -> FmtResult {
-        write!(state, "`{}`", self.name)
+        let alias = format!("`{}`", self.name);
+        state.write_str(&alias)
     }
 }
