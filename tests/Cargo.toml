@@ -10,4 +10,8 @@ yukino = { path = "./..", version = "0.1.0" }
 sqlx = { version = "0.5.9", features = ["runtime-tokio-rustls", "json", "time", "mysql", "decimal"]}
 tokio = { version = "1", features = ["full"] }
 
+[profile.dev]
+opt-level = 1               # Use slightly better optimizations.
+overflow-checks = false
+
 

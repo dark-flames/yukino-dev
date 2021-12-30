@@ -51,51 +51,40 @@ impl EntityResolver {
             return Err(Error::new_spanned(ast, "Expected named fields"));
         }?;
 
-        let associations = ast
-            .attrs
-            .iter()
-            .filter(|attr| attr.path.is_ident("belongs_to"))
-            .map(|attr| match attr.parse_meta()? {
-                Meta::List(l) => {
-                    let mut iter = l.nested.iter();
-                    let ref_entity_path = iter
-                        .next()
-                        .ok_or_else(|| Error::new_spanned(attr, "Expected referenced entity path"))
-                        .and_then(|meta| match meta {
-                            NestedMeta::Meta(Meta::Path(p)) => Ok(p.clone()),
-                            _ => Err(Error::new_spanned(attr, "Expected referenced entity path")),
-                        })?;
+        let associations = ast.fields.iter()
+            .filter_map(|f| {
+                f.attrs.iter().find(|attr| attr.path.is_ident("belongs_to"))
+                    .map(|attr| match attr.parse_meta()? {
+                        Meta::List(l) => {
+                            let ref_entity_path = l.nested.iter()
+                                .next()
+                                .ok_or_else(|| Error::new_spanned(attr, "Expected referenced entity path"))
+                                .and_then(|meta| match meta {
+                                    NestedMeta::Meta(Meta::Path(p)) => Ok(p.clone()),
+                                    _ => Err(Error::new_spanned(attr, "Expected referenced entity path")),
+                                })?;
 
-                    let foreign_key = iter
-                        .next()
-                        .ok_or_else(|| Error::new_spanned(attr, "Expected foreign key"))
-                        .and_then(|meta| match meta {
-                            NestedMeta::Meta(Meta::Path(p)) => Ok(p
-                                .get_ident()
-                                .ok_or_else(|| Error::new_spanned(attr, "Expected foreign key"))?
-                                .clone()),
-                            _ => Err(Error::new_spanned(attr, "Expected foreign key1")),
-                        })?;
+                            let foreign_key = f.ident.clone().unwrap();
 
-                    fields
-                        .iter()
-                        .find(|f| f.name == foreign_key)
-                        .ok_or_else(|| {
-                            Error::new_spanned(attr, "Cannot find a field with this name")
-                        })
-                        .map(|field| ResolvedAssociation {
-                            ref_entity_path,
-                            foreign_key,
-                            column_name: field.definition.identity_column.clone(),
-                            ty: field.ty.clone(),
-                        })
-                }
-                _ => Err(Error::new_spanned(
-                    attr,
-                    "`belongs_to` attribute must be a list",
-                )),
-            })
-            .collect::<Result<Vec<_>>>()?;
+                            fields
+                                .iter()
+                                .find(|f| f.name == foreign_key)
+                                .ok_or_else(|| {
+                                    Error::new_spanned(attr, "Cannot find a field with this name")
+                                })
+                                .map(|field| ResolvedAssociation {
+                                    ref_entity_path,
+                                    foreign_key,
+                                    column_name: field.definition.identity_column.clone(),
+                                    ty: field.ty.clone(),
+                                })
+                        }
+                        _ => Err(Error::new_spanned(
+                            attr,
+                            "`belongs_to` attribute must be a list",
+                        )),
+                    })
+            }).collect::<Result<Vec<_>>>()?;
 
         if fields.iter().filter(|f| f.definition.primary_key).count() > 1 {
             return Err(Error::new_spanned(

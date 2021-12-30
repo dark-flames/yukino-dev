@@ -1,8 +1,8 @@
 use yukino::Entity;
 
 #[derive(Entity, Debug, Clone)]
-#[belongs_to(Foo, foo_id)]
 pub struct Bar {
+    #[belongs_to(Foo)]
     pub foo_id: u32,
     pub name: String,
 }

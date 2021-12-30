@@ -4,9 +4,7 @@ use sqlx::{Executor, MySql, MySqlPool};
 use sqlx::mysql::MySqlPoolOptions;
 use sqlx::types::Decimal;
 
-use yukino::Entity;
 use yukino::prelude::*;
-use yukino::prelude::VerticalJoin;
 
 #[derive(Entity, Clone, Debug)]
 pub struct Person {
@@ -18,11 +16,11 @@ pub struct Person {
 }
 
 #[derive(Entity, Clone, Debug)]
-#[belongs_to(Person, host_id)]
 pub struct Meeting {
     #[id]
     pub id: u32,
     pub title: String,
+    #[belongs_to(Person)]
     pub host_id: u32,
     pub start_time: u64,
     pub end_time: u64,
