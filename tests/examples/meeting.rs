@@ -152,7 +152,7 @@ pub async fn prepare_data(pool: &MySqlPool) {
 pub async fn main() -> Result<(), sqlx::Error> {
     let url = env::var("DB").unwrap();
     let pool = MySqlPoolOptions::new()
-        .max_connections(10)
+        .max_connections(1)
         .connect(&url)
         .await?;
 

@@ -174,11 +174,25 @@ pub fn run_bench_group(c: &mut Criterion) {
         .max_connections(10)
         .connect(&url)).unwrap();
 
+    runtime.block_on(delete_all(&pool));
+    runtime.block_on(prepare_data(&pool));
 
-    c.bench_function("bench_meeting", |b| {
+    c.bench_function("adult_hosted_meeting_length", |b| {
         // Insert a call to `to_async` to convert the bencher to async mode.
         // The timing loops are the same as with the normal bencher.
-        b.to_async(&runtime).iter(|| bench_group(&pool));
+        b.to_async(&runtime).iter(|| adult_hosted_meeting_length(&pool));
+    });
+
+    c.bench_function("meeting_count_by_level", |b| {
+        // Insert a call to `to_async` to convert the bencher to async mode.
+        // The timing loops are the same as with the normal bencher.
+        b.to_async(&runtime).iter(|| meeting_count_by_level(&pool));
+    });
+
+    c.bench_function("hosted_meeting_titles", |b| {
+        // Insert a call to `to_async` to convert the bencher to async mode.
+        // The timing loops are the same as with the normal bencher.
+        b.to_async(&runtime).iter(|| hosted_meeting_titles(&pool));
     });
 }
 
