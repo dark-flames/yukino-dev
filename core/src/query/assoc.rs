@@ -126,3 +126,15 @@ where
     ExprBoxOfAssociatedView<Children::View, Parent>: In<<Parent as WithPrimaryKey>::PrimaryKeyType>,
 {
 }
+
+impl<
+    Children: EntityWithView + Association<Parent, ForeignKeyType = ForeignKey>,
+    Parent: EntityWithView + WithPrimaryKey<PrimaryKeyType = ForeignKey>,
+    ForeignKey: Value,
+> BelongsToEntities<Children, Parent, ForeignKey> for Children
+    where
+        Parent::View: ViewWithPrimaryKey<PrimaryKeyType = ForeignKey>,
+        Children::View: AssociatedView<Parent, ForeignKeyType = ForeignKey>,
+        ExprBoxOfAssociatedView<Children::View, Parent>: In<<Parent as WithPrimaryKey>::PrimaryKeyType>,
+{
+}

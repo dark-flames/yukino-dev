@@ -13,11 +13,12 @@ pub mod prelude {
     pub use crate::operator::{
         InSubquery, SortOrder, SubqueryExists, VerticalAverage, VerticalBitAnd, VerticalBitOr,
         VerticalBitXor, VerticalCount, VerticalCountDistinct, VerticalJoin, VerticalMax,
-        VerticalMin, VerticalSum,
+        VerticalMin, VerticalSum
     };
     pub use crate::query::{
-        BelongsToQueryResult, BelongsToView, Delete, Executable, FetchMulti, FetchOne, Filter,
-        Filter2, Fold, Fold2, GroupBy, GroupFold, Map, Map2, Sort, Sort2, Update,
+        BelongsToEntities, BelongsToQueryResult, BelongsToView, Delete, Executable, FetchMulti,
+        FetchOne, Filter, Filter2, Fold, Fold2, GroupBy, GroupFold, JoinChildren, Map, Map2, Sort,
+        Sort2, Update
     };
     pub use crate::view::{
         Deletable, EntityWithView, Identifiable, Insertable, SingleRowSubqueryView,
