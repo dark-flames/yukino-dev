@@ -9,9 +9,8 @@ use crate::query::{
     Map2, MultiRows, QueryResultMap, Sort, Sort2,
 };
 use crate::view::{
-    ConcreteList, EntityView, EntityViewTag, EntityWithView, ExprViewBox, ExprViewBoxWithTag,
-    MergeList, NotInList, TagList, TagsOfValueView, Value, ValueCountOf, VerticalExprView,
-    VerticalView,
+    ConcreteList, EntityView, EntityViewTag, EntityWithView, ExprViewBoxWithTag, MergeList,
+    NotInList, TagList, TagsOfValueView, Value, ValueCountOf, VerticalExprView, VerticalView,
 };
 
 pub trait GroupResult: Clone {
@@ -100,7 +99,7 @@ impl<View: GroupResult, E: EntityWithView> Map<View> for GroupedQueryResult<View
 impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Filter2<View, AggregateView>
     for GroupedQueryResult<View, AggregateView, E>
 {
-    fn filter<F, R: Into<ExprViewBox<bool>>>(mut self, f: F) -> Self
+    fn filter<F, R: Into<ExprViewBoxWithTag<bool, Tags>>, Tags: TagList>(mut self, f: F) -> Self
     where
         F: Fn(View, AggregateView) -> R,
     {
@@ -121,7 +120,7 @@ impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Filter2<Vi
 }
 
 impl<View: GroupResult, E: EntityWithView> Filter<View> for GroupedQueryResult<View, (), E> {
-    fn filter<F, R: Into<ExprViewBox<bool>>>(mut self, f: F) -> Self
+    fn filter<F, R: Into<ExprViewBoxWithTag<bool, Tags>>, Tags: TagList>(mut self, f: F) -> Self
     where
         F: Fn(View) -> R,
     {

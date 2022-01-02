@@ -31,6 +31,7 @@ pub enum Expr {
     And(ExprBox, ExprBox),
     Or(ExprBox, ExprBox),
     In(ExprBox, SelectQuery),
+    InArr(ExprBox, Vec<DatabaseValue>),
     Exists(SelectQuery),
     NotExists(SelectQuery),
 }
@@ -63,6 +64,15 @@ impl Display for Expr {
             Expr::And(l, r) => write!(f, "{} AND {}", l, r),
             Expr::Or(l, r) => write!(f, "{} OR {}", l, r),
             Expr::In(l, r) => write!(f, "{} IN ({})", l, r),
+            Expr::InArr(l, a) => write!(
+                f,
+                "{} IN ({})",
+                l,
+                a.iter()
+                    .map(|i| i.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
             Expr::Exists(s) => write!(f, "EXISTS ({})", s),
             Expr::NotExists(s) => write!(f, "NOT EXISTS ({})", s),
         }
@@ -224,6 +234,15 @@ impl ToSql for Expr {
                 write!(state, "IN")?;
                 write!(state, "(")?;
                 s.to_sql(state)?;
+                write!(state, ")")?;
+                write!(state, ")")
+            }
+            Expr::InArr(e, arr) => {
+                write!(state, "(")?;
+                e.to_sql(state)?;
+                write!(state, "IN")?;
+                write!(state, "(")?;
+                state.join(arr, |s| write!(s, ","))?;
                 write!(state, ")")?;
                 write!(state, ")")
             }

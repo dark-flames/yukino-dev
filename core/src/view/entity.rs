@@ -1,6 +1,6 @@
 use generic_array::GenericArray;
 
-use interface::{WithPrimaryKey, YukinoEntity};
+use interface::{Association, WithPrimaryKey, YukinoEntity};
 use query_builder::{Alias, InsertQuery};
 
 use crate::query::{Delete, DeleteQueryResult, QueryResultFilter};
@@ -31,14 +31,34 @@ pub trait EntityWithView: YukinoEntity + Value {
     fn all() -> QueryResultFilter<Self>;
 }
 
+pub type ExprBoxOfAssociatedView<V, P> = ExprViewBoxWithTag<
+    <V as AssociatedView<P>>::ForeignKeyType,
+    <V as AssociatedView<P>>::ForeignKeyTags,
+>;
+
+pub type ExprBoxOfViewWithPrimaryKey<V> = ExprViewBoxWithTag<
+    <V as ViewWithPrimaryKey>::PrimaryKeyType,
+    <V as ViewWithPrimaryKey>::PrimaryKeyTags,
+>;
+
 pub trait ViewWithPrimaryKey: EntityView
 where
-    <Self as EntityView>::Entity: WithPrimaryKey<Type = Self::Type>,
+    <Self as EntityView>::Entity: WithPrimaryKey<PrimaryKeyType = Self::PrimaryKeyType>,
 {
-    type Type;
-    type PrimaryKeyTag: TagList;
+    type PrimaryKeyType;
+    type PrimaryKeyTags: TagList;
 
-    fn primary_key(&self) -> &ExprViewBoxWithTag<Self::Type, Self::PrimaryKeyTag>;
+    fn primary_key(&self) -> &ExprBoxOfViewWithPrimaryKey<Self>;
+}
+
+pub trait AssociatedView<E: EntityWithView + WithPrimaryKey<PrimaryKeyType = Self::ForeignKeyType>>:
+    EntityView
+where
+    <Self as EntityView>::Entity: Association<E, ForeignKeyType = Self::ForeignKeyType>,
+{
+    type ForeignKeyType;
+    type ForeignKeyTags: TagList;
+    fn foreign_key(&self) -> &ExprBoxOfAssociatedView<Self, E>;
 }
 
 pub trait FieldMarker {
@@ -56,7 +76,7 @@ pub trait FieldMarker {
 }
 
 pub trait Identifiable: WithPrimaryKey + EntityWithView {
-    fn get(id: Self::Type) -> QueryResultFilter<Self>;
+    fn get(id: Self::PrimaryKeyType) -> QueryResultFilter<Self>;
 }
 
 pub trait Deletable: Identifiable {

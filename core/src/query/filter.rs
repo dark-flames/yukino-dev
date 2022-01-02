@@ -5,15 +5,15 @@ use query_builder::{
     Alias, Expr, OrderByItem, Query, Select, SelectFrom, SelectItem, SelectQuery, SelectSource,
 };
 
-use crate::operator::SortResult;
+use crate::operator::{In, SortResult};
 use crate::query::{
     AliasGenerator, AssociationBuilder, Delete, DeleteQueryResult, Executable, Fold,
     FoldQueryResult, FoldResult, GroupBy, GroupedQueryResult, GroupResult, Map, MultiRows,
     QueryResultMap, Sort, Update, UpdateQueryResult,
 };
 use crate::view::{
-    EntityView, EntityWithView, ExprView, ExprViewBox, ExprViewBoxWithTag, TagList, TagsOfEntity,
-    Value, ViewWithPrimaryKey,
+    AssociatedView, EntityView, EntityWithView, ExprView, ExprViewBoxWithTag, TagList,
+    TagsOfEntity, Value, ViewWithPrimaryKey,
 };
 
 pub struct QueryResultFilter<E: EntityWithView> {
@@ -30,20 +30,20 @@ pub struct SortedQueryResultFilter<E: EntityWithView> {
 
 pub trait Filter<View> {
     #[must_use]
-    fn filter<F, R: Into<ExprViewBox<bool>>>(self, f: F) -> Self
+    fn filter<F, R: Into<ExprViewBoxWithTag<bool, Tags>>, Tags: TagList>(self, f: F) -> Self
     where
         F: Fn(View) -> R;
 }
 
 pub trait Filter2<View1, View2> {
     #[must_use]
-    fn filter<F, R: Into<ExprViewBox<bool>>>(self, f: F) -> Self
+    fn filter<F, R: Into<ExprViewBoxWithTag<bool, Tags>>, Tags: TagList>(self, f: F) -> Self
     where
         F: Fn(View1, View2) -> R;
 }
 
 impl<E: EntityWithView> Filter<E::View> for QueryResultFilter<E> {
-    fn filter<F, R: Into<ExprViewBox<bool>>>(mut self, f: F) -> Self
+    fn filter<F, R: Into<ExprViewBoxWithTag<bool, Tags>>, Tags: TagList>(mut self, f: F) -> Self
     where
         F: Fn(E::View) -> R,
     {
@@ -217,13 +217,25 @@ impl<E: EntityWithView> Executable<E, TagsOfEntity<E>> for SortedQueryResultFilt
     }
 }
 
+pub type ExprBoxOfAssociatedView<V, P> = ExprViewBoxWithTag<
+    <V as AssociatedView<P>>::ForeignKeyType,
+    <V as AssociatedView<P>>::ForeignKeyTags,
+>;
+
+pub type ExprBoxOfViewWithPrimaryKey<V> = ExprViewBoxWithTag<
+    <V as ViewWithPrimaryKey>::PrimaryKeyType,
+    <V as ViewWithPrimaryKey>::PrimaryKeyTags,
+>;
+
 impl<
         Children: EntityWithView + Association<Parent, ForeignKeyType = ForeignKey>,
-        Parent: EntityWithView + WithPrimaryKey<Type = ForeignKey>,
+        Parent: EntityWithView + WithPrimaryKey<PrimaryKeyType = ForeignKey>,
         ForeignKey: Value,
     > AssociationBuilder<Children, Parent, ForeignKey> for QueryResultFilter<Parent>
 where
-    Parent::View: ViewWithPrimaryKey<Type = ForeignKey>,
+    Parent::View: ViewWithPrimaryKey<PrimaryKeyType = ForeignKey>,
+    Children::View: AssociatedView<Parent, ForeignKeyType = ForeignKey>,
+    ExprBoxOfAssociatedView<Children::View, Parent>: In<<Parent as WithPrimaryKey>::PrimaryKeyType>,
 {
     fn build_query(self) -> QueryResultFilter<Children> {
         let subquery = self.query.select(vec![SelectItem {
@@ -264,5 +276,9 @@ where
         ));
 
         result
+    }
+
+    fn build_from_parent_entities(primary_keys: Vec<ForeignKey>) -> QueryResultFilter<Children> {
+        Children::all().filter(|view| view.foreign_key().clone().in_arr(&primary_keys))
     }
 }

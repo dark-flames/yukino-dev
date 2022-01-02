@@ -1,14 +1,15 @@
 use std::ops::Not;
 
-use generic_array::arr;
+use generic_array::{arr, GenericArray};
+use generic_array::functional::FunctionalSequence;
 use generic_array::typenum::U1;
 use sqlx::types::Decimal;
 
-use query_builder::Expr;
+use query_builder::{DatabaseValue, Expr};
 
 use crate::view::{
     AnyTagExprView, AnyTagsValue, ConcreteList, ExprViewBoxWithTag, MergeList, SingleExprView,
-    SubqueryFnCallView, SubqueryIntoView, TagList, TagsOfValueView, Value,
+    SubqueryFnCallView, SubqueryIntoView, TagList, TagsOfValueView, Value, ValueCountOf,
 };
 
 pub trait ExprNot: Value + Not {
@@ -31,6 +32,29 @@ impl<T: Value + ExprNot, Tags: TagList> Not for ExprViewBoxWithTag<T, Tags> {
 
     fn not(self) -> Self::Output {
         T::expr_not(self)
+    }
+}
+
+pub trait ExprIn: Value {
+    fn expr_in_arr<Tags: TagList>(
+        e: ExprViewBoxWithTag<Self, Tags>,
+        arr: &[Self],
+    ) -> ExprViewBoxWithTag<bool, Tags>;
+}
+
+pub trait In<T: Value> {
+    type OutputTags: TagList;
+    fn in_arr(self, arr: &[T]) -> ExprViewBoxWithTag<bool, Self::OutputTags>;
+}
+
+impl<T: Value, TTags: TagList> In<T> for ExprViewBoxWithTag<T, TTags>
+where
+    T: ExprIn,
+{
+    type OutputTags = TTags;
+
+    fn in_arr(self, arr: &[T]) -> ExprViewBoxWithTag<bool, Self::OutputTags> {
+        T::expr_in_arr(self, arr)
     }
 }
 
@@ -77,6 +101,43 @@ macro_rules! impl_expr_for {
                 let l_expr = l.collect_expr().into_iter().next().unwrap();
                 let r_expr = r.collect_expr().into_iter().next().unwrap();
                 let result = Expr::$expr_variant(Box::new(l_expr), Box::new(r_expr));
+                SingleExprView::from_exprs_with_tags(arr![Expr; result])
+            }
+        }
+        )*
+    }
+}
+macro_rules! impl_expr_in_for {
+    ([$($ty: ty),*])  => {
+        $(
+        impl ExprIn for $ty {
+            fn expr_in_arr<Tags: TagList>(
+                e: ExprViewBoxWithTag<Self, Tags>,
+                arr: &[Self]
+            ) -> ExprViewBoxWithTag<bool, Tags> {
+                let mut expr_iter = e.collect_expr().zip(
+                    arr.iter().map(
+                        |item| (*Self::converter()).serialize(item).unwrap()
+                    ).fold(
+                        GenericArray::<Vec<DatabaseValue>, ValueCountOf<Self>>::default(),
+                        |carry, item| {
+                            carry.zip(item, |mut list, v| {
+                                list.push(v);
+                                list
+                            })
+                        }
+                    ),
+                    |expr, values| {
+                        Expr::InArr(Box::new(expr), values)
+                    }
+                ).into_iter();
+
+                let first_expr: Expr = expr_iter.next().unwrap();
+
+                let result = expr_iter.fold(first_expr, |carry, item| {
+                    Expr::And(Box::new(carry), Box::new(item))
+                });
+
                 SingleExprView::from_exprs_with_tags(arr![Expr; result])
             }
         }
@@ -226,6 +287,8 @@ impl_op_for!(>, Bt, bt, [bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, 
 impl_op_for!(>=, Bte, bte, [bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]);
 impl_op_for!(<, Lt, lt, [bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]);
 impl_op_for!(<=, Lte, lte, [bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]);
+
+impl_expr_in_for!([bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]);
 
 impl_bool_operator!(&, And, and, ViewAnd, view_and, ExprAnd, expr_and, And, [bool]);
 impl_bool_operator!(|, Or, or, ViewOr, view_or, ExprOr, expr_or, Or, [bool]);
