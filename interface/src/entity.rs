@@ -18,7 +18,7 @@ pub trait Association<Parent: YukinoEntity + WithPrimaryKey<PrimaryKeyType = Sel
 pub type PrimaryKeyTypeOf<E> = <E as WithPrimaryKey>::PrimaryKeyType;
 
 pub trait WithPrimaryKey: YukinoEntity {
-    type PrimaryKeyType: 'static + Clone + Hash;
+    type PrimaryKeyType: 'static + Clone + Hash + Ord;
     fn primary_key(&self) -> &Self::PrimaryKeyType;
 
     fn primary_key_name() -> &'static str

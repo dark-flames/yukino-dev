@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use interface::{Association, PrimaryKeyTypeOf, WithPrimaryKey};
 
@@ -7,14 +7,6 @@ use crate::query::QueryResultFilter;
 use crate::view::{
     AssociatedView, EntityWithView, ExprBoxOfAssociatedView, Value, ViewWithPrimaryKey,
 };
-
-pub struct JoinedResult<
-    Children: EntityWithView + Association<Parent, ForeignKeyType = PrimaryKeyTypeOf<Parent>>,
-    Parent: EntityWithView + WithPrimaryKey,
-> {
-    _parent: Vec<Parent>,
-    _grouped_children: HashMap<PrimaryKeyTypeOf<Parent>, Vec<Children>>,
-}
 
 pub trait AssociationBuilder<
     Children: EntityWithView + Association<Parent, ForeignKeyType = ForeignKey>,
@@ -84,7 +76,7 @@ pub trait JoinChildren<
     Parent: EntityWithView + WithPrimaryKey,
 >
 {
-    fn join(self, children: Vec<Children>) -> JoinedResult<Children, Parent>;
+    fn join(self, children: Vec<Children>) -> Vec<(Parent, Vec<Children>)>;
 }
 
 impl<
@@ -92,8 +84,22 @@ impl<
         Parent: EntityWithView + WithPrimaryKey,
     > JoinChildren<Children, Parent> for Vec<Parent>
 {
-    fn join(self, _children: Vec<Children>) -> JoinedResult<Children, Parent> {
-        todo!()
+    fn join(self, children: Vec<Children>) -> Vec<(Parent, Vec<Children>)> {
+        let parent: BTreeMap<PrimaryKeyTypeOf<Parent>, Parent> = self.into_iter()
+            .map(|p| (p.primary_key().clone(), p))
+            .collect();
+
+        let mut grouped_children: BTreeMap<PrimaryKeyTypeOf<Parent>, Vec<Children>> = parent.values().map(
+            |p| (p.primary_key().clone(), vec![])
+        ).collect();
+
+        for child in children {
+            grouped_children.get_mut(child.foreign_key()).unwrap().push(child);
+        }
+
+        parent.into_iter().map(|(_, p)| p)
+            .zip(grouped_children.into_iter().map(|(_, c)| c))
+            .collect()
     }
 }
 

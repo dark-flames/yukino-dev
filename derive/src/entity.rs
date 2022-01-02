@@ -51,17 +51,28 @@ impl EntityResolver {
             return Err(Error::new_spanned(ast, "Expected named fields"));
         }?;
 
-        let associations = ast.fields.iter()
+        let associations = ast
+            .fields
+            .iter()
             .filter_map(|f| {
-                f.attrs.iter().find(|attr| attr.path.is_ident("belongs_to"))
+                f.attrs
+                    .iter()
+                    .find(|attr| attr.path.is_ident("belongs_to"))
                     .map(|attr| match attr.parse_meta()? {
                         Meta::List(l) => {
-                            let ref_entity_path = l.nested.iter()
+                            let ref_entity_path = l
+                                .nested
+                                .iter()
                                 .next()
-                                .ok_or_else(|| Error::new_spanned(attr, "Expected referenced entity path"))
+                                .ok_or_else(|| {
+                                    Error::new_spanned(attr, "Expected referenced entity path")
+                                })
                                 .and_then(|meta| match meta {
                                     NestedMeta::Meta(Meta::Path(p)) => Ok(p.clone()),
-                                    _ => Err(Error::new_spanned(attr, "Expected referenced entity path")),
+                                    _ => Err(Error::new_spanned(
+                                        attr,
+                                        "Expected referenced entity path",
+                                    )),
                                 })?;
 
                             let foreign_key = f.ident.clone().unwrap();
@@ -84,7 +95,8 @@ impl EntityResolver {
                             "`belongs_to` attribute must be a list",
                         )),
                     })
-            }).collect::<Result<Vec<_>>>()?;
+            })
+            .collect::<Result<Vec<_>>>()?;
 
         if fields.iter().filter(|f| f.definition.primary_key).count() > 1 {
             return Err(Error::new_spanned(

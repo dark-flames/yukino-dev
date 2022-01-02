@@ -55,7 +55,7 @@ pub async fn meeting_count_by_level<'c, E: Executor<'c, Database = MySql>>(
                     .fold(|m| m.id.count())
                     .as_expr()
             })
-                .sum()
+            .sum()
         })
         .exec(executor)
         .await
@@ -170,9 +170,9 @@ pub fn run_bench_group(c: &mut Criterion) {
     let url = env::var("DB").unwrap();
     let runtime = Runtime::new().unwrap();
 
-    let pool = runtime.block_on(MySqlPoolOptions::new()
-        .max_connections(10)
-        .connect(&url)).unwrap();
+    let pool = runtime
+        .block_on(MySqlPoolOptions::new().max_connections(10).connect(&url))
+        .unwrap();
 
     runtime.block_on(delete_all(&pool));
     runtime.block_on(prepare_data(&pool));
@@ -180,7 +180,8 @@ pub fn run_bench_group(c: &mut Criterion) {
     c.bench_function("adult_hosted_meeting_length", |b| {
         // Insert a call to `to_async` to convert the bencher to async mode.
         // The timing loops are the same as with the normal bencher.
-        b.to_async(&runtime).iter(|| adult_hosted_meeting_length(&pool));
+        b.to_async(&runtime)
+            .iter(|| adult_hosted_meeting_length(&pool));
     });
 
     c.bench_function("meeting_count_by_level", |b| {
@@ -198,5 +199,3 @@ pub fn run_bench_group(c: &mut Criterion) {
 
 criterion_group!(benches, run_bench_group);
 criterion_main!(benches);
-
-
