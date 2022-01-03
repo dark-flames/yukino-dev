@@ -10,6 +10,7 @@ CREATE TABLE meeting (
     `id` INT UNSIGNED NOT NULL,
     `title` VARCHAR(255) NOT NULL,
     `host_id` INT UNSIGNED NOT NULL,
+    `co_host_id` INT UNSIGNED NOT NULL,
     `start_time` BIGINT UNSIGNED NOT NULL,
     `end_time` BIGINT UNSIGNED NOT NULL,
     PRIMARY KEY (`id`)

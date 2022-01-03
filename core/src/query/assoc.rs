@@ -3,12 +3,8 @@ use std::hash::Hash;
 
 use interface::{Association, FieldMarker, PrimaryKeyTypeOf, WithPrimaryKey};
 
-use crate::operator::In;
 use crate::query::QueryResultFilter;
-use crate::view::{
-    AssociatedView, EntityWithView, ExprBoxOfAssociatedView, FieldMarkerWithView, TagOfMarker,
-    Value, ViewWithPrimaryKey,
-};
+use crate::view::{EntityWithView, FieldMarkerWithView, Value, ViewWithPrimaryKey};
 
 pub trait AssociationBuilder<
     Children: EntityWithView + Association<Parent, ForeignField, ForeignKeyType = ForeignType>,
@@ -25,51 +21,52 @@ pub trait AssociationBuilder<
     fn build_from_parent_entities(primary_keys: Vec<ForeignType>) -> QueryResultFilter<Children>;
 }
 
-pub trait BelongsToQueryResult<
-    Parent: EntityWithView + WithPrimaryKey<PrimaryKeyType = ForeignType>,
-    ForeignField: FieldMarkerWithView + FieldMarker<Entity = Self, FieldType = ForeignType>,
-    ForeignType: Value + Ord + Hash,
->: EntityWithView + Association<Parent, ForeignField, ForeignKeyType = ForeignType> where
-    QueryResultFilter<Parent>: AssociationBuilder<Self, Parent, ForeignField, ForeignType>,
-    Parent::View: ViewWithPrimaryKey<PrimaryKeyType = ForeignType>,
-{
-    fn belonging_to_query(r: QueryResultFilter<Parent>) -> QueryResultFilter<Self>
+pub trait BelongsToQueryResult<Parent: EntityWithView>: EntityWithView {
+    fn belonging_to_query<
+        ForeignField: FieldMarkerWithView + FieldMarker<Entity = Self, FieldType = ForeignType>,
+        ForeignType: Value + Ord + Hash,
+    >(
+        r: QueryResultFilter<Parent>,
+    ) -> QueryResultFilter<Self>
     where
-        Self: Sized,
+        QueryResultFilter<Parent>: AssociationBuilder<Self, Parent, ForeignField, ForeignType>,
+        Parent: WithPrimaryKey<PrimaryKeyType = ForeignType>,
+        Parent::View: ViewWithPrimaryKey<PrimaryKeyType = ForeignType>,
+        Self: Sized + Association<Parent, ForeignField, ForeignKeyType = ForeignType>,
     {
         r.build_query()
     }
 }
 
-pub trait BelongsToView<
-    Children: EntityWithView + Association<Parent, ForeignField, ForeignKeyType = ForeignType>,
-    Parent: EntityWithView + WithPrimaryKey<PrimaryKeyType = ForeignType>,
-    ForeignField: FieldMarkerWithView + FieldMarker<Entity = Children, FieldType = ForeignType>,
-    ForeignType: Value + Ord + Hash,
-> where
-    QueryResultFilter<Parent>: AssociationBuilder<Children, Parent, ForeignField, ForeignType>,
-    Parent::View: ViewWithPrimaryKey<PrimaryKeyType = ForeignType>,
-{
-    fn belonging_to_view(r: &Parent::View) -> QueryResultFilter<Children>
+pub trait BelongsToView<Parent: EntityWithView>: EntityWithView {
+    fn belonging_to_view<
+        ForeignField: FieldMarkerWithView + FieldMarker<Entity = Self, FieldType = ForeignType>,
+        ForeignType: Value + Ord + Hash,
+    >(
+        r: &Parent::View,
+    ) -> QueryResultFilter<Self>
     where
-        Self: Sized,
+        QueryResultFilter<Parent>: AssociationBuilder<Self, Parent, ForeignField, ForeignType>,
+        Parent: WithPrimaryKey<PrimaryKeyType = ForeignType>,
+        Parent::View: ViewWithPrimaryKey<PrimaryKeyType = ForeignType>,
+        Self: Sized + Association<Parent, ForeignField, ForeignKeyType = ForeignType>,
     {
         QueryResultFilter::<Parent>::build_from_parent_view(r)
     }
 }
 
-pub trait BelongsToEntities<
-    Children: EntityWithView + Association<Parent, ForeignField, ForeignKeyType = ForeignType>,
-    Parent: EntityWithView + WithPrimaryKey<PrimaryKeyType = ForeignType>,
-    ForeignField: FieldMarkerWithView + FieldMarker<Entity = Children, FieldType = ForeignType>,
-    ForeignType: Value + Ord + Hash,
-> where
-    QueryResultFilter<Parent>: AssociationBuilder<Children, Parent, ForeignField, ForeignType>,
-    Parent::View: ViewWithPrimaryKey<PrimaryKeyType = ForeignType>,
-{
-    fn belonging_to(r: &[Parent]) -> QueryResultFilter<Children>
+pub trait BelongsToEntities<Parent: EntityWithView>: EntityWithView {
+    fn belonging_to<
+        ForeignField: FieldMarkerWithView + FieldMarker<Entity = Self, FieldType = ForeignType>,
+        ForeignType: Value + Ord + Hash,
+    >(
+        r: &[Parent],
+    ) -> QueryResultFilter<Self>
     where
-        Self: Sized,
+        QueryResultFilter<Parent>: AssociationBuilder<Self, Parent, ForeignField, ForeignType>,
+        Parent: WithPrimaryKey<PrimaryKeyType = ForeignType>,
+        Parent::View: ViewWithPrimaryKey<PrimaryKeyType = ForeignType>,
+        Self: Sized + Association<Parent, ForeignField, ForeignKeyType = ForeignType>,
     {
         QueryResultFilter::<Parent>::build_from_parent_entities(
             r.iter().map(|i| i.primary_key().clone()).collect(),
@@ -77,24 +74,33 @@ pub trait BelongsToEntities<
     }
 }
 
-pub trait JoinChildren<
-    Children: EntityWithView + Association<Parent, ForeignField, ForeignKeyType = ForeignType>,
-    Parent: EntityWithView + WithPrimaryKey<PrimaryKeyType = ForeignType>,
-    ForeignField: FieldMarkerWithView + FieldMarker<Entity = Children, FieldType = ForeignType>,
-    ForeignType: Value + Ord + Hash,
->
-{
-    fn join(self, children: Vec<Children>) -> Vec<(Parent, Vec<Children>)>;
-}
-
-impl<
-        Children: EntityWithView + Association<Parent, ForeignField, ForeignKeyType = ForeignType>,
-        Parent: EntityWithView + WithPrimaryKey<PrimaryKeyType = ForeignType>,
+pub trait JoinChildren<Children: EntityWithView, Parent: EntityWithView> {
+    fn join<
         ForeignField: FieldMarkerWithView + FieldMarker<Entity = Children, FieldType = ForeignType>,
         ForeignType: Value + Ord + Hash,
-    > JoinChildren<Children, Parent, ForeignField, ForeignType> for Vec<Parent>
+    >(
+        self,
+        children: Vec<Children>,
+    ) -> Vec<(Parent, Vec<Children>)>
+    where
+        Children: Association<Parent, ForeignField, ForeignKeyType = ForeignType>,
+        Parent: WithPrimaryKey<PrimaryKeyType = ForeignType>;
+}
+
+impl<Children: EntityWithView, Parent: EntityWithView> JoinChildren<Children, Parent>
+    for Vec<Parent>
 {
-    fn join(self, children: Vec<Children>) -> Vec<(Parent, Vec<Children>)> {
+    fn join<
+        ForeignField: FieldMarkerWithView + FieldMarker<Entity = Children, FieldType = ForeignType>,
+        ForeignType: Value + Ord + Hash,
+    >(
+        self,
+        children: Vec<Children>,
+    ) -> Vec<(Parent, Vec<Children>)>
+    where
+        Children: Association<Parent, ForeignField, ForeignKeyType = ForeignType>,
+        Parent: WithPrimaryKey<PrimaryKeyType = ForeignType>,
+    {
         let parent: BTreeMap<PrimaryKeyTypeOf<Parent>, Parent> = self
             .into_iter()
             .map(|p| (p.primary_key().clone(), p))
@@ -120,59 +126,8 @@ impl<
     }
 }
 
-impl<
-        Children: EntityWithView + Association<Parent, ForeignField, ForeignKeyType = ForeignType>,
-        Parent: EntityWithView + WithPrimaryKey<PrimaryKeyType = ForeignType>,
-        ForeignField: FieldMarkerWithView + FieldMarker<Entity = Children, FieldType = ForeignType>,
-        ForeignType: Value + Ord + Hash,
-    > BelongsToQueryResult<Parent, ForeignField, ForeignType> for Children
-where
-    Parent::View: ViewWithPrimaryKey<PrimaryKeyType = ForeignType>,
-    Children::View: AssociatedView<
-        Parent,
-        ForeignField,
-        ForeignKeyType = ForeignType,
-        ForeignKeyTags = TagOfMarker<ForeignField>,
-    >,
-    ExprBoxOfAssociatedView<Children::View, Parent, ForeignField>:
-        In<<Parent as WithPrimaryKey>::PrimaryKeyType>,
-{
-}
+impl<Children: EntityWithView, Parent: EntityWithView> BelongsToQueryResult<Parent> for Children {}
 
-impl<
-        Children: EntityWithView + Association<Parent, ForeignField, ForeignKeyType = ForeignType>,
-        Parent: EntityWithView + WithPrimaryKey<PrimaryKeyType = ForeignType>,
-        ForeignField: FieldMarkerWithView + FieldMarker<Entity = Children, FieldType = ForeignType>,
-        ForeignType: Value + Ord + Hash,
-    > BelongsToView<Children, Parent, ForeignField, ForeignType> for Children
-where
-    Parent::View: ViewWithPrimaryKey<PrimaryKeyType = ForeignType>,
-    Children::View: AssociatedView<
-        Parent,
-        ForeignField,
-        ForeignKeyType = ForeignType,
-        ForeignKeyTags = TagOfMarker<ForeignField>,
-    >,
-    ExprBoxOfAssociatedView<Children::View, Parent, ForeignField>:
-        In<<Parent as WithPrimaryKey>::PrimaryKeyType>,
-{
-}
+impl<Children: EntityWithView, Parent: EntityWithView> BelongsToView<Parent> for Children {}
 
-impl<
-        Children: EntityWithView + Association<Parent, ForeignField, ForeignKeyType = ForeignType>,
-        Parent: EntityWithView + WithPrimaryKey<PrimaryKeyType = ForeignType>,
-        ForeignField: FieldMarkerWithView + FieldMarker<Entity = Children, FieldType = ForeignType>,
-        ForeignType: Value + Ord + Hash,
-    > BelongsToEntities<Children, Parent, ForeignField, ForeignType> for Children
-where
-    Parent::View: ViewWithPrimaryKey<PrimaryKeyType = ForeignType>,
-    Children::View: AssociatedView<
-        Parent,
-        ForeignField,
-        ForeignKeyType = ForeignType,
-        ForeignKeyTags = TagOfMarker<ForeignField>,
-    >,
-    ExprBoxOfAssociatedView<Children::View, Parent, ForeignField>:
-        In<<Parent as WithPrimaryKey>::PrimaryKeyType>,
-{
-}
+impl<Children: EntityWithView, Parent: EntityWithView> BelongsToEntities<Parent> for Children {}

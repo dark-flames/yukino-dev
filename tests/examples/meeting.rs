@@ -22,6 +22,8 @@ pub struct Meeting {
     pub title: String,
     #[belongs_to(Person)]
     pub host_id: u32,
+    #[belongs_to(Person)]
+    pub co_host_id: u32,
     pub start_time: u64,
     pub end_time: u64,
 }
@@ -31,7 +33,7 @@ pub async fn adult_hosted_meeting_length<'c, E: Executor<'c, Database = MySql>>(
 ) -> Vec<u64> {
     let adult = Person::all().filter(|p| bt!(p.age, 18));
 
-    Meeting::belonging_to_query(adult)
+    Meeting::belonging_to_query::<meeting::host_id, _>(adult)
         .sort(|m| m.id.asc())
         .map(|m| m.end_time - m.start_time)
         .exec(executor)
@@ -46,7 +48,7 @@ pub async fn meeting_count_by_level<'c, E: Executor<'c, Database = MySql>>(
         .group_by(|p| p.level)
         .fold_group(|p| {
             p.map(|p| {
-                Meeting::belonging_to_view(&p)
+                Meeting::belonging_to_view::<meeting::host_id, _>(&p)
                     .fold(|m| m.id.count())
                     .as_expr()
             })
@@ -59,12 +61,12 @@ pub async fn meeting_count_by_level<'c, E: Executor<'c, Database = MySql>>(
 
 pub async fn person_and_hosted_meeting(executor: &MySqlPool) -> Vec<(Person, Vec<Meeting>)> {
     let persons: Vec<Person> = Person::all().exec(executor).await.unwrap();
-    let meetings = Meeting::belonging_to(&persons)
+    let meetings = Meeting::belonging_to::<meeting::host_id, _>(&persons)
         .exec(executor)
         .await
         .unwrap();
 
-    persons.join(meetings)
+    persons.join::<meeting::host_id, _>(meetings)
 }
 
 pub async fn hosted_meeting_titles<'c, E: Executor<'c, Database = MySql>>(
@@ -74,7 +76,7 @@ pub async fn hosted_meeting_titles<'c, E: Executor<'c, Database = MySql>>(
         .map(|p| {
             (
                 p.id.clone(),
-                Meeting::belonging_to_view(&p)
+                Meeting::belonging_to_view::<meeting::host_id, _>(&p)
                     .fold(|m| m.sort(|m| m.id.asc()).map(|m| m.title).join(Some(", ")))
                     .as_expr(),
             )
@@ -116,6 +118,7 @@ pub async fn prepare_data(pool: &MySqlPool) {
             id: 1,
             title: "Meeting 1".to_string(),
             host_id: 1,
+            co_host_id: 2,
             start_time: 1,
             end_time: 10,
         },
@@ -123,6 +126,7 @@ pub async fn prepare_data(pool: &MySqlPool) {
             id: 2,
             title: "Meeting 2".to_string(),
             host_id: 1,
+            co_host_id: 2,
             start_time: 2,
             end_time: 11,
         },
@@ -130,6 +134,7 @@ pub async fn prepare_data(pool: &MySqlPool) {
             id: 3,
             title: "Meeting 3".to_string(),
             host_id: 2,
+            co_host_id: 3,
             start_time: 3,
             end_time: 12,
         },
@@ -137,6 +142,7 @@ pub async fn prepare_data(pool: &MySqlPool) {
             id: 4,
             title: "Meeting 4".to_string(),
             host_id: 3,
+            co_host_id: 4,
             start_time: 2,
             end_time: 11,
         },
@@ -144,6 +150,7 @@ pub async fn prepare_data(pool: &MySqlPool) {
             id: 5,
             title: "Meeting 5".to_string(),
             host_id: 3,
+            co_host_id: 4,
             start_time: 3,
             end_time: 12,
         },
