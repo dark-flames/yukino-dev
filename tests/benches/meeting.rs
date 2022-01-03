@@ -38,7 +38,7 @@ pub async fn adult_hosted_meeting_length<'c, E: Executor<'c, Database = MySql>>(
 ) -> Vec<u64> {
     let adult = Person::all().filter(|p| bt!(p.age, 18));
 
-    Meeting::belonging_to_query::<meeting::host_id, _>(adult)
+    Meeting::belonging_to_query::<meeting::host_id>(adult)
         .sort(|m| m.id.asc())
         .map(|m| m.end_time - m.start_time)
         .exec(executor)
@@ -53,11 +53,11 @@ pub async fn meeting_count_by_level<'c, E: Executor<'c, Database = MySql>>(
         .group_by(|p| p.level)
         .fold_group(|p| {
             p.map(|p| {
-                Meeting::belonging_to_view::<meeting::host_id, _>(&p)
+                Meeting::belonging_to_view::<meeting::host_id>(&p)
                     .fold(|m| m.id.count())
                     .as_expr()
             })
-            .sum()
+                .sum()
         })
         .exec(executor)
         .await
@@ -66,12 +66,12 @@ pub async fn meeting_count_by_level<'c, E: Executor<'c, Database = MySql>>(
 
 pub async fn person_and_hosted_meeting(executor: &MySqlPool) -> Vec<(Person, Vec<Meeting>)> {
     let persons: Vec<Person> = Person::all().exec(executor).await.unwrap();
-    let meetings = Meeting::belonging_to::<meeting::host_id, _>(&persons)
+    let meetings = Meeting::belonging_to::<meeting::host_id>(&persons)
         .exec(executor)
         .await
         .unwrap();
 
-    persons.join::<meeting::host_id, _>(meetings)
+    persons.join::<meeting::host_id>(meetings)
 }
 
 pub async fn hosted_meeting_titles<'c, E: Executor<'c, Database = MySql>>(
@@ -81,7 +81,7 @@ pub async fn hosted_meeting_titles<'c, E: Executor<'c, Database = MySql>>(
         .map(|p| {
             (
                 p.id.clone(),
-                Meeting::belonging_to_view::<meeting::host_id, _>(&p)
+                Meeting::belonging_to_view::<meeting::host_id>(&p)
                     .fold(|m| m.sort(|m| m.id.asc()).map(|m| m.title).join(Some(", ")))
                     .as_expr(),
             )
