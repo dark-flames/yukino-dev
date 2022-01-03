@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 
 use generic_array::ArrayLength;
 
+use interface::FieldMarker;
 use query_builder::{AssignmentValue, Expr, OrderByItem, Query, SelectFrom, UpdateQuery};
 
 use crate::operator::SortResult;
@@ -85,7 +86,10 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
     }
 
     #[must_use]
-    pub fn set_default<FMarker: FieldMarkerWithView<Entity = E>>(mut self, _m: FMarker) -> Self {
+    pub fn set_default<FMarker: FieldMarkerWithView<Entity = E>>(mut self, _m: FMarker) -> Self
+    where
+        <FMarker as FieldMarker>::FieldType: Value,
+    {
         self.assignments.extend(
             FMarker::columns()
                 .into_iter()

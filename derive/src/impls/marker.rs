@@ -23,8 +23,6 @@ impl Implementor for FieldMarkerImplementor {
                     pub struct #marker_name;
 
                     impl yukino::view::FieldMarkerWithView for #marker_name {
-                        type Entity = super::#entity_name;
-                        type FieldType = #ty;
                         type ViewTags = #view_tags;
 
                         fn columns() -> yukino::generic_array::GenericArray<
@@ -40,7 +38,10 @@ impl Implementor for FieldMarkerImplementor {
                         }
                     }
 
-                    impl yukino::FieldMarker for #marker_name {}
+                    impl yukino::FieldMarker for #marker_name {
+                        type Entity = super::#entity_name;
+                        type FieldType = #ty;
+                    }
                 }
             })
             .collect();

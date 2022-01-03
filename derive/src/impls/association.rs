@@ -23,9 +23,8 @@ impl Implementor for AssociationImplementor {
                 let foreign_key_marker = &foreign_key_field.field_marker;
                 let tags = &foreign_key_field.tag_list;
                 quote! {
-                    impl yukino::Association<#target_entity_name> for #entity_name {
+                    impl yukino::Association<#target_entity_name, #marker_mod::#foreign_key_marker> for #entity_name {
                         type ForeignKeyType = #ty;
-                        type ForeignKeyMarker = #marker_mod::#foreign_key_marker;
                         fn foreign_key(&self) -> &Self::ForeignKeyType {
                             &self.#field_name
                         }
@@ -35,10 +34,10 @@ impl Implementor for AssociationImplementor {
                         }
                     }
 
-                    impl yukino::view::AssociatedView<#target_entity_name> for #view_name {
+                    impl yukino::view::AssociatedView<#target_entity_name, #marker_mod::#foreign_key_marker> for #view_name {
                         type ForeignKeyType = #ty;
                         type ForeignKeyTags = #tags;
-                        fn foreign_key(&self) -> &yukino::view::ExprBoxOfAssociatedView<Self, #target_entity_name> {
+                        fn foreign_key(&self) -> &yukino::view::ExprBoxOfAssociatedView<Self, #target_entity_name, #marker_mod::#foreign_key_marker> {
                             &self.#field_name
                         }
                     }

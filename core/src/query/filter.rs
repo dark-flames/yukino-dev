@@ -1,6 +1,7 @@
+use std::hash::Hash;
 use std::marker::PhantomData;
 
-use interface::{Association, WithPrimaryKey};
+use interface::{Association, FieldMarker, WithPrimaryKey};
 use query_builder::{
     Alias, Expr, OrderByItem, Query, Select, SelectFrom, SelectItem, SelectQuery, SelectSource,
 };
@@ -12,8 +13,9 @@ use crate::query::{
     QueryResultMap, Sort, Update, UpdateQueryResult,
 };
 use crate::view::{
-    AssociatedView, EntityView, EntityWithView, ExprView, ExprViewBoxWithTag, TagList,
-    TagsOfEntity, Value, ViewWithPrimaryKey,
+    AssociatedView, EntityView, EntityWithView, ExprBoxOfAssociatedView, ExprView,
+    ExprViewBoxWithTag, FieldMarkerWithView, TagList, TagOfMarker, TagsOfEntity, TypeOfMarker,
+    Value, ViewWithPrimaryKey,
 };
 
 pub struct QueryResultFilter<E: EntityWithView> {
@@ -217,25 +219,22 @@ impl<E: EntityWithView> Executable<E, TagsOfEntity<E>> for SortedQueryResultFilt
     }
 }
 
-pub type ExprBoxOfAssociatedView<V, P> = ExprViewBoxWithTag<
-    <V as AssociatedView<P>>::ForeignKeyType,
-    <V as AssociatedView<P>>::ForeignKeyTags,
->;
-
-pub type ExprBoxOfViewWithPrimaryKey<V> = ExprViewBoxWithTag<
-    <V as ViewWithPrimaryKey>::PrimaryKeyType,
-    <V as ViewWithPrimaryKey>::PrimaryKeyTags,
->;
-
 impl<
-        Children: EntityWithView + Association<Parent, ForeignKeyType = ForeignKey>,
-        Parent: EntityWithView + WithPrimaryKey<PrimaryKeyType = ForeignKey>,
-        ForeignKey: Value,
-    > AssociationBuilder<Children, Parent, ForeignKey> for QueryResultFilter<Parent>
+        Children: EntityWithView + Association<Parent, ForeignField, ForeignKeyType = ForeignType>,
+        Parent: EntityWithView + WithPrimaryKey<PrimaryKeyType = ForeignType>,
+        ForeignField: FieldMarkerWithView + FieldMarker<Entity = Children, FieldType = ForeignType>,
+        ForeignType: Value + Ord + Hash,
+    > AssociationBuilder<Children, Parent, ForeignField, ForeignType> for QueryResultFilter<Parent>
 where
-    Parent::View: ViewWithPrimaryKey<PrimaryKeyType = ForeignKey>,
-    Children::View: AssociatedView<Parent, ForeignKeyType = ForeignKey>,
-    ExprBoxOfAssociatedView<Children::View, Parent>: In<<Parent as WithPrimaryKey>::PrimaryKeyType>,
+    Parent::View: ViewWithPrimaryKey<PrimaryKeyType = TypeOfMarker<ForeignField>>,
+    Children::View: AssociatedView<
+        Parent,
+        ForeignField,
+        ForeignKeyType = ForeignType,
+        ForeignKeyTags = TagOfMarker<ForeignField>,
+    >,
+    ExprBoxOfAssociatedView<Children::View, Parent, ForeignField>:
+        In<<Parent as WithPrimaryKey>::PrimaryKeyType>,
 {
     fn build_query(self) -> QueryResultFilter<Children> {
         let subquery = self.query.select(vec![SelectItem {
@@ -278,7 +277,7 @@ where
         result
     }
 
-    fn build_from_parent_entities(primary_keys: Vec<ForeignKey>) -> QueryResultFilter<Children> {
+    fn build_from_parent_entities(primary_keys: Vec<ForeignType>) -> QueryResultFilter<Children> {
         Children::all().filter(|view| view.foreign_key().clone().in_arr(&primary_keys))
     }
 }

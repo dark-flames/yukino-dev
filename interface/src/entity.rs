@@ -4,11 +4,14 @@ pub trait YukinoEntity: 'static {
     fn table_name() -> &'static str;
 }
 
-pub trait Association<Parent: YukinoEntity + WithPrimaryKey<PrimaryKeyType = Self::ForeignKeyType>>:
-    YukinoEntity
+pub type TypeOfForeignField<A, P, F> = <A as Association<P, F>>::ForeignKeyType;
+
+pub trait Association<
+    Parent: YukinoEntity + WithPrimaryKey<PrimaryKeyType = Self::ForeignKeyType>,
+    ForeignField: FieldMarker<Entity = Self, FieldType = Self::ForeignKeyType>,
+>: YukinoEntity
 {
-    type ForeignKeyType: 'static + Clone;
-    type ForeignKeyMarker: FieldMarker;
+    type ForeignKeyType: 'static + Clone + Ord + Hash;
     fn foreign_key(&self) -> &Self::ForeignKeyType;
 
     fn foreign_key_name() -> &'static str
@@ -28,5 +31,6 @@ pub trait WithPrimaryKey: YukinoEntity {
 }
 
 pub trait FieldMarker {
-
+    type Entity: YukinoEntity;
+    type FieldType: 'static + Clone;
 }

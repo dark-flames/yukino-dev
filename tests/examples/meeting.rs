@@ -57,11 +57,12 @@ pub async fn meeting_count_by_level<'c, E: Executor<'c, Database = MySql>>(
         .unwrap()
 }
 
-pub async fn person_and_hosted_meeting(
-    executor: &MySqlPool,
-) -> Vec<(Person, Vec<Meeting>)> {
+pub async fn person_and_hosted_meeting(executor: &MySqlPool) -> Vec<(Person, Vec<Meeting>)> {
     let persons: Vec<Person> = Person::all().exec(executor).await.unwrap();
-    let meetings = Meeting::belonging_to(&persons).exec(executor).await.unwrap();
+    let meetings = Meeting::belonging_to(&persons)
+        .exec(executor)
+        .await
+        .unwrap();
 
     persons.join(meetings)
 }
@@ -188,15 +189,12 @@ pub async fn main() -> Result<(), sqlx::Error> {
     );
 
     assert_eq!(
-        person_and_hosted_meeting(&pool).await.into_iter().map(
-            |(person, meetings)| (person.id, meetings.into_iter().map(|m| m.id).collect())
-        ).collect::<Vec<(u32, Vec<u32>)>>(),
-        vec![
-            (1, vec![1, 2]),
-            (2, vec![3]),
-            (3, vec![4, 5]),
-            (4, vec![]),
-        ]
+        person_and_hosted_meeting(&pool)
+            .await
+            .into_iter()
+            .map(|(person, meetings)| (person.id, meetings.into_iter().map(|m| m.id).collect()))
+            .collect::<Vec<(u32, Vec<u32>)>>(),
+        vec![(1, vec![1, 2]), (2, vec![3]), (3, vec![4, 5]), (4, vec![]),]
     );
 
     Ok(())

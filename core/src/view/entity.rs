@@ -31,9 +31,9 @@ pub trait EntityWithView: YukinoEntity + Value {
     fn all() -> QueryResultFilter<Self>;
 }
 
-pub type ExprBoxOfAssociatedView<V, P> = ExprViewBoxWithTag<
-    <V as AssociatedView<P>>::ForeignKeyType,
-    <V as AssociatedView<P>>::ForeignKeyTags,
+pub type ExprBoxOfAssociatedView<V, P, F> = ExprViewBoxWithTag<
+    <V as AssociatedView<P, F>>::ForeignKeyType,
+    <V as AssociatedView<P, F>>::ForeignKeyTags,
 >;
 
 pub type ExprBoxOfViewWithPrimaryKey<V> = ExprViewBoxWithTag<
@@ -51,19 +51,30 @@ where
     fn primary_key(&self) -> &ExprBoxOfViewWithPrimaryKey<Self>;
 }
 
-pub trait AssociatedView<E: EntityWithView + WithPrimaryKey<PrimaryKeyType = Self::ForeignKeyType>>:
-    EntityView
-where
-    <Self as EntityView>::Entity: Association<E, ForeignKeyType = Self::ForeignKeyType>,
+pub trait AssociatedView<
+    Parent: EntityWithView + WithPrimaryKey<PrimaryKeyType = Self::ForeignKeyType>,
+    ForeignField: FieldMarkerWithView<
+        Entity = <Self as EntityView>::Entity,
+        FieldType = Self::ForeignKeyType,
+        ViewTags = Self::ForeignKeyTags,
+    >,
+>: EntityView where
+    <Self as EntityView>::Entity:
+        Association<Parent, ForeignField, ForeignKeyType = Self::ForeignKeyType>,
 {
-    type ForeignKeyType;
+    type ForeignKeyType: Value + Ord;
     type ForeignKeyTags: TagList;
-    fn foreign_key(&self) -> &ExprBoxOfAssociatedView<Self, E>;
+    fn foreign_key(&self) -> &ExprBoxOfAssociatedView<Self, Parent, ForeignField>;
 }
 
-pub trait FieldMarkerWithView: FieldMarker {
-    type Entity: EntityWithView;
-    type FieldType: Value;
+pub type TypeOfMarker<M> = <M as FieldMarker>::FieldType;
+pub type TagOfMarker<M> = <M as FieldMarkerWithView>::ViewTags;
+
+pub trait FieldMarkerWithView: FieldMarker
+where
+    <Self as FieldMarker>::Entity: EntityWithView,
+    <Self as FieldMarker>::FieldType: Value,
+{
     type ViewTags: TagList;
 
     fn columns() -> GenericArray<String, <Self::FieldType as Value>::L>
