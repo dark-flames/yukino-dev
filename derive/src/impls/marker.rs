@@ -22,7 +22,7 @@ impl Implementor for FieldMarkerImplementor {
                 quote! {
                     pub struct #marker_name;
 
-                    impl yukino::view::FieldMarker for #marker_name {
+                    impl yukino::view::FieldMarkerWithView for #marker_name {
                         type Entity = super::#entity_name;
                         type FieldType = #ty;
                         type ViewTags = #view_tags;
@@ -39,6 +39,8 @@ impl Implementor for FieldMarkerImplementor {
                             entity_view.#fields_name
                         }
                     }
+
+                    impl yukino::FieldMarker for #marker_name {}
                 }
             })
             .collect();

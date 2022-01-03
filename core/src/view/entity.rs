@@ -1,6 +1,6 @@
 use generic_array::GenericArray;
 
-use interface::{Association, WithPrimaryKey, YukinoEntity};
+use interface::{Association, FieldMarker, WithPrimaryKey, YukinoEntity};
 use query_builder::{Alias, InsertQuery};
 
 use crate::query::{Delete, DeleteQueryResult, QueryResultFilter};
@@ -61,7 +61,7 @@ where
     fn foreign_key(&self) -> &ExprBoxOfAssociatedView<Self, E>;
 }
 
-pub trait FieldMarker {
+pub trait FieldMarkerWithView: FieldMarker {
     type Entity: EntityWithView;
     type FieldType: Value;
     type ViewTags: TagList;

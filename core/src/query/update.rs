@@ -8,7 +8,7 @@ use query_builder::{AssignmentValue, Expr, OrderByItem, Query, SelectFrom, Updat
 use crate::operator::SortResult;
 use crate::query::{Executable, SingleRow, Sort};
 use crate::view::{
-    EntityView, EntityWithView, ExprViewBox, ExprViewBoxWithTag, FieldMarker, TagList,
+    EntityView, EntityWithView, ExprViewBox, ExprViewBoxWithTag, FieldMarkerWithView, TagList,
     TagsOfValueView, Value,
 };
 
@@ -40,7 +40,7 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
 
     #[must_use]
     pub fn set<
-        FMarker: FieldMarker<Entity = E, FieldType = T>,
+        FMarker: FieldMarkerWithView<Entity = E, FieldType = T>,
         T: Value,
         Tags: TagList,
         V: Into<ExprViewBoxWithTag<T, Tags>>,
@@ -64,7 +64,7 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
 
     #[must_use]
     pub fn set_by<
-        FMarker: FieldMarker<Entity = E, FieldType = T>,
+        FMarker: FieldMarkerWithView<Entity = E, FieldType = T>,
         T: Value,
         Tags: TagList,
         V: Into<ExprViewBoxWithTag<T, Tags>>,
@@ -85,7 +85,7 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
     }
 
     #[must_use]
-    pub fn set_default<FMarker: FieldMarker<Entity = E>>(mut self, _m: FMarker) -> Self {
+    pub fn set_default<FMarker: FieldMarkerWithView<Entity = E>>(mut self, _m: FMarker) -> Self {
         self.assignments.extend(
             FMarker::columns()
                 .into_iter()

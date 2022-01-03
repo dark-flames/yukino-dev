@@ -8,6 +8,7 @@ pub trait Association<Parent: YukinoEntity + WithPrimaryKey<PrimaryKeyType = Sel
     YukinoEntity
 {
     type ForeignKeyType: 'static + Clone;
+    type ForeignKeyMarker: FieldMarker;
     fn foreign_key(&self) -> &Self::ForeignKeyType;
 
     fn foreign_key_name() -> &'static str
@@ -24,4 +25,8 @@ pub trait WithPrimaryKey: YukinoEntity {
     fn primary_key_name() -> &'static str
     where
         Self: Sized;
+}
+
+pub trait FieldMarker {
+
 }
