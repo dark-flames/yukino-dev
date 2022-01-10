@@ -6,6 +6,7 @@ use interface::FieldDefinition;
 pub struct ResolvedEntity {
     pub table_name: String,
     pub entity_name: Ident,
+    pub new_entity_name: Ident,
     pub view_name: Ident,
     pub vertical_name: Ident,
     pub converter_name: Ident,
@@ -34,4 +35,5 @@ pub struct ResolvedField {
     pub converter_ty: TokenStream,
     pub converter_value_count: usize,
     pub field_marker: Ident,
+    pub primary: bool
 }

@@ -12,6 +12,7 @@ pub fn cmp_view<T: Value>(view: ExprViewBox<T>, query: &str) {
 
 #[test]
 pub fn test_numeric() {
+    foo::id::
     let alias = Alias {
         name: "b".to_string(),
     };

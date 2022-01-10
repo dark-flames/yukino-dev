@@ -10,6 +10,7 @@ pub struct EntityImplementor;
 impl Implementor for EntityImplementor {
     fn get_implements(&self, resolved: &ResolvedEntity) -> Vec<TokenStream> {
         let name = &resolved.entity_name;
+        let new_entity_name = &resolved.new_entity_name;
         let view_name = &resolved.view_name;
         let vertical_view_name = &resolved.vertical_name;
         let converter_name = &resolved.converter_name;
@@ -74,6 +75,7 @@ impl Implementor for EntityImplementor {
             impl yukino::view::EntityWithView for #name {
                 type View = #view_name;
                 type VerticalView = #vertical_view_name;
+                type New = #new_entity_name;
 
                 fn all() -> yukino::query::QueryResultFilter<Self> {
                     yukino::query::QueryResultFilter::create()
@@ -91,6 +93,7 @@ impl Implementor for EntityImplementor {
             }
 
             impl yukino::view::Insertable for #name {
+                type Entity = Self;
                 fn insert(self) -> yukino::query_builder::InsertQuery {
                     use yukino::view::Value;
                     let mut result = yukino::query_builder::Insert::into(

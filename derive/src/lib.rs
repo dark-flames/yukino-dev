@@ -6,10 +6,7 @@ use syn::{Error, ExprTuple, parse_macro_input, parse_quote, TypeTuple};
 
 use crate::entity::EntityResolver;
 use crate::fields::{BasicFieldResolver, DateTimeFieldResolver, DecimalFieldResolver};
-use crate::impls::{
-    AssociationImplementor, ConverterImplementor, EntityImplementor, FieldMarkerImplementor,
-    PrimaryImplementor, ViewImplementor,
-};
+use crate::impls::{AssociationImplementor, ConverterImplementor, EntityImplementor, FieldMarkerImplementor, InsertImplementor, PrimaryImplementor, ViewImplementor};
 
 mod entity;
 mod fields;
@@ -32,6 +29,7 @@ pub fn derive_entity(tokens: TokenStream) -> TokenStream {
             Box::new(PrimaryImplementor),
             Box::new(AssociationImplementor),
             Box::new(FieldMarkerImplementor),
+            Box::new(InsertImplementor),
         ],
     );
 

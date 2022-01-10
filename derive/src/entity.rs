@@ -116,13 +116,14 @@ impl EntityResolver {
 
         Ok(ResolvedEntity {
             table_name,
+            new_entity_name: format_ident!("New{}", entity_name),
             view_name: format_ident!("{}View", entity_name),
             vertical_name: format_ident!("Vertical{}View", entity_name),
             converter_name: format_ident!("{}Converter", entity_name),
             marker_mod: format_ident!("{}", entity_name.to_string().to_snake_case()),
             entity_name,
             fields,
-            associations,
+            associations
         })
     }
 

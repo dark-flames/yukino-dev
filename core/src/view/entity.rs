@@ -27,6 +27,7 @@ pub trait EntityVerticalView:
 pub trait EntityWithView: YukinoEntity + Value {
     type View: EntityView<Entity = Self>;
     type VerticalView: EntityVerticalView<Entity = Self>;
+    type New: Insertable<Entity = Self>;
 
     fn all() -> QueryResultFilter<Self>;
 }
@@ -96,7 +97,9 @@ pub trait Deletable: Identifiable {
     }
 }
 
-pub trait Insertable: EntityWithView {
+pub trait Insertable {
+    type Entity: EntityWithView;
+
     fn insert(self) -> InsertQuery;
 
     fn columns() -> Vec<String>

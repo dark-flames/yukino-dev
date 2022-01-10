@@ -15,6 +15,7 @@ pub struct Bar {
 #[derive(Entity, Clone, Debug)]
 pub struct Foo {
     #[id]
+    #[auto_increment]
     pub id: u32,
     pub boolean: bool,
     pub u_short: u16,
@@ -38,6 +39,28 @@ pub fn create_foo() -> Foo {
     let now: PrimitiveDateTime = SystemTime::now().into();
     Foo {
         id: 114514,
+        boolean: false,
+        u_short: 0,
+        short: 0,
+        u_int: 0,
+        int: 0,
+        u_long: 0,
+        long: 0,
+        float: 0.0,
+        double: 0.0,
+        string: "".to_string(),
+        optional: None,
+        decimal: Decimal::new(0, 0),
+        optional_decimal: None,
+        date: now.date(),
+        time: now.time(),
+        datetime: now,
+    }
+}
+
+pub fn create_new_foo() -> NewFoo {
+    let now: PrimitiveDateTime = SystemTime::now().into();
+    NewFoo {
         boolean: false,
         u_short: 0,
         short: 0,

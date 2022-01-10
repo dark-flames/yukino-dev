@@ -56,12 +56,13 @@ impl FieldResolver for BasicFieldResolver {
                     name: column_name.clone(),
                     ty: (&ty).into(),
                     optional,
-                    auto_increment,
+                    auto_increment
                 }],
                 identity_column: column_name,
                 primary_key,
             },
             converter_value_count: 1,
+            primary: primary_key
         })
     }
 }
