@@ -157,8 +157,8 @@ impl_aggr_fn!(
 impl_aggr_fn!(
     ExprCount,
     expr_count,
-    u64,
-    TagsOfValueView<u64>,
+    i64,
+    TagsOfValueView<i64>,
     VerticalCount,
     count,
     Count,

@@ -7,9 +7,9 @@ pub use derive::Entity;
 pub use interface::*;
 
 pub mod prelude {
-    pub use derive::Entity;
+    pub use derive::{Entity, make_tuple, tuple};
 
-    pub use crate::{and, bt, bte, eq, lt, lte, neq, or, tuple};
+    pub use crate::{and, bt, bte, eq, lt, lte, neq, or};
     pub use crate::operator::{
         InSubquery, SortOrder, SubqueryExists, VerticalAverage, VerticalBitAnd, VerticalBitOr,
         VerticalBitXor, VerticalCount, VerticalCountDistinct, VerticalJoin, VerticalMax,

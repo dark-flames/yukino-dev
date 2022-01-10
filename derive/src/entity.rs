@@ -1,7 +1,7 @@
 use heck::SnakeCase;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use syn::{Error, Fields, ItemStruct, LitStr, Meta, NestedMeta};
+use syn::{Error, Fields, ItemStruct, Lit, Meta, NestedMeta};
 use syn::Result;
 
 use crate::fields::FieldResolver;
@@ -30,7 +30,21 @@ impl EntityResolver {
             .attrs
             .iter()
             .find(|attr| attr.path.is_ident("name"))
-            .map(|attr| attr.parse_args::<LitStr>().map(|lit| lit.value()))
+            .map(|attr| match attr.parse_meta()? {
+                Meta::NameValue(v) => {
+                    match v.lit {
+                        Lit::Str(s) => Ok(s.value()),
+                        _ => Err(Error::new_spanned(
+                            v,
+                            "`name` attribute must be a str",
+                        ))
+                    }
+                }
+                _ => Err(Error::new_spanned(
+                    attr,
+                    "`name` attribute must be a named value",
+                ))
+            })
             .unwrap_or_else(|| Ok(ast.ident.to_string().to_snake_case()))?;
 
         let fields = if let Fields::Named(name_fields) = &ast.fields {

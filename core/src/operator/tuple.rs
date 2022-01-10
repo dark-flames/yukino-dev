@@ -50,9 +50,3 @@ where
     }
 }
 
-#[macro_export]
-macro_rules! tuple {
-    ($l: expr, $r: expr) => {
-        ($l, $r).into()
-    };
-}

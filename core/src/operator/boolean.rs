@@ -4,6 +4,7 @@ use generic_array::{arr, GenericArray};
 use generic_array::functional::FunctionalSequence;
 use generic_array::typenum::U1;
 use sqlx::types::Decimal;
+use sqlx::types::time::{Date, PrimitiveDateTime, Time};
 
 use query_builder::{DatabaseValue, Expr};
 
@@ -283,27 +284,27 @@ op_trait!(Lte, lte);
 
 impl_op_for!(&, And, and, [bool]);
 impl_op_for!(|, Or, or, [bool]);
-impl_op_for!(>, Bt, bt, [bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]);
-impl_op_for!(>=, Bte, bte, [bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]);
-impl_op_for!(<, Lt, lt, [bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]);
-impl_op_for!(<=, Lte, lte, [bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]);
+impl_op_for!(>, Bt, bt, [bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String, Date, Time, PrimitiveDateTime]);
+impl_op_for!(>=, Bte, bte, [bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String, Date, Time, PrimitiveDateTime]);
+impl_op_for!(<, Lt, lt, [bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String, Date, Time, PrimitiveDateTime]);
+impl_op_for!(<=, Lte, lte, [bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String, Date, Time, PrimitiveDateTime]);
 
 impl_expr_in_for!([bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]);
 
 impl_bool_operator!(&, And, and, ViewAnd, view_and, ExprAnd, expr_and, And, [bool]);
 impl_bool_operator!(|, Or, or, ViewOr, view_or, ExprOr, expr_or, Or, [bool]);
 impl_bool_operator!(==, PartialEq, eq, ViewEq, view_eq, ExprEq, expr_eq, Eq,
-    [bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]);
+    [bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String, Date, Time, PrimitiveDateTime]);
 impl_bool_operator!(!=, PartialEq, ne, ViewNeq, view_neq, ExprNeq, expr_neq, Neq,
-    [bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]);
+    [bool, u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String, Date, Time, PrimitiveDateTime]);
 impl_bool_operator!(>, Bt, bt, ViewBt, view_bt, ExprBt, expr_bt, Bt,
-    [u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]);
+    [u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String, Date, Time, PrimitiveDateTime]);
 impl_bool_operator!(>=, Bte, bte, ViewBte, view_bte, ExprBte, expr_bte, Bte,
-    [u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]);
+    [u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String, Date, Time, PrimitiveDateTime]);
 impl_bool_operator!(<, Lt, lt, ViewLt, view_lt, ExprLt, expr_lt, Lt,
-    [u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]);
+    [u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String, Date, Time, PrimitiveDateTime]);
 impl_bool_operator!(<=, Lte, lte, ViewLte, view_lte, ExprLte, expr_lte, Lte,
-    [u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String]);
+    [u16, i16, u32, i32, u64, i64, f32, f64, Decimal, String, Date, Time, PrimitiveDateTime]);
 
 generate_macro!(and, ViewAnd, view_and);
 generate_macro!(or, ViewOr, view_or);

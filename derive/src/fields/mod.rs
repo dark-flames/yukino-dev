@@ -1,9 +1,8 @@
 use std::any::type_name;
 
+use heck::SnakeCase;
 use quote::ToTokens;
-use syn::{
-    Field, GenericArgument, parse_quote, parse_str, PathArguments, Result, ReturnType, Type,
-};
+use syn::{Error, Field, GenericArgument, Lit, Meta, parse_quote, parse_str, PathArguments, Result, ReturnType, Type};
 
 pub use basic::*;
 pub use datetime::*;
@@ -22,13 +21,13 @@ pub trait FieldResolver {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum TypeMatchResult {
+enum TypeMatchResult {
     Match,
     Mismatch,
     InOption,
 }
 
-pub fn match_ty(a: &Type, b: &Type) -> bool {
+fn match_ty(a: &Type, b: &Type) -> bool {
     match (a, b) {
         (Type::Path(a), Type::Path(b)) => {
             if a.path.segments.len() != b.path.segments.len() {
@@ -79,7 +78,7 @@ pub fn match_ty(a: &Type, b: &Type) -> bool {
     }
 }
 
-pub fn match_optional_ty_by_param(target: &Type, input: &Type) -> TypeMatchResult {
+fn match_optional_ty_by_param(target: &Type, input: &Type) -> TypeMatchResult {
     let target_option = parse_quote! {
         Option<#target>
     };
@@ -93,9 +92,31 @@ pub fn match_optional_ty_by_param(target: &Type, input: &Type) -> TypeMatchResul
     }
 }
 
-pub fn match_optional_ty<T>(input: &Type) -> TypeMatchResult {
+fn match_optional_ty<T>(input: &Type) -> TypeMatchResult {
     let target = parse_str(type_name::<T>()).unwrap();
     match_optional_ty_by_param(&target, input)
+}
+
+fn parse_field_name(field: &Field) -> Result<String> {
+    field
+        .attrs
+        .iter()
+        .find(|attr| attr.path.is_ident("name"))
+        .map(|attr| match attr.parse_meta()? {
+            Meta::NameValue(v) => {
+                match v.lit {
+                    Lit::Str(s) => Ok(s.value()),
+                    _ => Err(Error::new_spanned(
+                        v,
+                        "`name` attribute must be a str",
+                    ))
+                }
+            }
+            _ => Err(Error::new_spanned(
+                attr,
+                "`name` attribute must be a named value",
+            ))
+        }).unwrap_or_else(|| Ok(field.ident.as_ref().unwrap().to_string().to_snake_case()))
 }
 
 #[test]

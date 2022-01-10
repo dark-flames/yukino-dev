@@ -1,11 +1,10 @@
-use heck::SnakeCase;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::{Field, parse_quote, Type};
 
 use interface::{ColumnDefinition, DatabaseType, FieldDefinition};
 
-use crate::fields::{FieldResolver, match_optional_ty_by_param, TypeMatchResult};
+use crate::fields::{FieldResolver, match_optional_ty_by_param, parse_field_name, TypeMatchResult};
 use crate::resolved::ResolvedField;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -145,7 +144,7 @@ impl FieldResolver for DateTimeFieldResolver {
 
     fn resolve_field(&self, field: &Field) -> syn::Result<ResolvedField> {
         let (field_ty, optional) = DateTimeType::from_ty(&field.ty).unwrap();
-        let column_name = field.ident.as_ref().unwrap().to_string().to_snake_case();
+        let column_name = parse_field_name(field)?;
 
         Ok(ResolvedField {
             name: field.ident.clone().unwrap(),

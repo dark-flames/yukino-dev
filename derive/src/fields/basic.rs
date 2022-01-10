@@ -1,13 +1,10 @@
-use heck::SnakeCase;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{Field, parse_quote, parse_str, Result, Type};
 
 use interface::{ColumnDefinition, DatabaseType, FieldDefinition};
 
-use crate::fields::{
-    FieldResolver, match_optional_ty, match_optional_ty_by_param, TypeMatchResult,
-};
+use crate::fields::{FieldResolver, match_optional_ty, match_optional_ty_by_param, parse_field_name, TypeMatchResult};
 use crate::resolved::ResolvedField;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -33,7 +30,8 @@ impl FieldResolver for BasicFieldResolver {
 
     fn resolve_field(&self, field: &Field) -> Result<ResolvedField> {
         let (ty, optional) = FieldType::from_ty(&field.ty).unwrap();
-        let column_name = field.ident.as_ref().unwrap().to_string().to_snake_case();
+        let column_name = parse_field_name(field)?;
+
         let auto_increment = field
             .attrs
             .iter()

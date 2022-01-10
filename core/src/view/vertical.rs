@@ -7,6 +7,7 @@ use crate::view::{
     ExprViewBoxWithTag, MergeList, TagList, TagsOfValueView, TupleExprView, Value, ValueCountOf,
 };
 
+#[derive(Clone)]
 pub struct VerticalExprView<T: Value, TTags: TagList> {
     pub(crate) expr: ExprViewBoxWithTag<T, TTags>,
     pub(crate) order_by: Vec<OrderByItem>,

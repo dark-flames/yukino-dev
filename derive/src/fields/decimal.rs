@@ -1,11 +1,10 @@
-use heck::SnakeCase;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::{Field, parse_quote, Result, Type};
 
 use interface::{ColumnDefinition, DatabaseType, FieldDefinition};
 
-use crate::fields::{FieldResolver, match_optional_ty_by_param, TypeMatchResult};
+use crate::fields::{FieldResolver, match_optional_ty_by_param, parse_field_name, TypeMatchResult};
 use crate::resolved::ResolvedField;
 
 fn match_decimal_ty(ty: &Type) -> Option<(TokenStream, bool)> {
@@ -33,7 +32,7 @@ impl FieldResolver for DecimalFieldResolver {
 
     fn resolve_field(&self, field: &Field) -> Result<ResolvedField> {
         let (full_ty, optional) = match_decimal_ty(&field.ty).unwrap();
-        let column_name = field.ident.as_ref().unwrap().to_string().to_snake_case();
+        let column_name = parse_field_name(field)?;
 
         Ok(ResolvedField {
             name: field.ident.clone().unwrap(),

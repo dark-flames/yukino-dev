@@ -189,6 +189,7 @@ impl Implementor for ViewImplementor {
                 }
             }
 
+            #[derive(Clone)]
             pub struct #vertical_name {
                 #(#vertical_fields,)*
                 _row_view: #name,

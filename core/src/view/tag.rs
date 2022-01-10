@@ -18,21 +18,21 @@ pub type OffsetOfTag<T> = <T as Tag>::Offset;
 pub type ConcreteBitMap<L1, L2> = <L1 as MergeBitMap<Len<L1>, L2>>::Output;
 pub type ConcreteList<L1, L2> = <L1 as MergeList<L2>>::Output;
 
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 pub struct Terminal;
 
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 pub struct Zero;
 
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 pub struct Suc<T>(PhantomData<T>);
 
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 pub struct True;
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 pub struct False;
 
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 pub struct BitMapSegment<U: BitMap, B: Bool>(PhantomData<(U, B)>);
 
 pub trait TagList: BitMap<L = Len<EmptyTagList>> {}

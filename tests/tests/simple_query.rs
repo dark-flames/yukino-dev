@@ -1,4 +1,5 @@
 use yukino::prelude::*;
+use yukino::view::TupleExprView;
 use yukino_tests::*;
 
 #[test]
@@ -67,7 +68,7 @@ fn test_map() {
         .group_by(|b| (b.int, b.short))
         .filter(|(a, _)| eq!(a, 910))
         .sort(|(a, b)| (a.asc(), b.desc()))
-        .map(|(a, _)| a)
+        .map(|(a, b)| (a, b))
         .generate_query()
         .0;
 
@@ -80,8 +81,8 @@ fn test_group_fold_map() {
         .filter(|b| lt!(b.int, 114514))
         .filter(|b| bt!(b.int, 1919))
         .group_by(|b| (b.int, b.short))
-        .fold_group(|b| b.sort(|b| b.long.asc()).string.join(Some(", ")))
-        .map(|(_, b), c| (b, c))
+        .fold_group(|b| (b.clone().sort(|i| i.long.asc()).string.join(Some(", ")), b.int.count()))
+        .map(|(a, b), (c, _)| make_tuple!(a, b, c))
         .generate_query()
         .0;
 
