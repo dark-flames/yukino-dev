@@ -5,6 +5,7 @@ use generic_array::{arr, ArrayLength, functional::FunctionalSequence, GenericArr
 use generic_array::typenum::{U1, UInt, UTerm};
 use generic_array::typenum::bit::{B0, B1};
 use sqlx::types::Decimal;
+use sqlx::types::time::{Date, PrimitiveDateTime, Time};
 
 use query_builder::{DatabaseValue, Expr};
 
@@ -153,4 +154,7 @@ impl_value!(i64, LongConverter, OptionalLongConverter);
 impl_value!(f32, FloatConverter, OptionalFloatConverter);
 impl_value!(f64, DoubleConverter, OptionalDoubleConverter);
 impl_value!(Decimal, DecimalConverter, OptionalDecimalConverter);
+impl_value!(Date, DateConverter, OptionalDateConverter);
+impl_value!(Time, TimeConverter, OptionalTimeConverter);
+impl_value!(PrimitiveDateTime, DateTimeConverter, OptionalDateTimeConverter);
 impl_value!(String, StringConverter, OptionalStringConverter);

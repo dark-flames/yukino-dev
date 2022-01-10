@@ -2,6 +2,7 @@ use generic_array::{arr, GenericArray};
 use generic_array::typenum::U1;
 use iroha::ToTokens;
 use sqlx::types::Decimal;
+use sqlx::types::time::{Date, PrimitiveDateTime, Time};
 
 use interface::DatabaseType;
 use query_builder::DatabaseValue;
@@ -98,6 +99,9 @@ basic_ty_converter!(u64, UnsignedLongConverter, UnsignedBigInteger);
 basic_ty_converter!(f32, FloatConverter, Float);
 basic_ty_converter!(f64, DoubleConverter, Double);
 basic_ty_converter!(Decimal, DecimalConverter, Decimal);
+basic_ty_converter!(Date, DateConverter, Date);
+basic_ty_converter!(Time, TimeConverter, Time);
+basic_ty_converter!(PrimitiveDateTime, DateTimeConverter, DateTime);
 basic_ty_converter!(String, StringConverter, String);
 optional_basic_ty_converter!(bool, OptionalBoolConverter, Bool);
 optional_basic_ty_converter!(i16, OptionalShortConverter, SmallInteger);
@@ -109,4 +113,7 @@ optional_basic_ty_converter!(u64, OptionalUnsignedLongConverter, UnsignedBigInte
 optional_basic_ty_converter!(f32, OptionalFloatConverter, Float);
 optional_basic_ty_converter!(f64, OptionalDoubleConverter, Double);
 optional_basic_ty_converter!(Decimal, OptionalDecimalConverter, Decimal);
+optional_basic_ty_converter!(Date, OptionalDateConverter, Date);
+optional_basic_ty_converter!(Time, OptionalTimeConverter, Time);
+optional_basic_ty_converter!(PrimitiveDateTime, OptionalDateTimeConverter, DateTime);
 optional_basic_ty_converter!(String, OptionalStringConverter, String);

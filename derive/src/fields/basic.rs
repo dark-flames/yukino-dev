@@ -1,7 +1,7 @@
 use heck::SnakeCase;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use syn::{Field, parse_str, Result, Type};
+use syn::{Field, parse_quote, parse_str, Result, Type};
 
 use interface::{ColumnDefinition, DatabaseType, FieldDefinition};
 
@@ -90,8 +90,10 @@ impl FieldType {
             (
                 FieldType::String,
                 Box::new(|| {
-                    let str = parse_str("String").unwrap();
-                    match_optional_ty_by_param(ty, &str)
+                    let str = parse_quote!(
+                        String
+                    );
+                    match_optional_ty_by_param(&str, ty)
                 }),
             ),
         ];

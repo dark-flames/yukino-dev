@@ -1,22 +1,9 @@
 use yukino::prelude::*;
-use yukino_tests::Foo;
+use yukino_tests::create_foo;
 
 #[test]
 fn test_insert() {
-    let test = Foo {
-        id: 114514,
-        boolean: false,
-        u_short: 0,
-        short: 0,
-        u_int: 0,
-        int: 0,
-        u_long: 0,
-        long: 0,
-        float: 0.0,
-        double: 0.0,
-        string: "".to_string(),
-        optional: None,
-    };
+    let test = create_foo();
 
     let query = test.insert().generate_query().0;
 

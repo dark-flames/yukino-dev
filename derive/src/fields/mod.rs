@@ -6,10 +6,14 @@ use syn::{
 };
 
 pub use basic::*;
+pub use datetime::*;
+pub use decimal::*;
 
 use crate::resolved::ResolvedField;
 
 mod basic;
+mod decimal;
+mod datetime;
 
 pub trait FieldResolver {
     fn can_resolve(&self, field: &Field) -> bool;

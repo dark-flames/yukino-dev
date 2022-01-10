@@ -205,6 +205,9 @@ where
     Decimal: Decode<'r, DB>,
     Value: Decode<'r, DB>,
     String: Decode<'r, DB>,
+    Date: Decode<'r, DB>,
+    Time: Decode<'r, DB>,
+    PrimitiveDateTime: Decode<'r, DB>
 {
     fn decode(value: <DB as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
         match (value.type_info().name(), value.is_null()) {
@@ -240,6 +243,14 @@ where
             ("LONGTEXT", true) => Ok(DatabaseValue::Null(DatabaseType::String)),
             ("VARCHAR", false) => String::decode(value).map(DatabaseValue::String),
             ("VARCHAR", true) => Ok(DatabaseValue::Null(DatabaseType::String)),
+            ("CHAR", false) => String::decode(value).map(DatabaseValue::String),
+            ("CHAR", true) => Ok(DatabaseValue::Null(DatabaseType::String)),
+            ("DATE", false) => Date::decode(value).map(DatabaseValue::Date),
+            ("DATE", true) => Ok(DatabaseValue::Null(DatabaseType::Date)),
+            ("TIME", false) => Time::decode(value).map(DatabaseValue::Time),
+            ("TIME", true) => Ok(DatabaseValue::Null(DatabaseType::Time)),
+            ("DATETIME", false) => PrimitiveDateTime::decode(value).map(DatabaseValue::DateTime),
+            ("DATETIME", true) => Ok(DatabaseValue::Null(DatabaseType::DateTime)),
             (t, _) => Err(Box::new(ExecuteError::DecodeError(format!(
                 "Unsupported DB type {}",
                 t

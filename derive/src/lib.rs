@@ -3,7 +3,7 @@ use proc_macro::TokenStream;
 use syn::parse_macro_input;
 
 use crate::entity::EntityResolver;
-use crate::fields::BasicFieldResolver;
+use crate::fields::{BasicFieldResolver, DateTimeFieldResolver, DecimalFieldResolver};
 use crate::impls::{
     AssociationImplementor, ConverterImplementor, EntityImplementor, FieldMarkerImplementor,
     PrimaryImplementor, ViewImplementor,
@@ -18,7 +18,11 @@ mod resolved;
 pub fn derive_entity(tokens: TokenStream) -> TokenStream {
     let item_struct = parse_macro_input!(tokens as syn::ItemStruct);
     let resolver = EntityResolver::create(
-        vec![Box::new(BasicFieldResolver)],
+        vec![
+            Box::new(BasicFieldResolver),
+            Box::new(DecimalFieldResolver),
+            Box::new(DateTimeFieldResolver),
+        ],
         vec![
             Box::new(ConverterImplementor),
             Box::new(EntityImplementor),
