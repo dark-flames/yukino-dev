@@ -2,8 +2,9 @@ use std::marker::PhantomData;
 
 use generic_array::{arr, GenericArray};
 use generic_array::typenum::U1;
+use sqlx::Database;
 
-use query_builder::{DatabaseValue, Expr, OrderByItem, Query, SelectQuery, SelectSource};
+use query_builder::{DatabaseValue, Expr, OrderByItem, Query, ResultRow, SelectQuery, SelectSource};
 
 use crate::err::{RuntimeResult, YukinoError};
 use crate::query::{AliasGenerator, Executable, ExecuteResultType, SingleRow};
@@ -59,22 +60,24 @@ impl<R: Value, RTags: TagList, ResultType: ExecuteResultType> QueryResultMap<R, 
     }
 }
 
-impl<R: Value, RTags: TagList, ResultType: ExecuteResultType> Executable<R, RTags>
+impl<R: Value, RTags: TagList, ResultType: ExecuteResultType, DB: Database> Executable<R, RTags, DB>
     for QueryResultMap<R, RTags, ResultType>
+    where SelectQuery: Query<DB, ResultRow<ValueCountOf<R>>>
 {
     type ResultType = ResultType;
+    type Query = SelectQuery;
 
-    fn generate_query(self) -> (Query, ExprViewBoxWithTag<R, RTags>) {
+    fn generate_query(self) -> (Self::Query, ExprViewBoxWithTag<R, RTags>) {
         let view = self.view.expr_clone();
         (
-            Query::Select(SelectQuery::create(
+            SelectQuery::create(
                 self.query,
                 self.alias_generator
                     .generate_select_list(self.view.collect_expr(), true),
                 self.order_by_items,
                 None,
                 0,
-            )),
+            ),
             view,
         )
     }

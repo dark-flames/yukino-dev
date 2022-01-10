@@ -1,7 +1,8 @@
 use generic_array::GenericArray;
+use sqlx::Database;
 
 use interface::{Association, FieldMarker, WithPrimaryKey, YukinoEntity};
-use query_builder::{Alias, AssignmentValue, InsertQuery};
+use query_builder::{Alias, ArgSource, ArgSourceList, InsertQuery};
 
 use crate::query::{Delete, DeleteQueryResult, QueryResultFilter};
 use crate::view::{ExprView, ExprViewBoxWithTag, TagList, Value, VerticalView};
@@ -27,7 +28,7 @@ pub trait EntityVerticalView:
 pub trait EntityWithView: YukinoEntity + Value {
     type View: EntityView<Entity = Self>;
     type VerticalView: EntityVerticalView<Entity = Self>;
-    type New: Insertable<Entity = Self>;
+    type New;
 
     fn all() -> QueryResultFilter<Self>;
 }
@@ -97,14 +98,13 @@ pub trait Deletable: Identifiable {
     }
 }
 
-pub trait Insertable {
+pub trait Insertable<DB: Database, O>: for<'q> ArgSource<'q, DB, O> {
     type Entity: EntityWithView;
+    type Source: for<'q> ArgSourceList<'q, DB, O>;
 
-    fn insert(self) -> InsertQuery;
+    fn insert(self) -> InsertQuery<DB, O, Self::Source> where Self: Sized;
 
     fn columns() -> Vec<String>
     where
         Self: Sized;
-
-    fn values(&self) -> Vec<AssignmentValue>;
 }

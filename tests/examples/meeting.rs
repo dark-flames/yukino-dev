@@ -1,7 +1,7 @@
 use std::env;
 
-use sqlx::{Executor, MySql, MySqlPool};
 use sqlx::mysql::MySqlPoolOptions;
+use sqlx::MySqlPool;
 use sqlx::types::Decimal;
 
 use yukino::prelude::*;
@@ -13,6 +13,7 @@ pub struct Person {
     pub name: String,
     pub age: u32,
     pub level: u16,
+    pub comment: String,
 }
 
 #[derive(Entity, Clone, Debug)]
@@ -28,22 +29,18 @@ pub struct Meeting {
     pub end_time: u64,
 }
 
-pub async fn adult_hosted_meeting_length<'c, E: Executor<'c, Database = MySql>>(
-    executor: E,
-) -> Vec<u64> {
+pub async fn adult_hosted_meeting_length(pool: &MySqlPool) -> Vec<u64> {
     let adult = Person::all().filter(|p| bt!(p.age, 18));
 
     Meeting::belonging_to_query::<meeting::host_id>(adult)
         .sort(|m| m.id.asc())
         .map(|m| m.end_time - m.start_time)
-        .exec(executor)
+        .exec(pool)
         .await
         .unwrap()
 }
 
-pub async fn meeting_count_by_level<'c, E: Executor<'c, Database = MySql>>(
-    executor: E,
-) -> Vec<(u16, Option<Decimal>)> {
+pub async fn meeting_count_by_level(pool: &MySqlPool) -> Vec<(u16, Option<Decimal>)>{
     Person::all()
         .group_by(|p| p.level)
         .fold_group(|p| {
@@ -54,7 +51,7 @@ pub async fn meeting_count_by_level<'c, E: Executor<'c, Database = MySql>>(
             })
             .sum()
         })
-        .exec(executor)
+        .exec(pool)
         .await
         .unwrap()
 }
@@ -69,9 +66,7 @@ pub async fn person_and_hosted_meeting(executor: &MySqlPool) -> Vec<(Person, Vec
     persons.join::<meeting::host_id>(meetings)
 }
 
-pub async fn hosted_meeting_titles<'c, E: Executor<'c, Database = MySql>>(
-    executor: E,
-) -> Vec<(u32, Option<String>)> {
+pub async fn hosted_meeting_titles(pool: &MySqlPool) -> Vec<(u32, Option<String>)>{
     Person::all()
         .map(|p| {
             (
@@ -81,7 +76,7 @@ pub async fn hosted_meeting_titles<'c, E: Executor<'c, Database = MySql>>(
                     .as_expr(),
             )
         })
-        .exec(executor)
+        .exec(pool)
         .await
         .unwrap()
 }
@@ -93,24 +88,28 @@ pub async fn prepare_data(pool: &MySqlPool) {
             name: "Alice".to_string(),
             age: 15,
             level: 1,
+            comment: "".to_string()
         },
         Person {
             id: 2,
             name: "Bob".to_string(),
             age: 19,
             level: 1,
+            comment: "".to_string()
         },
         Person {
             id: 3,
             name: "Carol".to_string(),
             age: 20,
             level: 2,
+            comment: "".to_string()
         },
         Person {
             id: 4,
             name: "David".to_string(),
             age: 17,
             level: 2,
+            comment: "".to_string()
         },
     ];
     let meeting_list = vec![
@@ -166,6 +165,7 @@ pub async fn bit_data_person(pool: &MySqlPool, size: usize) {
             name: format!("Person {}", idx),
             age: 0,
             level: 0,
+            comment: "s".repeat(1000)
         })
         .insert_all()
         .exec(pool)
@@ -188,6 +188,7 @@ pub async fn main() -> Result<(), sqlx::Error> {
     Person::all().delete().exec(&pool).await.unwrap();
     Meeting::all().delete().exec(&pool).await.unwrap();
 
+    //prepare_data(&pool).await;
     bit_data_person(&pool, 10000).await;
     simple_query(&pool).await;
 

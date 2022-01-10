@@ -107,14 +107,11 @@ impl ToSql for DatabaseValue {
     }
 }
 
-impl BindArgs for DatabaseValue {
-    fn bind_args<'q, DB: Database, O>(
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for DatabaseValue where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+    fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
-    where
-        DatabaseValue: AppendToArgs<'q, DB>,
-    {
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
         self.bind_on(query)
     }
 }

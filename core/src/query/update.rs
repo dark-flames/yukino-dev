@@ -2,16 +2,14 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 
 use generic_array::ArrayLength;
+use sqlx::Database;
 
 use interface::FieldMarker;
-use query_builder::{AssignmentValue, Expr, OrderByItem, Query, SelectFrom, UpdateQuery};
+use query_builder::{AssignmentValue, Expr, OrderByItem, Query, ResultRow, SelectFrom, UpdateQuery};
 
 use crate::operator::SortResult;
 use crate::query::{Executable, SingleRow, Sort};
-use crate::view::{
-    EntityView, EntityWithView, ExprViewBox, ExprViewBoxWithTag, FieldMarkerWithView, TagList,
-    TagsOfValueView, Value,
-};
+use crate::view::{EntityView, EntityWithView, ExprViewBox, ExprViewBoxWithTag, FieldMarkerWithView, TagList, TagsOfValueView, Value, ValueCountOf};
 
 pub struct UpdateQueryResult<E: EntityWithView> {
     query: UpdateQuery,
@@ -123,14 +121,17 @@ impl<E: EntityWithView> Sort<E::View> for UpdateQueryResult<E> {
     }
 }
 
-impl<E: EntityWithView> Executable<(), TagsOfValueView<()>> for UpdateQueryResult<E> {
+impl<E: EntityWithView, DB: Database> Executable<(), TagsOfValueView<()>, DB> for UpdateQueryResult<E>
+    where UpdateQuery: Query<DB, ResultRow<ValueCountOf<()>>>
+{
     type ResultType = SingleRow;
+    type Query = UpdateQuery;
 
-    fn generate_query(mut self) -> (Query, ExprViewBox<()>) {
+    fn generate_query(mut self) -> (Self::Query, ExprViewBox<()>) {
         for (column, value) in self.assignments {
             self.query.set(column, value);
         }
 
-        (Query::Update(self.query), ().view())
+        (self.query, ().view())
     }
 }

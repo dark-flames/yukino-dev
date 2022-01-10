@@ -2,8 +2,9 @@ use std::ops::{Add, Sub};
 
 use generic_array::{arr, GenericArray};
 use generic_array::typenum::U1;
+use sqlx::Database;
 
-use query_builder::{DatabaseValue, Expr, Query, SelectQuery, SelectSource};
+use query_builder::{DatabaseValue, Expr, Query, ResultRow, SelectQuery, SelectSource};
 
 use crate::err::{RuntimeResult, YukinoError};
 use crate::query::{AliasGenerator, Executable, Map, QueryResultMap};
@@ -51,19 +52,21 @@ impl<View: FoldResult> Map<View> for FoldQueryResult<View> {
     }
 }
 
-impl<View: FoldResult> Executable<View::Value, View::Tags> for FoldQueryResult<View> {
+impl<View: FoldResult, DB: Database> Executable<View::Value, View::Tags, DB> for FoldQueryResult<View>
+    where SelectQuery: Query<DB, ResultRow<ValueCountOf<View::Value>>> {
     type ResultType = SingleRow;
+    type Query = SelectQuery;
 
-    fn generate_query(self) -> (Query, ExprViewBoxWithTag<View::Value, View::Tags>) {
+    fn generate_query(self) -> (Self::Query, ExprViewBoxWithTag<View::Value, View::Tags>) {
         (
-            Query::Select(SelectQuery::create(
+            SelectQuery::create(
                 self.query,
                 self.alias_generator
                     .generate_select_list(self.view.collect_fold_expr_vec(), true),
                 vec![],
                 None,
                 0,
-            )),
+            ),
             self.view.expr_box(),
         )
     }

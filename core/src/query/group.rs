@@ -1,7 +1,9 @@
 use std::marker::PhantomData;
 use std::ops::{Add, Sub};
 
-use query_builder::{Alias, Expr, GroupSelect, IntoSelectSource, OrderByItem, Query, SelectQuery};
+use sqlx::Database;
+
+use query_builder::{Alias, Expr, GroupSelect, IntoSelectSource, OrderByItem, Query, ResultRow, SelectQuery};
 
 use crate::operator::SortResult;
 use crate::query::{
@@ -191,21 +193,24 @@ impl<View: GroupResult, E: EntityWithView> Sort<View> for GroupedQueryResult<Vie
     }
 }
 
-impl<View: GroupResult, E: EntityWithView> Executable<View::Value, View::Tags>
+impl<View: GroupResult, E: EntityWithView, DB: Database> Executable<View::Value, View::Tags, DB>
     for GroupedQueryResult<View, (), E>
+    where SelectQuery: Query<DB, ResultRow<ValueCountOf<View::Value>>>
 {
     type ResultType = MultiRows;
+    type Query = SelectQuery;
 
-    fn generate_query(self) -> (Query, ExprViewBoxWithTag<View::Value, View::Tags>) {
+
+    fn generate_query(self) -> (Self::Query, ExprViewBoxWithTag<View::Value, View::Tags>) {
         (
-            Query::Select(SelectQuery::create(
+            SelectQuery::create(
                 self.query.source(),
                 self.alias_generator
                     .generate_select_list(self.view.collect_expr_vec(), true),
                 vec![],
                 None,
                 0,
-            )),
+            ),
             self.view.expr_box(),
         )
     }
@@ -219,10 +224,11 @@ type ValueOfFoldResult<A> = <A as FoldResult>::Value;
 type ConcretedTags<G, A> = ConcreteList<TagOfGroupResult<G>, TagOfFoldResult<A>>;
 type ResultExprViewBox<G, A> = ExprViewBoxWithTag<ValueTuple<G, A>, ConcretedTags<G, A>>;
 
-impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView>
-    Executable<ValueTuple<View, AggregateView>, ConcretedTags<View, AggregateView>>
+impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView, DB: Database>
+    Executable<ValueTuple<View, AggregateView>, ConcretedTags<View, AggregateView>, DB>
     for GroupedQueryResult<View, AggregateView, E>
 where
+    SelectQuery: Query<DB, ResultRow<ValueCountOf<ValueTuple<View, AggregateView>>>>,
     ValueTuple<View, AggregateView>: Value,
     TagsOfValueView<View::Value>: MergeList<TagsOfValueView<AggregateView::Value>>,
     TagOfGroupResult<View>: MergeList<TagOfFoldResult<AggregateView>>,
@@ -234,10 +240,12 @@ where
         Sub<ValueCountOf<View::Value>, Output = ValueCountOf<AggregateView::Value>>,
 {
     type ResultType = MultiRows;
+    type Query = SelectQuery;
 
-    fn generate_query(self) -> (Query, ResultExprViewBox<View, AggregateView>) {
+
+    fn generate_query(self) -> (Self::Query, ResultExprViewBox<View, AggregateView>) {
         (
-            Query::Select(SelectQuery::create(
+            SelectQuery::create(
                 self.query.source(),
                 self.alias_generator.generate_select_list(
                     self.view
@@ -249,7 +257,7 @@ where
                 vec![],
                 None,
                 0,
-            )),
+            ),
             (self.view.expr_box(), self.aggregate.expr_box()).into(),
         )
     }
@@ -315,14 +323,16 @@ impl<View: GroupResult, E: EntityWithView> Map<View> for SortedGroupedQueryResul
     }
 }
 
-impl<View: GroupResult, E: EntityWithView> Executable<View::Value, View::Tags>
+impl<View: GroupResult, E: EntityWithView, DB: Database> Executable<View::Value, View::Tags, DB>
     for SortedGroupedQueryResult<View, (), E>
+    where SelectQuery: Query<DB, ResultRow<ValueCountOf<View::Value>>>
 {
     type ResultType = MultiRows;
+    type Query = SelectQuery;
 
-    fn generate_query(self) -> (Query, ExprViewBoxWithTag<View::Value, View::Tags>) {
+    fn generate_query(self) -> (Self::Query, ExprViewBoxWithTag<View::Value, View::Tags>) {
         (
-            Query::Select(SelectQuery::create(
+            SelectQuery::create(
                 self.nested.query.source(),
                 self.nested
                     .alias_generator
@@ -330,16 +340,17 @@ impl<View: GroupResult, E: EntityWithView> Executable<View::Value, View::Tags>
                 self.order_by,
                 None,
                 0,
-            )),
+            ),
             self.nested.view.expr_box(),
         )
     }
 }
 
-impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView>
-    Executable<ValueTuple<View, AggregateView>, ConcretedTags<View, AggregateView>>
+impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView, DB: Database>
+    Executable<ValueTuple<View, AggregateView>, ConcretedTags<View, AggregateView>, DB>
     for SortedGroupedQueryResult<View, AggregateView, E>
 where
+    SelectQuery: Query<DB, ResultRow<ValueCountOf<ValueTuple<View, AggregateView>>>>,
     ValueTuple<View, AggregateView>: Value,
     TagsOfValueView<View::Value>: MergeList<TagsOfValueView<AggregateView::Value>>,
     TagOfGroupResult<View>: MergeList<TagOfFoldResult<AggregateView>>,
@@ -351,10 +362,12 @@ where
         Sub<ValueCountOf<View::Value>, Output = ValueCountOf<AggregateView::Value>>,
 {
     type ResultType = MultiRows;
+    type Query = SelectQuery;
 
-    fn generate_query(self) -> (Query, ResultExprViewBox<View, AggregateView>) {
+
+    fn generate_query(self) -> (Self::Query, ResultExprViewBox<View, AggregateView>) {
         (
-            Query::Select(SelectQuery::create(
+            SelectQuery::create(
                 self.nested.query.source(),
                 self.nested.alias_generator.generate_select_list(
                     self.nested
@@ -367,7 +380,7 @@ where
                 vec![],
                 None,
                 0,
-            )),
+            ),
             (
                 self.nested.view.expr_box(),
                 self.nested.aggregate.expr_box(),

@@ -28,31 +28,35 @@ impl Implementor for EntityImplementor {
                 yukino::generic_array::typenum::#type_num
             }
         };
-        let (iters, values, columns): (Vec<_>, Vec<_>, Vec<_>) = resolved.fields.iter().fold(
-            (vec![], vec![], vec![]),
-            |(mut c_iters, mut c_values, mut c_columns), field| {
+        let (count, iters, binds, columns): (usize, Vec<_>, Vec<_>, Vec<_>) = resolved.fields.iter().fold(
+            (0, vec![], vec![], vec![]),
+            |(mut c_count, mut c_iters, mut c_binds, mut c_columns), field| {
                 let field_name = &field.name;
                 let iter = format_ident!("{}_tmp", field.name.to_string().to_snake_case());
-                let (v, c): (Vec<_>, Vec<_>) = field
+                let (s, b, c): (usize, Vec<_>, Vec<_>) = field
                     .definition
                     .columns
                     .iter()
-                    .map(|c| {
+                    .fold((0, vec![], vec![]), |(mut c_s, mut c_b, mut c_c), c| {
                         let column_name = &c.name;
-                        (
-                            quote! {
-                                yukino::query_builder::AssignmentValue::Expr(
-                                    Box::new(
-                                        yukino::query_builder::Expr::Lit(#iter.next().unwrap())
-                                        )
+                        c_s += 1;
+
+                        c_b.push(quote! {
+                            let query = {
+                                use yukino::query_builder::BindArgs;
+                                yukino::query_builder::BindArgs::<'_, DB, O>::bind_args(
+                                    #iter.next().unwrap(),
+                                    query
                                 )
-                            },
-                            quote! {
-                                #column_name.to_string()
-                            },
-                        )
-                    })
-                    .unzip();
+                            };
+                        });
+
+                        c_c.push(quote! {
+                            #column_name.to_string()
+                        });
+
+                        (c_s, c_b, c_c)
+                    });
 
                 c_iters.push(quote! {
                     let mut #iter = {
@@ -60,10 +64,12 @@ impl Implementor for EntityImplementor {
                         self.#field_name.to_database_values().into_iter()
                     };
                 });
-                c_values.extend(v);
+                c_count += s;
+                c_binds.extend(b);
                 c_columns.extend(c);
 
-                (c_iters, c_values, c_columns)
+
+                (c_count, c_iters, c_binds, c_columns)
             },
         );
 
@@ -94,28 +100,40 @@ impl Implementor for EntityImplementor {
                 }
             }
 
-            impl yukino::view::Insertable for #name {
+            impl<DB: sqlx::Database, O> yukino::view::Insertable<DB, O> for #name
+                where yukino::query_builder::DatabaseValue: for<'p> yukino::query_builder::AppendToArgs<'p, DB> {
                 type Entity = Self;
-                fn insert(self) -> yukino::query_builder::InsertQuery {
+                type Source = Vec<Self>;
+
+                fn insert(self) -> yukino::query_builder::InsertQuery<DB, O, Self::Source> {
                     use yukino::view::Value;
-                    let mut result = yukino::query_builder::Insert::into(
+                    yukino::query_builder::Insert::into(
                         #table_name.to_string(),
-                        Self::columns()
-                    );
-
-                    result.append(self.values());
-
-                    result
+                        <Self as yukino::view::Insertable<DB, O>>::columns(),
+                        vec![self]
+                    )
                 }
 
                 fn columns() -> Vec<String> where Self: Sized {
                     vec![#(#columns),*]
                 }
+            }
 
-                fn values(&self) -> Vec<yukino::query_builder::AssignmentValue> {
+            impl<'q, DB: sqlx::Database, O> yukino::query_builder::ArgSource<'q, DB, O> for #name
+                where yukino::query_builder::DatabaseValue: for<'p> yukino::query_builder::AppendToArgs<'p, DB> {
+                fn insert_value_count() -> usize {
+                    #count
+                }
+
+                fn bind_args(
+                    self,
+                    query: yukino::query_builder::QueryOf<'q, DB, O>
+                ) ->  yukino::query_builder::QueryOf<'q, DB, O> where Self: Sized {
                     #(#iters)*
 
-                    vec![#(#values),*]
+                    #(#binds)*
+
+                    query
                 }
             }
         }]

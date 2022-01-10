@@ -107,14 +107,11 @@ impl ToSql for NormalAggregateFunctionCall {
     }
 }
 
-impl BindArgs for NormalAggregateFunctionCall {
-    fn bind_args<'q, DB: Database, O>(
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for NormalAggregateFunctionCall where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+    fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
-    where
-        DatabaseValue: AppendToArgs<'q, DB>,
-    {
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>{
         self.param.bind_args(query)
     }
 }
@@ -144,14 +141,11 @@ impl ToSql for GroupConcatFunctionCall {
     }
 }
 
-impl BindArgs for GroupConcatFunctionCall {
-    fn bind_args<'q, DB: Database, O>(
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for GroupConcatFunctionCall where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+    fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
-    where
-        DatabaseValue: AppendToArgs<'q, DB>,
-    {
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
         self.order_by.bind_args(self.expr.bind_args(query))
     }
 }
@@ -168,14 +162,11 @@ impl ToSql for SubqueryFunctionCall {
     }
 }
 
-impl BindArgs for SubqueryFunctionCall {
-    fn bind_args<'q, DB: Database, O>(
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SubqueryFunctionCall where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+    fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
-    where
-        DatabaseValue: AppendToArgs<'q, DB>,
-    {
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
         self.subquery.bind_args(query)
     }
 }
@@ -189,14 +180,11 @@ impl ToSql for AggregateFunctionCall {
     }
 }
 
-impl BindArgs for AggregateFunctionCall {
-    fn bind_args<'q, DB: Database, O>(
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for AggregateFunctionCall where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+    fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
-    where
-        DatabaseValue: AppendToArgs<'q, DB>,
-    {
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
         match self {
             AggregateFunctionCall::Normal(normal) => normal.bind_args(query),
             AggregateFunctionCall::GroupConcat(group) => group.bind_args(query),
@@ -213,14 +201,11 @@ impl ToSql for FunctionCall {
     }
 }
 
-impl BindArgs for FunctionCall {
-    fn bind_args<'q, DB: Database, O>(
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for FunctionCall where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+    fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
-    where
-        DatabaseValue: AppendToArgs<'q, DB>,
-    {
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
         match self {
             FunctionCall::Aggregate(a) => a.bind_args(query),
             FunctionCall::Subquery(s) => s.bind_args(query),

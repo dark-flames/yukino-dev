@@ -1,13 +1,10 @@
-use std::fmt::Write;
+use std::fmt::{Display, Formatter, Write};
 
 use sqlx::Database;
 use sqlx::database::HasArguments;
 use sqlx::query::QueryAs;
 
-use crate::{
-    Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Expr, OrderByItem, QueryBuildState,
-    ToSql,
-};
+use crate::{Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Expr, OrderByItem, Query, QueryBuildState, ToSql};
 
 pub struct Delete;
 
@@ -80,14 +77,21 @@ impl ToSql for DeleteQuery {
     }
 }
 
-impl BindArgs for DeleteQuery {
-    fn bind_args<'q, DB: Database, O>(
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for DeleteQuery where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+    fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
-    where
-        DatabaseValue: AppendToArgs<'q, DB>,
-    {
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
         self.order_by.bind_args(self.where_clauses.bind_args(query))
     }
 }
+
+impl Display for DeleteQuery {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut state = QueryBuildState::default();
+        self.to_sql(&mut state)?;
+        Display::fmt(state.to_string().as_str(), f)
+    }
+}
+
+impl<DB: Database, O> Query<DB, O> for DeleteQuery where DatabaseValue: for<'p> AppendToArgs<'p, DB> {}

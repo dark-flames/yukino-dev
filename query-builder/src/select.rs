@@ -4,10 +4,7 @@ use sqlx::Database;
 use sqlx::database::HasArguments;
 use sqlx::query::QueryAs;
 
-use crate::{
-    Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Delete, Expr, Join,
-    QueryBuildState, ToSql, Update, UpdateQuery,
-};
+use crate::{Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Delete, Expr, Join, Query, QueryBuildState, ToSql, Update, UpdateQuery};
 use crate::delete::DeleteQuery;
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -370,14 +367,11 @@ impl ToSql for OrderByItem {
     }
 }
 
-impl BindArgs for OrderByItem {
-    fn bind_args<'q, DB: Database, O>(
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for OrderByItem where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+    fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
-    where
-        DatabaseValue: AppendToArgs<'q, DB>,
-    {
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
         self.expr.bind_args(query)
     }
 }
@@ -409,14 +403,11 @@ impl ToSql for SelectSource {
     }
 }
 
-impl BindArgs for SelectSource {
-    fn bind_args<'q, DB: Database, O>(
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SelectSource where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+    fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
-    where
-        DatabaseValue: AppendToArgs<'q, DB>,
-    {
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
         match self {
             SelectSource::From(from) => from.bind_args(query),
             SelectSource::Group(group) => group.bind_args(query),
@@ -424,14 +415,11 @@ impl BindArgs for SelectSource {
     }
 }
 
-impl BindArgs for SelectFrom {
-    fn bind_args<'q, DB: Database, O>(
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SelectFrom where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+    fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
-    where
-        DatabaseValue: AppendToArgs<'q, DB>,
-    {
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
         self.where_clauses.bind_args(self.join.bind_args(query))
     }
 }
@@ -454,14 +442,11 @@ impl ToSql for GroupSelect {
     }
 }
 
-impl BindArgs for GroupSelect {
-    fn bind_args<'q, DB: Database, O>(
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for GroupSelect where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+    fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
-    where
-        DatabaseValue: AppendToArgs<'q, DB>,
-    {
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
         self.having
             .bind_args(self.group_by.bind_args(self.base.bind_args(query)))
     }
@@ -479,14 +464,11 @@ impl ToSql for SelectItem {
     }
 }
 
-impl BindArgs for SelectItem {
-    fn bind_args<'q, DB: Database, O>(
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SelectItem where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+    fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
-    where
-        DatabaseValue: AppendToArgs<'q, DB>,
-    {
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
         self.expr.bind_args(query)
     }
 }
@@ -517,14 +499,11 @@ impl ToSql for SelectQuery {
     }
 }
 
-impl BindArgs for SelectQuery {
-    fn bind_args<'q, DB: Database, O>(
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SelectQuery where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+    fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
-    where
-        DatabaseValue: AppendToArgs<'q, DB>,
-    {
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
         let after_select = self.select.bind_args(query);
 
         let after_source = self.base.bind_args(after_select);
@@ -555,3 +534,5 @@ impl From<SelectFrom> for DeleteQuery {
         result
     }
 }
+
+impl<DB: Database, O> Query<DB, O> for SelectQuery where DatabaseValue: for<'q> AppendToArgs<'q, DB> {}
