@@ -156,5 +156,9 @@ impl_value!(f64, DoubleConverter, OptionalDoubleConverter);
 impl_value!(Decimal, DecimalConverter, OptionalDecimalConverter);
 impl_value!(Date, DateConverter, OptionalDateConverter);
 impl_value!(Time, TimeConverter, OptionalTimeConverter);
-impl_value!(PrimitiveDateTime, DateTimeConverter, OptionalDateTimeConverter);
+impl_value!(
+    PrimitiveDateTime,
+    DateTimeConverter,
+    OptionalDateTimeConverter
+);
 impl_value!(String, StringConverter, OptionalStringConverter);

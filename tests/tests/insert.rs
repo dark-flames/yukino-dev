@@ -5,7 +5,7 @@ use yukino_tests::create_foo;
 fn test_insert() {
     let test = create_foo();
 
-    let query = test.insert().generate_query().0;
+    let query = test.insert_all().generate_query().0;
 
     println!("{}", query)
 }

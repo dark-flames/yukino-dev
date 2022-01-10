@@ -27,37 +27,42 @@ impl Implementor for EntityImplementor {
                 yukino::generic_array::typenum::#type_num
             }
         };
-        let insert_branches: Vec<_> = resolved
-            .fields
-            .iter()
-            .map(|field| {
+        let (iters, values, columns): (Vec<_>, Vec<_>, Vec<_>) = resolved.fields.iter().fold(
+            (vec![], vec![], vec![]),
+            |(mut c_iters, mut c_values, mut c_columns), field| {
                 let field_name = &field.name;
-                let tmp = format_ident!("{}_tmp", field.name.to_string().to_snake_case());
-                let column_branches: Vec<_> = field
+                let iter = format_ident!("{}_tmp", field.name.to_string().to_snake_case());
+                let (v, c): (Vec<_>, Vec<_>) = field
                     .definition
                     .columns
                     .iter()
                     .map(|c| {
                         let column_name = &c.name;
-                        quote! {
-                            .set(
-                                #column_name.to_string(),
+                        (
+                            quote! {
                                 yukino::query_builder::AssignmentValue::Expr(
-                                    yukino::query_builder::Expr::Lit(#tmp.next().unwrap())
+                                    yukino::query_builder::Expr::Lit(#iter.next().unwrap())
                                 )
-                            )
-                        }
+                            },
+                            quote! {
+                                #column_name.to_string()
+                            },
+                        )
                     })
-                    .collect();
+                    .unzip();
 
-                quote! {
-                    let mut #tmp = self.#field_name.to_database_values().into_iter();
+                c_iters.push(quote! {
+                    let mut #iter = {
+                        use yukino::view::Value;
+                        self.#field_name.to_database_values().into_iter()
+                    };
+                });
+                c_values.extend(v);
+                c_columns.extend(c);
 
-                    result
-                        #(#column_branches)*;
-                }
-            })
-            .collect();
+                (c_iters, c_values, c_columns)
+            },
+        );
 
         vec![quote! {
             impl yukino::YukinoEntity for #name {
@@ -88,11 +93,24 @@ impl Implementor for EntityImplementor {
             impl yukino::view::Insertable for #name {
                 fn insert(self) -> yukino::query_builder::InsertQuery {
                     use yukino::view::Value;
-                    let mut result = yukino::query_builder::Insert::into(#table_name.to_string());
+                    let mut result = yukino::query_builder::Insert::into(
+                        #table_name.to_string(),
+                        Self::columns()
+                    );
 
-                    #(#insert_branches)*
+                    result.append(self.values());
 
                     result
+                }
+
+                fn columns() -> Vec<String> where Self: Sized {
+                    vec![#(#columns),*]
+                }
+
+                fn values(&self) -> Vec<yukino::query_builder::AssignmentValue> {
+                    #(#iters)*
+
+                    vec![#(#values),*]
                 }
             }
         }]

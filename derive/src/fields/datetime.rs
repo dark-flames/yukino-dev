@@ -11,7 +11,7 @@ use crate::resolved::ResolvedField;
 enum DateTimeType {
     Date,
     Time,
-    DateTime
+    DateTime,
 }
 
 impl DateTimeType {
@@ -25,7 +25,7 @@ impl DateTimeType {
             },
             DateTimeType::DateTime => parse_quote! {
                 sqlx::types::time::PrimitiveDateTime
-            }
+            },
         }
     }
 
@@ -45,7 +45,7 @@ impl DateTimeType {
         match self {
             DateTimeType::Date => DatabaseType::Date,
             DateTimeType::Time => DatabaseType::Time,
-            DateTimeType::DateTime => DatabaseType::DateTime
+            DateTimeType::DateTime => DatabaseType::DateTime,
         }
     }
 
@@ -53,11 +53,10 @@ impl DateTimeType {
         let tys: [DateTimeType; 3] = [
             DateTimeType::Date,
             DateTimeType::Time,
-            DateTimeType::DateTime
+            DateTimeType::DateTime,
         ];
 
-        tys
-            .iter()
+        tys.iter()
             .map(|datetime_ty| {
                 let target = datetime_ty.ty();
                 match match_optional_ty_by_param(&target, ty) {
@@ -157,7 +156,7 @@ impl FieldResolver for DateTimeFieldResolver {
                     auto_increment: false,
                 }],
                 identity_column: column_name.clone(),
-                primary_key: false
+                primary_key: false,
             },
             ty: field_ty.full_ty(optional),
             view_construct: field_ty.view_construct(&column_name),
@@ -168,7 +167,7 @@ impl FieldResolver for DateTimeFieldResolver {
             tag_list: field_ty.tags(optional),
             converter_ty: field_ty.converter_ty(optional),
             converter_value_count: 1,
-            field_marker: format_ident!("{}", column_name)
+            field_marker: format_ident!("{}", column_name),
         })
     }
 }

@@ -12,14 +12,17 @@ fn match_decimal_ty(ty: &Type) -> Option<(TokenStream, bool)> {
         sqlx::types::Decimal
     };
 
-    let result =  match_optional_ty_by_param(&full_decimal_ty, ty);
+    let result = match_optional_ty_by_param(&full_decimal_ty, ty);
 
     match result {
         TypeMatchResult::Match => Some((full_decimal_ty.to_token_stream(), false)),
         TypeMatchResult::Mismatch => None,
-        TypeMatchResult::InOption => Some((quote! {
-            Option<#full_decimal_ty>
-        } , true)),
+        TypeMatchResult::InOption => Some((
+            quote! {
+                Option<#full_decimal_ty>
+            },
+            true,
+        )),
     }
 }
 
@@ -45,7 +48,7 @@ impl FieldResolver for DecimalFieldResolver {
                     auto_increment: false,
                 }],
                 identity_column: column_name.clone(),
-                primary_key: false
+                primary_key: false,
             },
             ty: field.ty.clone().to_token_stream(),
             view_construct: quote! {
@@ -83,7 +86,7 @@ impl FieldResolver for DecimalFieldResolver {
                 }
             },
             converter_value_count: 1,
-            field_marker: format_ident!("{}", column_name)
+            field_marker: format_ident!("{}", column_name),
         })
     }
 }

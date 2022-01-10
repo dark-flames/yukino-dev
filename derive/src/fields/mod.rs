@@ -2,7 +2,10 @@ use std::any::type_name;
 
 use heck::SnakeCase;
 use quote::ToTokens;
-use syn::{Error, Field, GenericArgument, Lit, Meta, parse_quote, parse_str, PathArguments, Result, ReturnType, Type};
+use syn::{
+    Error, Field, GenericArgument, Lit, Meta, parse_quote, parse_str, PathArguments, Result,
+    ReturnType, Type,
+};
 
 pub use basic::*;
 pub use datetime::*;
@@ -11,8 +14,8 @@ pub use decimal::*;
 use crate::resolved::ResolvedField;
 
 mod basic;
-mod decimal;
 mod datetime;
+mod decimal;
 
 pub trait FieldResolver {
     fn can_resolve(&self, field: &Field) -> bool;
@@ -103,20 +106,16 @@ fn parse_field_name(field: &Field) -> Result<String> {
         .iter()
         .find(|attr| attr.path.is_ident("name"))
         .map(|attr| match attr.parse_meta()? {
-            Meta::NameValue(v) => {
-                match v.lit {
-                    Lit::Str(s) => Ok(s.value()),
-                    _ => Err(Error::new_spanned(
-                        v,
-                        "`name` attribute must be a str",
-                    ))
-                }
-            }
+            Meta::NameValue(v) => match v.lit {
+                Lit::Str(s) => Ok(s.value()),
+                _ => Err(Error::new_spanned(v, "`name` attribute must be a str")),
+            },
             _ => Err(Error::new_spanned(
                 attr,
                 "`name` attribute must be a named value",
-            ))
-        }).unwrap_or_else(|| Ok(field.ident.as_ref().unwrap().to_string().to_snake_case()))
+            )),
+        })
+        .unwrap_or_else(|| Ok(field.ident.as_ref().unwrap().to_string().to_snake_case()))
 }
 
 #[test]

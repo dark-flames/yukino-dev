@@ -4,7 +4,9 @@ use syn::{Field, parse_quote, parse_str, Result, Type};
 
 use interface::{ColumnDefinition, DatabaseType, FieldDefinition};
 
-use crate::fields::{FieldResolver, match_optional_ty, match_optional_ty_by_param, parse_field_name, TypeMatchResult};
+use crate::fields::{
+    FieldResolver, match_optional_ty, match_optional_ty_by_param, parse_field_name, TypeMatchResult,
+};
 use crate::resolved::ResolvedField;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -88,9 +90,7 @@ impl FieldType {
             (
                 FieldType::String,
                 Box::new(|| {
-                    let str = parse_quote!(
-                        String
-                    );
+                    let str = parse_quote!(String);
                     match_optional_ty_by_param(&str, ty)
                 }),
             ),

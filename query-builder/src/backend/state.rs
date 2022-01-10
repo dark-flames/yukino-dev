@@ -33,10 +33,19 @@ impl QueryBuildState {
         items: &[T],
         separator: impl Fn(&mut Self) -> Result,
     ) -> Result {
+        self.join_by(items, |s, item| item.to_sql(s), separator)
+    }
+
+    pub fn join_by<T>(
+        &mut self,
+        items: &[T],
+        callback: impl Fn(&mut Self, &T) -> Result,
+        separator: impl Fn(&mut Self) -> Result,
+    ) -> Result {
         let last_index = items.len() - 1;
 
         for (index, item) in items.iter().enumerate() {
-            item.to_sql(self)?;
+            callback(self, item)?;
 
             if last_index != index {
                 separator(self)?;

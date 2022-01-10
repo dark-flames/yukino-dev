@@ -16,9 +16,9 @@ pub mod prelude {
         VerticalMin, VerticalSum,
     };
     pub use crate::query::{
-        BelongsToEntities, BelongsToQueryResult, BelongsToView, Delete, Executable, FetchMulti,
-        FetchOne, Filter, Filter2, Fold, Fold2, GroupBy, GroupFold, JoinChildren, Map, Map2, Sort,
-        Sort2, Update,
+        BatchInsert, BelongsToEntities, BelongsToQueryResult, BelongsToView, Delete, Executable,
+        FetchMulti, FetchOne, Filter, Filter2, Fold, Fold2, GroupBy, GroupFold, JoinChildren, Map,
+        Map2, Sort, Sort2, Update,
     };
     pub use crate::view::{
         Deletable, EntityWithView, Identifiable, Insertable, SingleRowSubqueryView,

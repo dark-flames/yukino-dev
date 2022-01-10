@@ -31,19 +31,14 @@ impl EntityResolver {
             .iter()
             .find(|attr| attr.path.is_ident("name"))
             .map(|attr| match attr.parse_meta()? {
-                Meta::NameValue(v) => {
-                    match v.lit {
-                        Lit::Str(s) => Ok(s.value()),
-                        _ => Err(Error::new_spanned(
-                            v,
-                            "`name` attribute must be a str",
-                        ))
-                    }
-                }
+                Meta::NameValue(v) => match v.lit {
+                    Lit::Str(s) => Ok(s.value()),
+                    _ => Err(Error::new_spanned(v, "`name` attribute must be a str")),
+                },
                 _ => Err(Error::new_spanned(
                     attr,
                     "`name` attribute must be a named value",
-                ))
+                )),
             })
             .unwrap_or_else(|| Ok(ast.ident.to_string().to_snake_case()))?;
 

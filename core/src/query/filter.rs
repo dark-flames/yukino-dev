@@ -220,7 +220,8 @@ impl<E: EntityWithView> Executable<E, TagsOfEntity<E>> for SortedQueryResultFilt
 }
 
 impl<
-        Children: EntityWithView + Association<Parent, ForeignField, ForeignKeyType = TypeOfMarker<ForeignField>>,
+        Children: EntityWithView
+            + Association<Parent, ForeignField, ForeignKeyType = TypeOfMarker<ForeignField>>,
         Parent: EntityWithView + WithPrimaryKey<PrimaryKeyType = TypeOfMarker<ForeignField>>,
         ForeignField: FieldMarkerWithView + FieldMarker<Entity = Children>,
     > AssociationBuilder<Children, Parent, ForeignField> for QueryResultFilter<Parent>
@@ -234,7 +235,7 @@ where
     >,
     ExprBoxOfAssociatedView<Children::View, Parent, ForeignField>:
         In<<Parent as WithPrimaryKey>::PrimaryKeyType>,
-    TypeOfMarker<ForeignField>: Value + Ord + Hash
+    TypeOfMarker<ForeignField>: Value + Ord + Hash,
 {
     fn build_query(self) -> QueryResultFilter<Children> {
         let subquery = self.query.select(vec![SelectItem {
@@ -277,7 +278,9 @@ where
         result
     }
 
-    fn build_from_parent_entities(primary_keys: Vec<TypeOfMarker<ForeignField>>) -> QueryResultFilter<Children> {
+    fn build_from_parent_entities(
+        primary_keys: Vec<TypeOfMarker<ForeignField>>,
+    ) -> QueryResultFilter<Children> {
         Children::all().filter(|view| view.foreign_key().clone().in_arr(&primary_keys))
     }
 }

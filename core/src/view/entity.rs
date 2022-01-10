@@ -1,7 +1,7 @@
 use generic_array::GenericArray;
 
 use interface::{Association, FieldMarker, WithPrimaryKey, YukinoEntity};
-use query_builder::{Alias, InsertQuery};
+use query_builder::{Alias, AssignmentValue, InsertQuery};
 
 use crate::query::{Delete, DeleteQueryResult, QueryResultFilter};
 use crate::view::{ExprView, ExprViewBoxWithTag, TagList, Value, VerticalView};
@@ -98,4 +98,10 @@ pub trait Deletable: Identifiable {
 
 pub trait Insertable: EntityWithView {
     fn insert(self) -> InsertQuery;
+
+    fn columns() -> Vec<String>
+    where
+        Self: Sized;
+
+    fn values(&self) -> Vec<AssignmentValue>;
 }

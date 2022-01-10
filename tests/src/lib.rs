@@ -31,7 +31,7 @@ pub struct Foo {
     pub optional_decimal: Option<sqlx::types::Decimal>,
     pub date: sqlx::types::time::Date,
     pub time: sqlx::types::time::Time,
-    pub datetime: sqlx::types::time::PrimitiveDateTime
+    pub datetime: sqlx::types::time::PrimitiveDateTime,
 }
 
 pub fn create_foo() -> Foo {
@@ -53,6 +53,6 @@ pub fn create_foo() -> Foo {
         optional_decimal: None,
         date: now.date(),
         time: now.time(),
-        datetime: now
+        datetime: now,
     }
 }

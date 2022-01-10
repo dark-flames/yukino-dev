@@ -207,7 +207,7 @@ where
     String: Decode<'r, DB>,
     Date: Decode<'r, DB>,
     Time: Decode<'r, DB>,
-    PrimitiveDateTime: Decode<'r, DB>
+    PrimitiveDateTime: Decode<'r, DB>,
 {
     fn decode(value: <DB as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
         match (value.type_info().name(), value.is_null()) {

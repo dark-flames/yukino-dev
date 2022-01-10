@@ -5,6 +5,7 @@ pub use exec::*;
 pub use filter::*;
 pub use fold::*;
 pub use group::*;
+pub use insert::*;
 pub use map::*;
 pub use sort::*;
 pub use update::*;

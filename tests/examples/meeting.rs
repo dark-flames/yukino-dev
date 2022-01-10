@@ -156,13 +156,8 @@ pub async fn prepare_data(pool: &MySqlPool) {
         },
     ];
 
-    for person in person_list {
-        person.insert().exec(pool).await.unwrap();
-    }
-
-    for meeting in meeting_list {
-        meeting.insert().exec(pool).await.unwrap();
-    }
+    person_list.insert_all().exec(pool).await.unwrap();
+    meeting_list.insert_all().exec(pool).await.unwrap();
 }
 
 #[tokio::main]
