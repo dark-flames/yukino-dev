@@ -23,17 +23,13 @@ pub trait FoldResult: 'static + Clone + Send + Sync {
 }
 
 pub struct FoldQueryResult<View: FoldResult> {
-    query: Box<dyn SelectSource>,
+    query: SelectSource,
     view: View,
     alias_generator: AliasGenerator,
 }
 
 impl<View: FoldResult> FoldQueryResult<View> {
-    pub fn create(
-        query: Box<dyn SelectSource>,
-        view: View,
-        alias_generator: AliasGenerator,
-    ) -> Self {
+    pub fn create(query: SelectSource, view: View, alias_generator: AliasGenerator) -> Self {
         FoldQueryResult {
             query,
             view,

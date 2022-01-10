@@ -12,7 +12,7 @@ use sqlx::types::time::{Date, PrimitiveDateTime, Time};
 
 use interface::DatabaseType;
 
-use crate::{ExecuteError, QueryBuildState, ToSql};
+use crate::{BindArgs, ExecuteError, QueryBuildState, ToSql};
 
 pub type Binary = Vec<u8>;
 
@@ -103,7 +103,19 @@ impl From<&DatabaseValue> for DatabaseType {
 
 impl ToSql for DatabaseValue {
     fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
-        state.append_param(self)
+        state.append_param()
+    }
+}
+
+impl BindArgs for DatabaseValue {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        self.bind_on(query)
     }
 }
 

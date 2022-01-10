@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use generic_array::{arr, GenericArray};
 use generic_array::typenum::U1;
 
-use query_builder::{AggregateFunctionCall, DatabaseValue, Expr};
+use query_builder::{AggregateFunctionCall, DatabaseValue, Expr, FunctionCall};
 
 use crate::err::{RuntimeResult, YukinoError};
 use crate::view::{
@@ -16,7 +16,7 @@ pub struct AggregateViewItem<
     T: Value<L = U1>,
     TTags: TagList + SetBit<OffsetOfTag<AggregateViewTag>, True>,
 > {
-    function_call: Box<dyn AggregateFunctionCall>,
+    function_call: AggregateFunctionCall,
     _marker: PhantomData<(T, TTags)>,
 }
 
@@ -40,7 +40,9 @@ impl<T: Value<L = U1>, TTags: TagList + SetBit<OffsetOfTag<AggregateViewTag>, Tr
     }
 
     fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<T>> {
-        arr![Expr; Expr::FunctionCall(self.function_call.clone_box())]
+        arr![Expr; Expr::FunctionCall(Box::new(FunctionCall::Aggregate(
+            self.function_call.clone()
+        )))]
     }
 
     fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<T>>) -> RuntimeResult<T> {
@@ -51,9 +53,9 @@ impl<T: Value<L = U1>, TTags: TagList + SetBit<OffsetOfTag<AggregateViewTag>, Tr
 impl<T: Value<L = U1>, TTags: TagList + SetBit<OffsetOfTag<AggregateViewTag>, True>>
     AggregateViewItem<T, TTags>
 {
-    pub fn from_agg_fn_call<F: AggregateFunctionCall>(f: F) -> Self {
+    pub fn from_agg_fn_call(f: AggregateFunctionCall) -> Self {
         AggregateViewItem {
-            function_call: Box::new(f),
+            function_call: f,
             _marker: Default::default(),
         }
     }

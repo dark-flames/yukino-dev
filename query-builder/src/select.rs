@@ -1,6 +1,13 @@
 use std::fmt::{Debug, Display, Formatter, Write};
 
-use crate::{Alias, AliasedTable, Delete, Expr, Join, QueryBuildState, ToSql, Update, UpdateQuery};
+use sqlx::Database;
+use sqlx::database::HasArguments;
+use sqlx::query::QueryAs;
+
+use crate::{
+    Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Delete, Expr, Join,
+    QueryBuildState, ToSql, Update, UpdateQuery,
+};
 use crate::delete::DeleteQuery;
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -28,7 +35,7 @@ pub struct GroupSelect {
 
 #[derive(Clone, Debug)]
 pub struct SelectQuery {
-    base: Box<dyn SelectSource>,
+    base: SelectSource,
     select: Vec<SelectItem>,
     order_by: Vec<OrderByItem>,
     limit: Option<usize>,
@@ -47,13 +54,21 @@ pub struct OrderByItem {
     pub order: Order,
 }
 
-pub trait SelectSource: ToSql + Display + Debug + 'static + Send + Sync {
-    fn box_clone(&self) -> Box<dyn SelectSource>;
+#[derive(Clone, Debug)]
+pub enum SelectSource {
+    From(SelectFrom),
+    Group(GroupSelect),
+}
+
+pub trait IntoSelectSource {
+    fn source(self) -> SelectSource
+    where
+        Self: Sized;
     fn select(self, items: Vec<SelectItem>) -> SelectQuery
     where
         Self: Sized,
     {
-        SelectQuery::create(Box::new(self), items, vec![], None, 0)
+        SelectQuery::create(self.source(), items, vec![], None, 0)
     }
 
     fn order_by(self, items: Vec<OrderByItem>) -> SelectQuery
@@ -61,7 +76,7 @@ pub trait SelectSource: ToSql + Display + Debug + 'static + Send + Sync {
         Self: Sized,
     {
         SelectQuery {
-            base: Box::new(self),
+            base: self.source(),
             select: vec![],
             order_by: items,
             limit: None,
@@ -74,7 +89,7 @@ pub trait SelectSource: ToSql + Display + Debug + 'static + Send + Sync {
         Self: Sized,
     {
         SelectQuery {
-            base: Box::new(self),
+            base: self.source(),
             select: vec![],
             order_by: vec![],
             limit: Some(l),
@@ -87,12 +102,39 @@ pub trait SelectSource: ToSql + Display + Debug + 'static + Send + Sync {
         Self: Sized,
     {
         SelectQuery {
-            base: Box::new(self),
+            base: self.source(),
             select: vec![],
             order_by: vec![],
             limit: None,
             offset: o,
         }
+    }
+}
+
+impl IntoSelectSource for SelectSource {
+    fn source(self) -> SelectSource
+    where
+        Self: Sized,
+    {
+        self
+    }
+}
+
+impl IntoSelectSource for SelectFrom {
+    fn source(self) -> SelectSource
+    where
+        Self: Sized,
+    {
+        SelectSource::From(self)
+    }
+}
+
+impl IntoSelectSource for GroupSelect {
+    fn source(self) -> SelectSource
+    where
+        Self: Sized,
+    {
+        SelectSource::Group(self)
     }
 }
 
@@ -148,21 +190,9 @@ unsafe impl Sync for SelectFrom {}
 unsafe impl Send for GroupSelect {}
 unsafe impl Sync for GroupSelect {}
 
-impl SelectSource for SelectFrom {
-    fn box_clone(&self) -> Box<dyn SelectSource> {
-        Box::new(self.clone())
-    }
-}
-
-impl SelectSource for GroupSelect {
-    fn box_clone(&self) -> Box<dyn SelectSource> {
-        Box::new(self.clone())
-    }
-}
-
 impl SelectQuery {
     pub fn create(
-        base: Box<dyn SelectSource>,
+        base: SelectSource,
         select: Vec<SelectItem>,
         order_by: Vec<OrderByItem>,
         limit: Option<usize>,
@@ -315,9 +345,12 @@ impl Display for SelectQuery {
     }
 }
 
-impl Clone for Box<dyn SelectSource> {
-    fn clone(&self) -> Self {
-        self.box_clone()
+impl Display for SelectSource {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SelectSource::From(from) => write!(f, "{}", from),
+            SelectSource::Group(group) => write!(f, "{}", group),
+        }
     }
 }
 
@@ -334,6 +367,18 @@ impl ToSql for OrderByItem {
     fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
         self.expr.to_sql(state)?;
         self.order.to_sql(state)
+    }
+}
+
+impl BindArgs for OrderByItem {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        self.expr.bind_args(query)
     }
 }
 
@@ -355,6 +400,42 @@ impl ToSql for SelectFrom {
     }
 }
 
+impl ToSql for SelectSource {
+    fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
+        match self {
+            SelectSource::From(from) => from.to_sql(state),
+            SelectSource::Group(group) => group.to_sql(state),
+        }
+    }
+}
+
+impl BindArgs for SelectSource {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        match self {
+            SelectSource::From(from) => from.bind_args(query),
+            SelectSource::Group(group) => group.bind_args(query),
+        }
+    }
+}
+
+impl BindArgs for SelectFrom {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        self.where_clauses.bind_args(self.join.bind_args(query))
+    }
+}
+
 impl ToSql for GroupSelect {
     fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
         self.base.to_sql(state)?;
@@ -373,6 +454,19 @@ impl ToSql for GroupSelect {
     }
 }
 
+impl BindArgs for GroupSelect {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        self.having
+            .bind_args(self.group_by.bind_args(self.base.bind_args(query)))
+    }
+}
+
 impl ToSql for SelectItem {
     fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
         self.expr.to_sql(state)?;
@@ -382,6 +476,18 @@ impl ToSql for SelectItem {
         }
 
         Ok(())
+    }
+}
+
+impl BindArgs for SelectItem {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        self.expr.bind_args(query)
     }
 }
 
@@ -408,6 +514,21 @@ impl ToSql for SelectQuery {
         }
 
         Ok(())
+    }
+}
+
+impl BindArgs for SelectQuery {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        let after_select = self.select.bind_args(query);
+
+        let after_source = self.base.bind_args(after_select);
+        self.order_by.bind_args(after_source)
     }
 }
 

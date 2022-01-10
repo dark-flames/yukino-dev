@@ -14,7 +14,7 @@ use crate::view::{
 
 #[derive(Clone)]
 pub struct QueryResultMap<R: Value, RTags: TagList, ResultType: ExecuteResultType> {
-    query: Box<dyn SelectSource>,
+    query: SelectSource,
     order_by_items: Vec<OrderByItem>,
     view: ExprViewBoxWithTag<R, RTags>,
     alias_generator: AliasGenerator,
@@ -44,7 +44,7 @@ pub trait Map2<View1, View2> {
 
 impl<R: Value, RTags: TagList, ResultType: ExecuteResultType> QueryResultMap<R, RTags, ResultType> {
     pub fn create(
-        query: Box<dyn SelectSource>,
+        query: SelectSource,
         order_by_items: Vec<OrderByItem>,
         view: ExprViewBoxWithTag<R, RTags>,
         alias_generator: AliasGenerator,

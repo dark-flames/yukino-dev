@@ -15,7 +15,12 @@ pub trait BatchInsert {
     fn insert_all(self) -> InsertQuery;
 }
 
-impl<E: EntityWithView, InsertObject: Insertable<Entity=E>, List: IntoIterator<Item =InsertObject>> BatchInsert for List {
+impl<
+        E: EntityWithView,
+        InsertObject: Insertable<Entity = E>,
+        List: IntoIterator<Item = InsertObject>,
+    > BatchInsert for List
+{
     fn insert_all(self) -> InsertQuery {
         let mut query = Insert::into(E::table_name().to_string(), InsertObject::columns());
 

@@ -56,7 +56,9 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
         let result = v.into();
         let pairs = FMarker::columns()
             .into_iter()
-            .zip(result.collect_expr().into_iter().map(AssignmentValue::Expr));
+            .zip(result.collect_expr().into_iter().map(
+                |e| AssignmentValue::Expr(Box::new(e))
+            ));
 
         self.assignments.extend(pairs);
 
@@ -78,7 +80,9 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
         let result = f(FMarker::view(E::View::pure(self.query.root_alias()))).into();
         let pairs = FMarker::columns()
             .into_iter()
-            .zip(result.collect_expr().into_iter().map(AssignmentValue::Expr));
+            .zip(result.collect_expr().into_iter().map(
+                |e| AssignmentValue::Expr(Box::new(e))
+            ));
 
         self.assignments.extend(pairs);
 

@@ -35,5 +35,5 @@ pub struct ResolvedField {
     pub converter_ty: TokenStream,
     pub converter_value_count: usize,
     pub field_marker: Ident,
-    pub primary: bool
+    pub primary: bool,
 }

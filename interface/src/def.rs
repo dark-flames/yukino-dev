@@ -26,5 +26,5 @@ pub struct ColumnDefinition {
     pub name: String,
     pub ty: DatabaseType,
     pub optional: bool,
-    pub auto_increment: bool
+    pub auto_increment: bool,
 }

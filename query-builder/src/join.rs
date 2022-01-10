@@ -1,6 +1,10 @@
 use std::fmt::{Display, Formatter, Write};
 
-use crate::{AliasedTable, Expr, QueryBuildState, ToSql};
+use sqlx::Database;
+use sqlx::database::HasArguments;
+use sqlx::query::QueryAs;
+
+use crate::{AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Expr, QueryBuildState, ToSql};
 
 #[derive(Copy, Clone, Debug)]
 pub enum JoinType {
@@ -54,5 +58,17 @@ impl ToSql for Join {
         self.table.to_sql(state)?;
         write!(state, "ON")?;
         self.on.to_sql(state)
+    }
+}
+
+impl BindArgs for Join {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        self.on.bind_args(query)
     }
 }

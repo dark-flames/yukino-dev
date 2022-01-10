@@ -1,6 +1,10 @@
 use std::fmt::Write;
 
-use crate::{AssignmentValue, QueryBuildState, ToSql};
+use sqlx::Database;
+use sqlx::database::HasArguments;
+use sqlx::query::QueryAs;
+
+use crate::{AppendToArgs, AssignmentValue, BindArgs, DatabaseValue, QueryBuildState, ToSql};
 
 pub struct Insert;
 
@@ -55,5 +59,17 @@ impl ToSql for InsertQuery {
         )?;
 
         write!(state, ";")
+    }
+}
+
+impl BindArgs for InsertQuery {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        self.values.bind_args(query)
     }
 }

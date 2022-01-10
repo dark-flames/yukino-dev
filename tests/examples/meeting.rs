@@ -160,6 +160,23 @@ pub async fn prepare_data(pool: &MySqlPool) {
     meeting_list.insert_all().exec(pool).await.unwrap();
 }
 
+pub async fn bit_data_person(pool: &MySqlPool, size: usize) {
+    (0..size)
+        .map(|idx| NewPerson {
+            name: format!("Person {}", idx),
+            age: 0,
+            level: 0,
+        })
+        .insert_all()
+        .exec(pool)
+        .await
+        .unwrap();
+}
+
+pub async fn simple_query(pool: &MySqlPool) {
+    Person::all().exec(pool).await.unwrap();
+}
+
 #[tokio::main]
 pub async fn main() -> Result<(), sqlx::Error> {
     let url = env::var("DB").unwrap();
@@ -171,8 +188,10 @@ pub async fn main() -> Result<(), sqlx::Error> {
     Person::all().delete().exec(&pool).await.unwrap();
     Meeting::all().delete().exec(&pool).await.unwrap();
 
-    prepare_data(&pool).await;
+    bit_data_person(&pool, 10000).await;
+    simple_query(&pool).await;
 
+    /*
     assert_eq!(adult_hosted_meeting_length(&pool).await, vec![9, 9, 9]);
 
     assert_eq!(
@@ -197,7 +216,7 @@ pub async fn main() -> Result<(), sqlx::Error> {
             .map(|(person, meetings)| (person.id, meetings.into_iter().map(|m| m.id).collect()))
             .collect::<Vec<(u32, Vec<u32>)>>(),
         vec![(1, vec![1, 2]), (2, vec![3]), (3, vec![4, 5]), (4, vec![]),]
-    );
+    );*/
 
     Ok(())
 }

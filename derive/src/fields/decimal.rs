@@ -45,7 +45,7 @@ impl FieldResolver for DecimalFieldResolver {
                     name: column_name.clone(),
                     ty: DatabaseType::Decimal,
                     optional,
-                    auto_increment: false
+                    auto_increment: false,
                 }],
                 identity_column: column_name.clone(),
                 primary_key: false,
@@ -87,7 +87,7 @@ impl FieldResolver for DecimalFieldResolver {
             },
             converter_value_count: 1,
             field_marker: format_ident!("{}", column_name),
-            primary: false
+            primary: false,
         })
     }
 }

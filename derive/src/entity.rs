@@ -123,7 +123,7 @@ impl EntityResolver {
             marker_mod: format_ident!("{}", entity_name.to_string().to_snake_case()),
             entity_name,
             fields,
-            associations
+            associations,
         })
     }
 

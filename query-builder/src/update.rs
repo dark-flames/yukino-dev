@@ -1,6 +1,13 @@
 use std::fmt::Write;
 
-use crate::{Alias, AliasedTable, Expr, OrderByItem, QueryBuildState, ToSql};
+use sqlx::Database;
+use sqlx::database::HasArguments;
+use sqlx::query::QueryAs;
+
+use crate::{
+    Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Expr, OrderByItem, QueryBuildState,
+    ToSql,
+};
 
 pub struct Update;
 
@@ -13,7 +20,7 @@ unsafe impl Send for AssignmentItem {}
 unsafe impl Sync for AssignmentItem {}
 
 pub enum AssignmentValue {
-    Expr(Expr),
+    Expr(Box<Expr>),
     Default,
 }
 
@@ -82,11 +89,39 @@ impl ToSql for AssignmentValue {
     }
 }
 
+impl BindArgs for AssignmentValue {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        if let AssignmentValue::Expr(e) = self {
+            e.bind_args(query)
+        } else {
+            query
+        }
+    }
+}
+
 impl ToSql for AssignmentItem {
     fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
         let column = format!("`{}`", self.column);
         write!(state, "{}=", column)?;
         self.value.to_sql(state)
+    }
+}
+
+impl BindArgs for AssignmentItem {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        self.value.bind_args(query)
     }
 }
 
@@ -113,5 +148,17 @@ impl ToSql for UpdateQuery {
         }
 
         Ok(())
+    }
+}
+
+impl BindArgs for UpdateQuery {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        self.order_by.bind_args(self.where_clauses.bind_args(query))
     }
 }

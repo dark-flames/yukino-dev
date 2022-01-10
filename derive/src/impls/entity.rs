@@ -42,7 +42,9 @@ impl Implementor for EntityImplementor {
                         (
                             quote! {
                                 yukino::query_builder::AssignmentValue::Expr(
-                                    yukino::query_builder::Expr::Lit(#iter.next().unwrap())
+                                    Box::new(
+                                        yukino::query_builder::Expr::Lit(#iter.next().unwrap())
+                                        )
                                 )
                             },
                             quote! {

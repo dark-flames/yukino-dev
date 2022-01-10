@@ -1,6 +1,13 @@
 use std::fmt::Write;
 
-use crate::{Alias, AliasedTable, Expr, OrderByItem, QueryBuildState, ToSql};
+use sqlx::Database;
+use sqlx::database::HasArguments;
+use sqlx::query::QueryAs;
+
+use crate::{
+    Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Expr, OrderByItem, QueryBuildState,
+    ToSql,
+};
 
 pub struct Delete;
 
@@ -70,5 +77,17 @@ impl ToSql for DeleteQuery {
         }
 
         Ok(())
+    }
+}
+
+impl BindArgs for DeleteQuery {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        self.order_by.bind_args(self.where_clauses.bind_args(query))
     }
 }

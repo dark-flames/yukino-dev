@@ -173,6 +173,8 @@ impl<T: Value<L = U1>> SubqueryFnCallView<T> {
 
 impl<T: Value<L = U1>> SubqueryIntoView<T> for SubqueryFnCallView<T> {
     fn as_expr(&self) -> ExprViewBox<T> {
-        T::view_from_exprs(arr![Expr; Expr::FunctionCall(self.fn_call.clone_box())])
+        T::view_from_exprs(arr![Expr; Expr::FunctionCall(
+            Box::new(FunctionCall::Subquery(self.fn_call.clone()))
+        )])
     }
 }

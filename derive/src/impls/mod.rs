@@ -13,10 +13,10 @@ use crate::resolved::ResolvedEntity;
 mod association;
 mod converter;
 mod entity;
+mod insert;
 mod marker;
 mod primary;
 mod view;
-mod insert;
 
 pub trait Implementor {
     fn get_implements(&self, resolved: &ResolvedEntity) -> Vec<TokenStream>;

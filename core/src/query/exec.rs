@@ -3,7 +3,9 @@ use generic_array::ArrayLength;
 use sqlx::{Database, Error, Executor, FromRow, MySql, query_as};
 use sqlx::query::QueryAs;
 
-use query_builder::{AppendToArgs, DatabaseValue, Query, QueryBuildState, ResultRow, ToSql};
+use query_builder::{
+    AppendToArgs, BindArgs, DatabaseValue, Query, QueryBuildState, ResultRow, ToSql,
+};
 
 use crate::view::{ExprViewBoxWithTag, TagList, Value, ValueCountOf};
 
@@ -38,9 +40,9 @@ pub trait FetchOne<T: Value, TTags: TagList>: Executable<T, TTags, ResultType = 
         let (query, view) = self.generate_query();
         let mut state = QueryBuildState::default();
         query.to_sql(&mut state).unwrap();
-        let query = state.to_string();
-        let query_as: QueryAs<MySql, ResultRow<ValueCountOf<T>>, _> = query_as(&query);
-        let query_as = state.bind_args(query_as);
+        let raw_query = state.to_string();
+        let query_as: QueryAs<MySql, ResultRow<ValueCountOf<T>>, _> = query_as(&raw_query);
+        let query_as = query.bind_args(query_as);
         let result = query_as.fetch_one(executor).await?;
 
         let arr = result.into();
@@ -65,9 +67,9 @@ pub trait FetchMulti<T: Value, TTags: TagList>:
         let (query, view) = self.generate_query();
         let mut state = QueryBuildState::default();
         query.to_sql(&mut state).unwrap();
-        let query = state.to_string();
-        let query_as: QueryAs<MySql, ResultRow<ValueCountOf<T>>, _> = query_as(&query);
-        let query_as = state.bind_args(query_as);
+        let raw_query = state.to_string();
+        let query_as: QueryAs<MySql, ResultRow<ValueCountOf<T>>, _> = query_as(&raw_query);
+        let query_as = query.bind_args(query_as);
         let result = query_as.fetch_all(executor).await?;
         result
             .into_iter()

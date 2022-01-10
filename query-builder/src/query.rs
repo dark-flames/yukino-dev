@@ -1,6 +1,13 @@
 use std::fmt::{Display, Formatter, Write};
 
-use crate::{DeleteQuery, InsertQuery, QueryBuildState, SelectQuery, ToSql, UpdateQuery};
+use sqlx::Database;
+use sqlx::database::HasArguments;
+use sqlx::query::QueryAs;
+
+use crate::{
+    AppendToArgs, BindArgs, DatabaseValue, DeleteQuery, InsertQuery, QueryBuildState, SelectQuery,
+    ToSql, UpdateQuery,
+};
 
 pub enum Query {
     Select(SelectQuery),
@@ -22,6 +29,23 @@ impl ToSql for Query {
         }?;
 
         write!(state, ";")
+    }
+}
+
+impl BindArgs for Query {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        match self {
+            Query::Select(s) => s.bind_args(query),
+            Query::Update(u) => u.bind_args(query),
+            Query::Delete(d) => d.bind_args(query),
+            Query::Insert(i) => i.bind_args(query),
+        }
     }
 }
 

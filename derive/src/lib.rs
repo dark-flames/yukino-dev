@@ -6,7 +6,10 @@ use syn::{Error, ExprTuple, parse_macro_input, parse_quote, TypeTuple};
 
 use crate::entity::EntityResolver;
 use crate::fields::{BasicFieldResolver, DateTimeFieldResolver, DecimalFieldResolver};
-use crate::impls::{AssociationImplementor, ConverterImplementor, EntityImplementor, FieldMarkerImplementor, InsertImplementor, PrimaryImplementor, ViewImplementor};
+use crate::impls::{
+    AssociationImplementor, ConverterImplementor, EntityImplementor, FieldMarkerImplementor,
+    InsertImplementor, PrimaryImplementor, ViewImplementor,
+};
 
 mod entity;
 mod fields;

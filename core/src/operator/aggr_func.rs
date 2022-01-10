@@ -1,7 +1,8 @@
 use sqlx::types::Decimal;
 
 use query_builder::{
-    AggregateFunction, GroupConcatFunctionCall, NormalAggregateFunctionCall, OrderByItem,
+    AggregateFunction, AggregateFunctionCall, GroupConcatFunctionCall, NormalAggregateFunctionCall,
+    OrderByItem,
 };
 
 use crate::view::{
@@ -46,11 +47,14 @@ macro_rules! impl_join_for {
                     separator: Option<&str>,
                 ) -> ExprViewBoxWithTag<Option<String>, AddTag<TagsOfValueView<Option<String>>, AggregateViewTag>>
                 {
-                    Box::new(AggregateViewItem::<Option<String>, TagsOfValueView<Option<String>>>::from_agg_fn_call(GroupConcatFunctionCall {
+                    Box::new(AggregateViewItem::<
+                        Option<String>,
+                        TagsOfValueView<Option<String>>
+                    >::from_agg_fn_call(AggregateFunctionCall::GroupConcat(GroupConcatFunctionCall {
                         expr: expr.collect_expr().into_iter().next().unwrap(),
                         order_by: order_by_items,
                         separator: separator.map(ToString::to_string),
-                    }))
+                    })))
                 }
             }
         )*
@@ -94,10 +98,12 @@ macro_rules! impl_aggr_fn {
                 ) -> ExprViewBoxWithTag<$return_ty, AddTag<$return_base_tags, AggregateViewTag>>
                 where $return_base_tags: SetBit<OffsetOfTag<AggregateViewTag>, True>
                 {
-                    Box::new(AggregateViewItem::<$return_ty, $return_base_tags>::from_agg_fn_call(NormalAggregateFunctionCall {
-                        function: AggregateFunction::$variant,
-                        param: expr.collect_expr().into_iter().next().unwrap()
-                    }))
+                    Box::new(AggregateViewItem::<$return_ty, $return_base_tags>::from_agg_fn_call(
+                        AggregateFunctionCall::Normal(NormalAggregateFunctionCall {
+                            function: AggregateFunction::$variant,
+                            param: expr.collect_expr().into_iter().next().unwrap()
+                        }
+                    )))
                 }
             }
         )*

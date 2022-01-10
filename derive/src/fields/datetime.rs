@@ -153,7 +153,7 @@ impl FieldResolver for DateTimeFieldResolver {
                     name: column_name.clone(),
                     ty: field_ty.database_ty(),
                     optional,
-                    auto_increment: false
+                    auto_increment: false,
                 }],
                 identity_column: column_name.clone(),
                 primary_key: false,
@@ -168,7 +168,7 @@ impl FieldResolver for DateTimeFieldResolver {
             converter_ty: field_ty.converter_ty(optional),
             converter_value_count: 1,
             field_marker: format_ident!("{}", column_name),
-            primary: false
+            primary: false,
         })
     }
 }

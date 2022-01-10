@@ -1,6 +1,12 @@
 use std::fmt::{Debug, Display, Formatter};
 
-use crate::{Expr, OrderByItem, QueryBuildState, SelectQuery, ToSql};
+use sqlx::Database;
+use sqlx::database::HasArguments;
+use sqlx::query::QueryAs;
+
+use crate::{
+    AppendToArgs, BindArgs, DatabaseValue, Expr, OrderByItem, QueryBuildState, SelectQuery, ToSql,
+};
 use crate::drivers::{convert_group_concat, convert_normal_aggregate_fn_call, convert_subquery_fn};
 
 #[derive(Clone, Debug, Copy)]
@@ -38,12 +44,16 @@ pub enum Function {
 unsafe impl Send for Function {}
 unsafe impl Sync for Function {}
 
-pub trait AggregateFunctionCall: 'static + Display + FunctionCall + Sync + Send {
-    fn clone_aggr_fn_box(&self) -> Box<dyn AggregateFunctionCall>;
+#[derive(Clone, Debug)]
+pub enum FunctionCall {
+    Aggregate(AggregateFunctionCall),
+    Subquery(SubqueryFunctionCall),
 }
 
-pub trait FunctionCall: 'static + Display + Debug + ToSql + Sync + Send {
-    fn clone_box(&self) -> Box<dyn FunctionCall>;
+#[derive(Clone, Debug)]
+pub enum AggregateFunctionCall {
+    Normal(NormalAggregateFunctionCall),
+    GroupConcat(GroupConcatFunctionCall),
 }
 
 #[derive(Clone, Debug)]
@@ -97,15 +107,15 @@ impl ToSql for NormalAggregateFunctionCall {
     }
 }
 
-impl FunctionCall for NormalAggregateFunctionCall {
-    fn clone_box(&self) -> Box<dyn FunctionCall> {
-        Box::new(self.clone())
-    }
-}
-
-impl AggregateFunctionCall for NormalAggregateFunctionCall {
-    fn clone_aggr_fn_box(&self) -> Box<dyn AggregateFunctionCall> {
-        Box::new(self.clone())
+impl BindArgs for NormalAggregateFunctionCall {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        self.param.bind_args(query)
     }
 }
 
@@ -134,15 +144,15 @@ impl ToSql for GroupConcatFunctionCall {
     }
 }
 
-impl FunctionCall for GroupConcatFunctionCall {
-    fn clone_box(&self) -> Box<dyn FunctionCall> {
-        Box::new(self.clone())
-    }
-}
-
-impl AggregateFunctionCall for GroupConcatFunctionCall {
-    fn clone_aggr_fn_box(&self) -> Box<dyn AggregateFunctionCall> {
-        Box::new(self.clone())
+impl BindArgs for GroupConcatFunctionCall {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        self.order_by.bind_args(self.expr.bind_args(query))
     }
 }
 
@@ -158,9 +168,63 @@ impl ToSql for SubqueryFunctionCall {
     }
 }
 
-impl FunctionCall for SubqueryFunctionCall {
-    fn clone_box(&self) -> Box<dyn FunctionCall> {
-        Box::new(self.clone())
+impl BindArgs for SubqueryFunctionCall {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        self.subquery.bind_args(query)
+    }
+}
+
+impl ToSql for AggregateFunctionCall {
+    fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
+        match self {
+            AggregateFunctionCall::Normal(normal) => normal.to_sql(state),
+            AggregateFunctionCall::GroupConcat(group) => group.to_sql(state),
+        }
+    }
+}
+
+impl BindArgs for AggregateFunctionCall {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        match self {
+            AggregateFunctionCall::Normal(normal) => normal.bind_args(query),
+            AggregateFunctionCall::GroupConcat(group) => group.bind_args(query),
+        }
+    }
+}
+
+impl ToSql for FunctionCall {
+    fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
+        match self {
+            FunctionCall::Aggregate(a) => a.to_sql(state),
+            FunctionCall::Subquery(s) => s.to_sql(state),
+        }
+    }
+}
+
+impl BindArgs for FunctionCall {
+    fn bind_args<'q, DB: Database, O>(
+        self,
+        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
+    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>
+    where
+        DatabaseValue: AppendToArgs<'q, DB>,
+    {
+        match self {
+            FunctionCall::Aggregate(a) => a.bind_args(query),
+            FunctionCall::Subquery(s) => s.bind_args(query),
+        }
     }
 }
 
@@ -182,14 +246,20 @@ impl Display for Function {
     }
 }
 
-impl Clone for Box<dyn FunctionCall> {
-    fn clone(&self) -> Self {
-        self.clone_box()
+impl Display for AggregateFunctionCall {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AggregateFunctionCall::Normal(normal) => write!(f, "{}", normal),
+            AggregateFunctionCall::GroupConcat(group) => write!(f, "{}", group),
+        }
     }
 }
 
-impl Clone for Box<dyn AggregateFunctionCall> {
-    fn clone(&self) -> Self {
-        self.clone_aggr_fn_box()
+impl Display for FunctionCall {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FunctionCall::Aggregate(a) => write!(f, "{}", a),
+            FunctionCall::Subquery(s) => write!(f, "{}", s),
+        }
     }
 }

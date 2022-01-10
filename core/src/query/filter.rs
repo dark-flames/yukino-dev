@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 
 use interface::{Association, FieldMarker, WithPrimaryKey};
 use query_builder::{
-    Alias, Expr, OrderByItem, Query, Select, SelectFrom, SelectItem, SelectQuery, SelectSource,
+    Alias, Expr, IntoSelectSource, OrderByItem, Query, Select, SelectFrom, SelectItem, SelectQuery
 };
 
 use crate::operator::{In, SortResult};
@@ -73,7 +73,7 @@ impl<E: EntityWithView> Map<E::View> for QueryResultFilter<E> {
         let result_view = f(E::View::pure(&self.root_alias)).into();
 
         QueryResultMap::create(
-            Box::new(self.query),
+            self.query.source(),
             vec![],
             result_view,
             self.alias_generator,
@@ -85,7 +85,7 @@ impl<E: EntityWithView> Fold<E::VerticalView> for QueryResultFilter<E> {
     fn fold<RV: FoldResult, F: Fn(E::VerticalView) -> RV>(self, f: F) -> FoldQueryResult<RV> {
         let result = f(E::View::pure(&self.root_alias).vertical());
 
-        FoldQueryResult::create(Box::new(self.query), result, self.alias_generator)
+        FoldQueryResult::create(self.query.source(), result, self.alias_generator)
     }
 }
 
@@ -126,7 +126,7 @@ impl<E: EntityWithView> Executable<E, TagsOfEntity<E>> for QueryResultFilter<E> 
 
         (
             Query::Select(SelectQuery::create(
-                Box::new(self.query),
+                self.query.source(),
                 self.alias_generator
                     .generate_select_list(view.collect_expr().into_iter(), true),
                 vec![],
@@ -190,7 +190,7 @@ impl<E: EntityWithView> Map<E::View> for SortedQueryResultFilter<E> {
         let result_view = f(E::View::pure(&self.nested.root_alias)).into();
 
         QueryResultMap::create(
-            Box::new(self.nested.query),
+            self.nested.query.source(),
             self.order_by,
             result_view,
             self.nested.alias_generator,
@@ -206,7 +206,7 @@ impl<E: EntityWithView> Executable<E, TagsOfEntity<E>> for SortedQueryResultFilt
 
         (
             Query::Select(SelectQuery::create(
-                Box::new(self.nested.query),
+                self.nested.query.source(),
                 self.nested
                     .alias_generator
                     .generate_select_list(view.collect_expr(), true),

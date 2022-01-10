@@ -12,16 +12,17 @@ impl Implementor for InsertImplementor {
         let entity_name = &resolved.entity_name;
         let name = &resolved.new_entity_name;
         let table_name = &resolved.table_name;
-        let (fields, iters, values, columns): (Vec<_>, Vec<_>, Vec<_>, Vec<_>) = resolved.fields.iter().fold(
-            (vec![], vec![], vec![], vec![]),
-            |(mut c_fields, mut c_iters, mut c_values, mut c_columns), field| {
-                let primary_field = field.primary;
+        let (fields, iters, values, columns): (Vec<_>, Vec<_>, Vec<_>, Vec<_>) =
+            resolved.fields.iter().fold(
+                (vec![], vec![], vec![], vec![]),
+                |(mut c_fields, mut c_iters, mut c_values, mut c_columns), field| {
+                    let primary_field = field.primary;
 
-                if !primary_field {
-                    let field_name = &field.name;
-                    let iter = format_ident!("{}_tmp", field.name.to_string().to_snake_case());
-                    let ty = &field.ty;
-                    let (v, c): (Vec<_>, Vec<_>) = field
+                    if !primary_field {
+                        let field_name = &field.name;
+                        let iter = format_ident!("{}_tmp", field.name.to_string().to_snake_case());
+                        let ty = &field.ty;
+                        let (v, c): (Vec<_>, Vec<_>) = field
                         .definition
                         .columns
                         .iter()
@@ -33,7 +34,9 @@ impl Implementor for InsertImplementor {
                                 Some((
                                     quote! {
                                         yukino::query_builder::AssignmentValue::Expr(
-                                            yukino::query_builder::Expr::Lit(#iter.next().unwrap())
+                                            Box::new(
+                                                yukino::query_builder::Expr::Lit(#iter.next().unwrap())
+                                            )
                                         )
                                     },quote! {
                                         #column_name.to_string()
@@ -43,22 +46,22 @@ impl Implementor for InsertImplementor {
 
                         })
                         .unzip();
-                    c_fields.push(quote! {pub #field_name: #ty});
+                        c_fields.push(quote! {pub #field_name: #ty});
 
-                    c_iters.push(quote! {
-                        let mut #iter = {
-                            use yukino::view::Value;
-                            self.#field_name.to_database_values().into_iter()
-                        };
-                    });
+                        c_iters.push(quote! {
+                            let mut #iter = {
+                                use yukino::view::Value;
+                                self.#field_name.to_database_values().into_iter()
+                            };
+                        });
 
-                    c_values.extend(v);
-                    c_columns.extend(c);
-                }
+                        c_values.extend(v);
+                        c_columns.extend(c);
+                    }
 
-                (c_fields, c_iters, c_values, c_columns)
-            },
-        );
+                    (c_fields, c_iters, c_values, c_columns)
+                },
+            );
 
         vec![quote! {
             pub struct #name {
