@@ -46,11 +46,11 @@ impl Implementor for ConverterImplementor {
                     }
 
                     de.push(quote! {
-                        #field_name: (*<#field_ty>::converter().deserializer())(#field_name)?
+                        #field_name: <#field_ty>::converter().deserialize(#field_name)?
                     });
 
                     ser_tmp.push(quote! {
-                        let #field_name = <#field_ty>::converter().serialize(&value.#field_name)?
+                        let #field_name = <#field_ty>::converter().serialize(value.#field_name)?
                     });
 
                     (
@@ -76,18 +76,22 @@ impl Implementor for ConverterImplementor {
                     &Self::INSTANCE
                 }
 
-                fn deserializer(&self) -> yukino::converter::Deserializer<Self::Output> {
-                    use yukino::converter::Converter;
+                fn deserialize(
+                    &self,
+                    data: yukino::generic_array::GenericArray<
+                        yukino::query_builder::DatabaseValue,
+                        yukino::view::ValueCountOf<Self::Output>
+                    >
+                ) -> yukino::converter::ConvertResult<Self::Output> {
                     use yukino::view::Value;
-                    Box::new(|rest| {
-                        #(#deserialize_tmp;)*
-                        Ok(#entity_name {
-                            #(#deserialize_branches),*
-                        })
+                    let rest = data;
+                    #(#deserialize_tmp;)*
+                    Ok(#entity_name {
+                        #(#deserialize_branches),*
                     })
                 }
 
-                fn serialize(&self, value: &Self::Output)
+                fn serialize(&self, value: Self::Output)
                     -> yukino::converter::ConvertResult<
                         yukino::generic_array::GenericArray<
                             yukino::query_builder::DatabaseValue,

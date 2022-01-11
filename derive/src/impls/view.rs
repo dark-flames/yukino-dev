@@ -160,13 +160,13 @@ impl Implementor for ViewImplementor {
 
                 fn eval(
                     &self,
-                    v: &yukino::generic_array::GenericArray<
+                    v: yukino::generic_array::GenericArray<
                         yukino::query_builder::DatabaseValue,
                         yukino::view::ValueCountOf<#entity_name>>
                 ) -> yukino::err::RuntimeResult<#entity_name> {
                     use yukino::view::Value;
                     use yukino::err::YukinoError;
-                    (*#entity_name::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
+                    #entity_name::converter().deserialize(v).map_err(|e| e.as_runtime_err())
                 }
             }
 

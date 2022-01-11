@@ -3,7 +3,9 @@ use generic_array::ArrayLength;
 use sqlx::{Database, Error, Executor, FromRow, MySql, query_as};
 use sqlx::query::QueryAs;
 
-use query_builder::{AppendToArgs, BindArgs, DatabaseValue, Query, QueryBuildState, ResultRow, ToSql};
+use query_builder::{
+    AppendToArgs, BindArgs, DatabaseValue, Query, QueryBuildState, ResultRow, ToSql,
+};
 
 use crate::view::{ExprViewBoxWithTag, TagList, Value, ValueCountOf};
 
@@ -25,10 +27,9 @@ impl ExecuteResultType for SingleRow {}
 impl ExecuteResultType for MultiRows {}
 
 #[async_trait]
-pub trait FetchOne<
-    T: Value,
-    TTags: TagList
->: Executable<T, TTags, MySql, ResultType = SingleRow> {
+pub trait FetchOne<T: Value, TTags: TagList>:
+    Executable<T, TTags, MySql, ResultType = SingleRow>
+{
     async fn exec<'c, 'e, E: 'e + Executor<'c, Database = MySql>>(
         self,
         executor: E,
@@ -37,7 +38,7 @@ pub trait FetchOne<
         Self: Sized,
         DatabaseValue: for<'q> AppendToArgs<'q, MySql>,
         <ValueCountOf<T> as ArrayLength<DatabaseValue>>::ArrayType: Unpin,
-        ResultRow<ValueCountOf<T>>: for<'r> FromRow<'r, <MySql as Database>::Row>
+        ResultRow<ValueCountOf<T>>: for<'r> FromRow<'r, <MySql as Database>::Row>,
     {
         let (query, view) = self.generate_query();
         let mut state = QueryBuildState::default();
@@ -48,7 +49,7 @@ pub trait FetchOne<
         let result = query_as.fetch_one(executor).await?;
 
         let arr = result.into();
-        view.eval(&arr).map_err(|e| Error::Decode(Box::new(e)))
+        view.eval(arr).map_err(|e| Error::Decode(Box::new(e)))
     }
 }
 
@@ -64,7 +65,7 @@ pub trait FetchMulti<T: Value, TTags: TagList>:
         Self: Sized,
         DatabaseValue: for<'q> AppendToArgs<'q, MySql>,
         <ValueCountOf<T> as ArrayLength<DatabaseValue>>::ArrayType: Unpin,
-        ResultRow<ValueCountOf<T>>: for<'r> FromRow<'r, <MySql as Database>::Row>
+        ResultRow<ValueCountOf<T>>: for<'r> FromRow<'r, <MySql as Database>::Row>,
     {
         let (query, view) = self.generate_query();
         let mut state = QueryBuildState::default();
@@ -77,17 +78,17 @@ pub trait FetchMulti<T: Value, TTags: TagList>:
             .into_iter()
             .map(|r| {
                 let arr = r.into();
-                view.eval(&arr).map_err(|e| Error::Decode(Box::new(e)))
+                view.eval(arr).map_err(|e| Error::Decode(Box::new(e)))
             })
             .collect()
     }
 }
 
-impl<T: Value, TTags: TagList, E: Executable<T, TTags, MySql, ResultType = SingleRow>> FetchOne<T, TTags>
-    for E
+impl<T: Value, TTags: TagList, E: Executable<T, TTags, MySql, ResultType = SingleRow>>
+    FetchOne<T, TTags> for E
 {
 }
-impl<T: Value, TTags: TagList, E: Executable<T, TTags, MySql, ResultType = MultiRows>> FetchMulti<T, TTags>
-    for E
+impl<T: Value, TTags: TagList, E: Executable<T, TTags, MySql, ResultType = MultiRows>>
+    FetchMulti<T, TTags> for E
 {
 }

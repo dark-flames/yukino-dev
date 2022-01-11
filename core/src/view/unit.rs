@@ -32,8 +32,10 @@ impl<Tags: TagList> ExprView<()> for UnitView<Tags> {
         arr![Expr;]
     }
 
-    fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<()>>) -> RuntimeResult<()> {
-        (*<() as Value>::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
+    fn eval(&self, v: GenericArray<DatabaseValue, ValueCountOf<()>>) -> RuntimeResult<()> {
+        <() as Value>::converter()
+            .deserialize(v)
+            .map_err(|e| e.as_runtime_err())
     }
 }
 
@@ -61,7 +63,7 @@ impl Value for () {
 }
 
 impl AnyTagsValue for () {
-    fn view_with_tags<Tags: TagList>(&self) -> ExprViewBoxWithTag<Self, Tags> {
+    fn view_with_tags<Tags: TagList>(self) -> ExprViewBoxWithTag<Self, Tags> {
         Box::new(UnitView::<Tags>(PhantomData))
     }
 }

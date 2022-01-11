@@ -273,7 +273,9 @@ impl ToSql for Expr {
 }
 
 impl<'q, DB: Database, O> BindArgs<'q, DB, O> for Expr
-    where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+where
+    DatabaseValue: for<'p> AppendToArgs<'p, DB>,
+{
     fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,

@@ -5,11 +5,16 @@ use generic_array::ArrayLength;
 use sqlx::Database;
 
 use interface::FieldMarker;
-use query_builder::{AssignmentValue, Expr, OrderByItem, Query, ResultRow, SelectFrom, UpdateQuery};
+use query_builder::{
+    AssignmentValue, Expr, OrderByItem, Query, ResultRow, SelectFrom, UpdateQuery,
+};
 
 use crate::operator::SortResult;
 use crate::query::{Executable, SingleRow, Sort};
-use crate::view::{EntityView, EntityWithView, ExprViewBox, ExprViewBoxWithTag, FieldMarkerWithView, TagList, TagsOfValueView, Value, ValueCountOf};
+use crate::view::{
+    EntityView, EntityWithView, ExprViewBox, ExprViewBoxWithTag, FieldMarkerWithView, TagList,
+    TagsOfValueView, Value, ValueCountOf,
+};
 
 pub struct UpdateQueryResult<E: EntityWithView> {
     query: UpdateQuery,
@@ -52,11 +57,12 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
         <T as Value>::L: ArrayLength<(String, Expr)>,
     {
         let result = v.into();
-        let pairs = FMarker::columns()
-            .into_iter()
-            .zip(result.collect_expr().into_iter().map(
-                |e| AssignmentValue::Expr(Box::new(e))
-            ));
+        let pairs = FMarker::columns().into_iter().zip(
+            result
+                .collect_expr()
+                .into_iter()
+                .map(|e| AssignmentValue::Expr(Box::new(e))),
+        );
 
         self.assignments.extend(pairs);
 
@@ -76,11 +82,12 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
         f: F,
     ) -> Self {
         let result = f(FMarker::view(E::View::pure(self.query.root_alias()))).into();
-        let pairs = FMarker::columns()
-            .into_iter()
-            .zip(result.collect_expr().into_iter().map(
-                |e| AssignmentValue::Expr(Box::new(e))
-            ));
+        let pairs = FMarker::columns().into_iter().zip(
+            result
+                .collect_expr()
+                .into_iter()
+                .map(|e| AssignmentValue::Expr(Box::new(e))),
+        );
 
         self.assignments.extend(pairs);
 
@@ -121,8 +128,10 @@ impl<E: EntityWithView> Sort<E::View> for UpdateQueryResult<E> {
     }
 }
 
-impl<E: EntityWithView, DB: Database> Executable<(), TagsOfValueView<()>, DB> for UpdateQueryResult<E>
-    where UpdateQuery: Query<DB, ResultRow<ValueCountOf<()>>>
+impl<E: EntityWithView, DB: Database> Executable<(), TagsOfValueView<()>, DB>
+    for UpdateQueryResult<E>
+where
+    UpdateQuery: Query<DB, ResultRow<ValueCountOf<()>>>,
 {
     type ResultType = SingleRow;
     type Query = UpdateQuery;

@@ -45,8 +45,10 @@ impl<T: Value<L = U1>, TTags: TagList + SetBit<OffsetOfTag<AggregateViewTag>, Tr
         )))]
     }
 
-    fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<T>>) -> RuntimeResult<T> {
-        (*T::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
+    fn eval(&self, v: GenericArray<DatabaseValue, ValueCountOf<T>>) -> RuntimeResult<T> {
+        T::converter()
+            .deserialize(v)
+            .map_err(|e| e.as_runtime_err())
     }
 }
 

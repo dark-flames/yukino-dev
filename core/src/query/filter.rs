@@ -4,7 +4,10 @@ use std::marker::PhantomData;
 use sqlx::Database;
 
 use interface::{Association, FieldMarker, WithPrimaryKey};
-use query_builder::{Alias, Expr, IntoSelectSource, OrderByItem, Query, ResultRow, Select, SelectFrom, SelectItem, SelectQuery};
+use query_builder::{
+    Alias, Expr, IntoSelectSource, OrderByItem, Query, ResultRow, Select, SelectFrom, SelectItem,
+    SelectQuery,
+};
 
 use crate::operator::{In, SortResult};
 use crate::query::{
@@ -12,7 +15,11 @@ use crate::query::{
     FoldQueryResult, FoldResult, GroupBy, GroupedQueryResult, GroupResult, Map, MultiRows,
     QueryResultMap, Sort, Update, UpdateQueryResult,
 };
-use crate::view::{AssociatedView, EntityView, EntityWithView, ExprBoxOfAssociatedView, ExprView, ExprViewBoxWithTag, FieldMarkerWithView, TagList, TagOfMarker, TagsOfEntity, TypeOfMarker, Value, ValueCountOf, ViewWithPrimaryKey};
+use crate::view::{
+    AssociatedView, EntityView, EntityWithView, ExprBoxOfAssociatedView, ExprView,
+    ExprViewBoxWithTag, FieldMarkerWithView, TagList, TagOfMarker, TagsOfEntity, TypeOfMarker,
+    Value, ValueCountOf, ViewWithPrimaryKey,
+};
 
 pub struct QueryResultFilter<E: EntityWithView> {
     query: SelectFrom,
@@ -115,7 +122,9 @@ impl<E: EntityWithView> Sort<E::View> for QueryResultFilter<E> {
 }
 
 impl<E: EntityWithView, DB: Database> Executable<E, TagsOfEntity<E>, DB> for QueryResultFilter<E>
-    where SelectQuery: Query<DB, ResultRow<ValueCountOf<E>>>{
+where
+    SelectQuery: Query<DB, ResultRow<ValueCountOf<E>>>,
+{
     type ResultType = MultiRows;
     type Query = SelectQuery;
 
@@ -196,8 +205,11 @@ impl<E: EntityWithView> Map<E::View> for SortedQueryResultFilter<E> {
     }
 }
 
-impl<E: EntityWithView, DB: Database> Executable<E, TagsOfEntity<E>, DB> for SortedQueryResultFilter<E>
-    where SelectQuery: Query<DB, ResultRow<ValueCountOf<E>>> {
+impl<E: EntityWithView, DB: Database> Executable<E, TagsOfEntity<E>, DB>
+    for SortedQueryResultFilter<E>
+where
+    SelectQuery: Query<DB, ResultRow<ValueCountOf<E>>>,
+{
     type ResultType = MultiRows;
     type Query = SelectQuery;
 
@@ -281,6 +293,6 @@ where
     fn build_from_parent_entities(
         primary_keys: Vec<TypeOfMarker<ForeignField>>,
     ) -> QueryResultFilter<Children> {
-        Children::all().filter(|view| view.foreign_key().clone().in_arr(&primary_keys))
+        Children::all().filter(|view| view.foreign_key().clone().in_arr(primary_keys.clone()))
     }
 }

@@ -4,7 +4,10 @@ use sqlx::Database;
 use sqlx::database::HasArguments;
 use sqlx::query::QueryAs;
 
-use crate::{Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Expr, OrderByItem, Query, QueryBuildState, ToSql};
+use crate::{
+    Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Expr, OrderByItem, Query,
+    QueryBuildState, ToSql,
+};
 
 pub struct Update;
 
@@ -86,7 +89,10 @@ impl ToSql for AssignmentValue {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for AssignmentValue where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for AssignmentValue
+where
+    DatabaseValue: for<'p> AppendToArgs<'p, DB>,
+{
     fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
@@ -107,7 +113,10 @@ impl ToSql for AssignmentItem {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for AssignmentItem where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for AssignmentItem
+where
+    DatabaseValue: for<'p> AppendToArgs<'p, DB>,
+{
     fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
@@ -142,7 +151,10 @@ impl ToSql for UpdateQuery {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for UpdateQuery where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for UpdateQuery
+where
+    DatabaseValue: for<'p> AppendToArgs<'p, DB>,
+{
     fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,

@@ -90,8 +90,10 @@ impl ExprView<bool> for InSubqueryView {
         arr![Expr; Expr::In(Box::new(self.expr.clone()), self.subquery.clone())]
     }
 
-    fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<bool>>) -> RuntimeResult<bool> {
-        (*bool::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
+    fn eval(&self, v: GenericArray<DatabaseValue, ValueCountOf<bool>>) -> RuntimeResult<bool> {
+        bool::converter()
+            .deserialize(v)
+            .map_err(|e| e.as_runtime_err())
     }
 }
 
@@ -113,8 +115,10 @@ impl ExprView<bool> for ExistsView {
         arr![Expr; Expr::Exists(self.subquery.clone())]
     }
 
-    fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<bool>>) -> RuntimeResult<bool> {
-        (*bool::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
+    fn eval(&self, v: GenericArray<DatabaseValue, ValueCountOf<bool>>) -> RuntimeResult<bool> {
+        bool::converter()
+            .deserialize(v)
+            .map_err(|e| e.as_runtime_err())
     }
 }
 
@@ -136,8 +140,10 @@ impl ExprView<bool> for NotExistsView {
         arr![Expr; Expr::NotExists(self.subquery.clone())]
     }
 
-    fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<bool>>) -> RuntimeResult<bool> {
-        (*bool::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
+    fn eval(&self, v: GenericArray<DatabaseValue, ValueCountOf<bool>>) -> RuntimeResult<bool> {
+        bool::converter()
+            .deserialize(v)
+            .map_err(|e| e.as_runtime_err())
     }
 }
 

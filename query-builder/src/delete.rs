@@ -4,7 +4,10 @@ use sqlx::Database;
 use sqlx::database::HasArguments;
 use sqlx::query::QueryAs;
 
-use crate::{Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Expr, OrderByItem, Query, QueryBuildState, ToSql};
+use crate::{
+    Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Expr, OrderByItem, Query,
+    QueryBuildState, ToSql,
+};
 
 pub struct Delete;
 
@@ -77,7 +80,10 @@ impl ToSql for DeleteQuery {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for DeleteQuery where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for DeleteQuery
+where
+    DatabaseValue: for<'p> AppendToArgs<'p, DB>,
+{
     fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,

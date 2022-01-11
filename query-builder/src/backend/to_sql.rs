@@ -16,19 +16,17 @@ pub type QueryOf<'q, DB, O> = QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Argum
 pub trait ArgSource<'q, DB: Database, O> {
     fn insert_value_count() -> usize;
 
-    fn bind_args(
-        self,
-        query: QueryOf<'q, DB, O>
-    ) -> QueryOf<'q, DB, O> where Self: Sized;
+    fn bind_args(self, query: QueryOf<'q, DB, O>) -> QueryOf<'q, DB, O>
+    where
+        Self: Sized;
 }
 
-pub trait ArgSourceList<'q, DB: Database, O>:  {
+pub trait ArgSourceList<'q, DB: Database, O> {
     fn query_part(&self) -> String;
 
-    fn bind_args(
-        self,
-        query: QueryOf<'q, DB, O>
-    ) -> QueryOf<'q, DB, O> where Self: Sized;
+    fn bind_args(self, query: QueryOf<'q, DB, O>) -> QueryOf<'q, DB, O>
+    where
+        Self: Sized;
 }
 
 pub trait BindArgs<'q, DB: Database, O> {
@@ -38,7 +36,9 @@ pub trait BindArgs<'q, DB: Database, O> {
     ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>;
 }
 
-impl<'q, DB: Database, O, I: BindArgs<'q, DB, O>, L: IntoIterator<Item = I>> BindArgs<'q, DB, O> for L {
+impl<'q, DB: Database, O, I: BindArgs<'q, DB, O>, L: IntoIterator<Item = I>> BindArgs<'q, DB, O>
+    for L
+{
     fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
@@ -53,16 +53,17 @@ impl<'q, DB: Database, O, S: ArgSource<'q, DB, O>> ArgSourceList<'q, DB, O> for 
             "({})",
             repeat("?")
                 .take(S::insert_value_count())
-                .collect::<Vec<_>>().join(",")
+                .collect::<Vec<_>>()
+                .join(",")
         );
 
         repeat(row).take(self.len()).collect::<Vec<_>>().join(",")
     }
 
-    fn bind_args(self, query: QueryOf<'q, DB, O>) -> QueryOf<'q, DB, O> where Self: Sized {
-        self.into_iter().fold(
-            query,
-            |q, l| l.bind_args(q)
-        )
+    fn bind_args(self, query: QueryOf<'q, DB, O>) -> QueryOf<'q, DB, O>
+    where
+        Self: Sized,
+    {
+        self.into_iter().fold(query, |q, l| l.bind_args(q))
     }
 }

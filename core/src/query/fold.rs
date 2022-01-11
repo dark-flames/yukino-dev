@@ -52,8 +52,11 @@ impl<View: FoldResult> Map<View> for FoldQueryResult<View> {
     }
 }
 
-impl<View: FoldResult, DB: Database> Executable<View::Value, View::Tags, DB> for FoldQueryResult<View>
-    where SelectQuery: Query<DB, ResultRow<ValueCountOf<View::Value>>> {
+impl<View: FoldResult, DB: Database> Executable<View::Value, View::Tags, DB>
+    for FoldQueryResult<View>
+where
+    SelectQuery: Query<DB, ResultRow<ValueCountOf<View::Value>>>,
+{
     type ResultType = SingleRow;
     type Query = SelectQuery;
 
@@ -115,8 +118,10 @@ impl<T: Value<L = U1>, View: FoldResult<Value = T>> ExprView<T> for FoldQueryRes
         arr![Expr; Expr::Subquery(self.subquery())]
     }
 
-    fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<T>>) -> RuntimeResult<T> {
-        (*T::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
+    fn eval(&self, v: GenericArray<DatabaseValue, ValueCountOf<T>>) -> RuntimeResult<T> {
+        T::converter()
+            .deserialize(v)
+            .map_err(|e| e.as_runtime_err())
     }
 }
 

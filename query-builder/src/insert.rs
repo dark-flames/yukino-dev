@@ -13,7 +13,7 @@ pub struct InsertQuery<DB: Database, O, S: for<'q> ArgSourceList<'q, DB, O>> {
     table: String,
     columns: Vec<String>,
     values: S,
-    _db: PhantomData<(DB, O)>
+    _db: PhantomData<(DB, O)>,
 }
 
 unsafe impl<DB: Database, O, S: for<'q> ArgSourceList<'q, DB, O>> Send for InsertQuery<DB, O, S> {}
@@ -21,13 +21,15 @@ unsafe impl<DB: Database, O, S: for<'q> ArgSourceList<'q, DB, O>> Sync for Inser
 
 impl Insert {
     pub fn into<DB: Database, O, S: for<'q> ArgSourceList<'q, DB, O>>(
-        table: String, columns: Vec<String>, values: S
+        table: String,
+        columns: Vec<String>,
+        values: S,
     ) -> InsertQuery<DB, O, S> {
         InsertQuery {
             table,
             columns,
             values,
-            _db: Default::default()
+            _db: Default::default(),
         }
     }
 }
@@ -41,8 +43,10 @@ impl<DB: Database, O, S: for<'q> ArgSourceList<'q, DB, O>> ToSql for InsertQuery
     }
 }
 
-impl<'q, DB: Database, O, S: for<'p> ArgSourceList<'p, DB, O>> BindArgs<'q, DB, O> for InsertQuery<DB, O, S>
-    where DatabaseValue: for<'p> AppendToArgs<'p, DB>
+impl<'q, DB: Database, O, S: for<'p> ArgSourceList<'p, DB, O>> BindArgs<'q, DB, O>
+    for InsertQuery<DB, O, S>
+where
+    DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
     fn bind_args(
         self,
@@ -53,7 +57,9 @@ impl<'q, DB: Database, O, S: for<'p> ArgSourceList<'p, DB, O>> BindArgs<'q, DB, 
 }
 
 impl<DB: Database, O, S: for<'q> ArgSourceList<'q, DB, O>> Display for InsertQuery<DB, O, S>
-    where DatabaseValue: for<'q> AppendToArgs<'q, DB> {
+where
+    DatabaseValue: for<'q> AppendToArgs<'q, DB>,
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut state = QueryBuildState::default();
         self.to_sql(&mut state)?;
@@ -61,5 +67,7 @@ impl<DB: Database, O, S: for<'q> ArgSourceList<'q, DB, O>> Display for InsertQue
     }
 }
 
-impl<DB: Database, O, S: for<'q> ArgSourceList<'q, DB, O>> Query<DB, O> for InsertQuery<DB, O, S>
-    where DatabaseValue: for<'q> AppendToArgs<'q, DB> {}
+impl<DB: Database, O, S: for<'q> ArgSourceList<'q, DB, O>> Query<DB, O> for InsertQuery<DB, O, S> where
+    DatabaseValue: for<'q> AppendToArgs<'q, DB>
+{
+}

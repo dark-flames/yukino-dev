@@ -73,24 +73,64 @@ pub trait BelongsToEntities<Parent: EntityWithView>: EntityWithView {
     }
 }
 
-pub trait JoinChildren<Children: EntityWithView, Parent: EntityWithView> {
+pub trait RightSideData {
+    type Children: EntityWithView;
+
+    fn children(&self) -> &Self::Children;
+}
+
+impl<Children: EntityWithView> RightSideData for Children {
+    type Children = Children;
+
+    fn children(&self) -> &Self::Children {
+        self
+    }
+}
+
+macro_rules! impl_right_side_data_for_tuple {
+    [$($param: ident),*] => {
+        impl<Children: EntityWithView, $($param),* > RightSideData for (Children, $($param),*) {
+            type Children = Children;
+
+            fn children(&self) -> &Self::Children {
+                &self.0
+            }
+        }
+    };
+}
+
+impl_right_side_data_for_tuple![T1];
+impl_right_side_data_for_tuple![T1, T2];
+impl_right_side_data_for_tuple![T1, T2, T3];
+impl_right_side_data_for_tuple![T1, T2, T3, T4];
+impl_right_side_data_for_tuple![T1, T2, T3, T4, T5];
+
+pub trait JoinChildren<
+    Children: EntityWithView,
+    Parent: EntityWithView,
+    Right: RightSideData<Children = Children>,
+>
+{
     fn join<ForeignField: FieldMarkerWithView + FieldMarker<Entity = Children>>(
         self,
-        children: Vec<Children>,
-    ) -> Vec<(Parent, Vec<Children>)>
+        right: Vec<Right>,
+    ) -> Vec<(Parent, Vec<Right>)>
     where
         Children: Association<Parent, ForeignField, ForeignKeyType = TypeOfMarker<ForeignField>>,
         Parent: WithPrimaryKey<PrimaryKeyType = TypeOfMarker<ForeignField>>,
         TypeOfMarker<ForeignField>: Value + Ord + Hash;
 }
 
-impl<Children: EntityWithView, Parent: EntityWithView> JoinChildren<Children, Parent>
-    for Vec<Parent>
+impl<
+        Children: EntityWithView,
+        Parent: EntityWithView,
+        Right: RightSideData<Children = Children>,
+    > JoinChildren<Children, Parent, Right> for Vec<Parent>
 {
     fn join<ForeignField: FieldMarkerWithView + FieldMarker<Entity = Children>>(
         self,
-        children: Vec<Children>,
-    ) -> Vec<(Parent, Vec<Children>)>
+        right: Vec<Right>,
+    ) -> Vec<(Parent, Vec<Right>)>
     where
         Children: Association<Parent, ForeignField, ForeignKeyType = TypeOfMarker<ForeignField>>,
         Parent: WithPrimaryKey<PrimaryKeyType = TypeOfMarker<ForeignField>>,
@@ -101,16 +141,16 @@ impl<Children: EntityWithView, Parent: EntityWithView> JoinChildren<Children, Pa
             .map(|p| (p.primary_key().clone(), p))
             .collect();
 
-        let mut grouped_children: BTreeMap<PrimaryKeyTypeOf<Parent>, Vec<Children>> = parent
+        let mut grouped_children: BTreeMap<PrimaryKeyTypeOf<Parent>, Vec<Right>> = parent
             .values()
             .map(|p| (p.primary_key().clone(), vec![]))
             .collect();
 
-        for child in children {
+        for r_i in right {
             grouped_children
-                .get_mut(child.foreign_key())
+                .get_mut(r_i.children().foreign_key())
                 .unwrap()
-                .push(child);
+                .push(r_i);
         }
 
         parent

@@ -4,7 +4,9 @@ use generic_array::{arr, GenericArray};
 use generic_array::typenum::U1;
 use sqlx::Database;
 
-use query_builder::{DatabaseValue, Expr, OrderByItem, Query, ResultRow, SelectQuery, SelectSource};
+use query_builder::{
+    DatabaseValue, Expr, OrderByItem, Query, ResultRow, SelectQuery, SelectSource,
+};
 
 use crate::err::{RuntimeResult, YukinoError};
 use crate::query::{AliasGenerator, Executable, ExecuteResultType, SingleRow};
@@ -62,7 +64,8 @@ impl<R: Value, RTags: TagList, ResultType: ExecuteResultType> QueryResultMap<R, 
 
 impl<R: Value, RTags: TagList, ResultType: ExecuteResultType, DB: Database> Executable<R, RTags, DB>
     for QueryResultMap<R, RTags, ResultType>
-    where SelectQuery: Query<DB, ResultRow<ValueCountOf<R>>>
+where
+    SelectQuery: Query<DB, ResultRow<ValueCountOf<R>>>,
 {
     type ResultType = ResultType;
     type Query = SelectQuery;
@@ -121,8 +124,10 @@ impl<T: Value<L = U1>, TTags: TagList> ExprView<T> for QueryResultMap<T, TTags, 
         arr![Expr; Expr::Subquery(self.subquery())]
     }
 
-    fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<T>>) -> RuntimeResult<T> {
-        (*T::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
+    fn eval(&self, v: GenericArray<DatabaseValue, ValueCountOf<T>>) -> RuntimeResult<T> {
+        T::converter()
+            .deserialize(v)
+            .map_err(|e| e.as_runtime_err())
     }
 }
 

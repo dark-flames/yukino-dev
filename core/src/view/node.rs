@@ -18,7 +18,7 @@ pub trait ExprView<T: Value>: Send + Sync {
 
     fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<T>>;
 
-    fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<T>>) -> RuntimeResult<T>;
+    fn eval(&self, v: GenericArray<DatabaseValue, ValueCountOf<T>>) -> RuntimeResult<T>;
 }
 
 pub trait AnyTagExprView<T: Value>: ExprView<T> {

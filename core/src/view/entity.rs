@@ -102,7 +102,9 @@ pub trait Insertable<DB: Database, O>: for<'q> ArgSource<'q, DB, O> {
     type Entity: EntityWithView;
     type Source: for<'q> ArgSourceList<'q, DB, O>;
 
-    fn insert(self) -> InsertQuery<DB, O, Self::Source> where Self: Sized;
+    fn insert(self) -> InsertQuery<DB, O, Self::Source>
+    where
+        Self: Sized;
 
     fn columns() -> Vec<String>
     where

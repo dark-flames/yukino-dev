@@ -53,8 +53,11 @@ impl<E: EntityWithView> Sort<E::View> for DeleteQueryResult<E> {
     }
 }
 
-impl<E: EntityWithView, DB: Database> Executable<(), TagsOfValueView<()>, DB> for DeleteQueryResult<E>
-    where DeleteQuery: Query<DB, ResultRow<ValueCountOf<()>>> {
+impl<E: EntityWithView, DB: Database> Executable<(), TagsOfValueView<()>, DB>
+    for DeleteQueryResult<E>
+where
+    DeleteQuery: Query<DB, ResultRow<ValueCountOf<()>>>,
+{
     type ResultType = MultiRows;
     type Query = DeleteQuery;
 

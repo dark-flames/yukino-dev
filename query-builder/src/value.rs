@@ -3,7 +3,9 @@ use std::fmt::{Display, Formatter};
 
 use generic_array::{ArrayLength, GenericArray};
 use serde_json::Value;
-use sqlx::{ColumnIndex, Database, Decode, Encode, Error, FromRow, Row, Type, TypeInfo, ValueRef};
+use sqlx::{
+    Column, ColumnIndex, Database, Decode, Encode, Error, FromRow, Row, Type, TypeInfo, ValueRef,
+};
 use sqlx::database::{HasArguments, HasValueRef};
 use sqlx::error::BoxDynError;
 use sqlx::query::QueryAs;
@@ -113,7 +115,10 @@ impl ToSql for DatabaseValue {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for DatabaseValue where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for DatabaseValue
+where
+    DatabaseValue: for<'p> AppendToArgs<'p, DB>,
+{
     fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
@@ -298,12 +303,9 @@ where
 {
     fn from_row(row: &'r R) -> Result<Self, Error> {
         let mut data: GenericArray<DatabaseValue, L> = GenericArray::default();
-        for (idx, value) in data.iter_mut().enumerate() {
-            let name = format!("r{}", idx);
-            let value_ref = row.try_get_raw(name.as_str()).unwrap();
-            *value = DatabaseValue::decode(value_ref).map_err(
-                Error::Decode
-            )?;
+
+        for (idx, column) in row.columns().iter().enumerate() {
+            data[idx] = row.try_get_unchecked(column.name())?;
         }
 
         Ok(data.into())

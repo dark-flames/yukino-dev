@@ -33,7 +33,7 @@ pub trait Value: 'static + Clone + Debug + Send + Sync {
     where
         Self: Sized;
 
-    fn view(&self) -> ExprViewBox<Self>
+    fn view(self) -> ExprViewBox<Self>
     where
         Self: Sized,
     {
@@ -47,13 +47,13 @@ pub trait Value: 'static + Clone + Debug + Send + Sync {
         Self::ValueExprView::from_exprs(exprs)
     }
 
-    fn to_database_values(&self) -> GenericArray<DatabaseValue, Self::L> {
+    fn to_database_values(self) -> GenericArray<DatabaseValue, Self::L> {
         Self::converter().serialize(self).unwrap()
     }
 }
 
 pub trait AnyTagsValue: Value {
-    fn view_with_tags<Tags: TagList>(&self) -> ExprViewBoxWithTag<Self, Tags>;
+    fn view_with_tags<Tags: TagList>(self) -> ExprViewBoxWithTag<Self, Tags>;
 }
 
 #[derive(Debug, Clone)]
@@ -89,8 +89,10 @@ impl<T: Value<L = U1>, Tags: TagList> ExprView<T> for SingleExprView<T, Tags> {
         arr![Expr; self.expr.clone()]
     }
 
-    fn eval(&self, v: &GenericArray<DatabaseValue, U1>) -> RuntimeResult<T> {
-        (*T::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
+    fn eval(&self, v: GenericArray<DatabaseValue, U1>) -> RuntimeResult<T> {
+        T::converter()
+            .deserialize(v)
+            .map_err(|e| e.as_runtime_err())
     }
 }
 
@@ -123,7 +125,7 @@ macro_rules! impl_value {
         }
 
         impl AnyTagsValue for $ty {
-            fn view_with_tags<Tags: TagList>(&self) -> ExprViewBoxWithTag<Self, Tags> {
+            fn view_with_tags<Tags: TagList>(self) -> ExprViewBoxWithTag<Self, Tags> {
                 Box::new(SingleExprView {
                     expr: Self::converter()
                         .serialize(self)

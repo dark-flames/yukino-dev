@@ -3,7 +3,9 @@ use std::ops::{Add, Sub};
 
 use sqlx::Database;
 
-use query_builder::{Alias, Expr, GroupSelect, IntoSelectSource, OrderByItem, Query, ResultRow, SelectQuery};
+use query_builder::{
+    Alias, Expr, GroupSelect, IntoSelectSource, OrderByItem, Query, ResultRow, SelectQuery,
+};
 
 use crate::operator::SortResult;
 use crate::query::{
@@ -195,11 +197,11 @@ impl<View: GroupResult, E: EntityWithView> Sort<View> for GroupedQueryResult<Vie
 
 impl<View: GroupResult, E: EntityWithView, DB: Database> Executable<View::Value, View::Tags, DB>
     for GroupedQueryResult<View, (), E>
-    where SelectQuery: Query<DB, ResultRow<ValueCountOf<View::Value>>>
+where
+    SelectQuery: Query<DB, ResultRow<ValueCountOf<View::Value>>>,
 {
     type ResultType = MultiRows;
     type Query = SelectQuery;
-
 
     fn generate_query(self) -> (Self::Query, ExprViewBoxWithTag<View::Value, View::Tags>) {
         (
@@ -241,7 +243,6 @@ where
 {
     type ResultType = MultiRows;
     type Query = SelectQuery;
-
 
     fn generate_query(self) -> (Self::Query, ResultExprViewBox<View, AggregateView>) {
         (
@@ -325,7 +326,8 @@ impl<View: GroupResult, E: EntityWithView> Map<View> for SortedGroupedQueryResul
 
 impl<View: GroupResult, E: EntityWithView, DB: Database> Executable<View::Value, View::Tags, DB>
     for SortedGroupedQueryResult<View, (), E>
-    where SelectQuery: Query<DB, ResultRow<ValueCountOf<View::Value>>>
+where
+    SelectQuery: Query<DB, ResultRow<ValueCountOf<View::Value>>>,
 {
     type ResultType = MultiRows;
     type Query = SelectQuery;
@@ -363,7 +365,6 @@ where
 {
     type ResultType = MultiRows;
     type Query = SelectQuery;
-
 
     fn generate_query(self) -> (Self::Query, ResultExprViewBox<View, AggregateView>) {
         (

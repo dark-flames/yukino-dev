@@ -1,5 +1,4 @@
 use generic_array::{arr, GenericArray};
-use generic_array::typenum::U1;
 use iroha::ToTokens;
 use sqlx::types::Decimal;
 use sqlx::types::time::{Date, PrimitiveDateTime, Time};
@@ -7,7 +6,7 @@ use sqlx::types::time::{Date, PrimitiveDateTime, Time};
 use interface::DatabaseType;
 use query_builder::DatabaseValue;
 
-use crate::converter::{Converter, ConverterInstance, ConvertResult, Deserializer};
+use crate::converter::{Converter, ConverterInstance, ConvertResult};
 use crate::err::ConvertError;
 use crate::view::ValueCountOf;
 
@@ -27,19 +26,19 @@ macro_rules! basic_ty_converter {
                 &Self::INSTANCE
             }
 
-            fn deserializer(
+           fn deserialize(
                 &self,
-            ) -> Deserializer<Self::Output> {
-                Box::new(|v| {
-                    match v.iter().next().unwrap() {
-                        DatabaseValue::$enum_variant(nested) => Ok(nested.clone()),
-                        _ => Err(ConvertError::UnexpectedValueType)
-                    }
-                })
+                data: GenericArray<DatabaseValue, ValueCountOf<Self::Output>>
+            ) -> ConvertResult<Self::Output> {
+                let [v]: [DatabaseValue; 1] = data.into();
+                match v {
+                    DatabaseValue::$enum_variant(nested) => Ok(nested),
+                    _ => Err(ConvertError::UnexpectedValueType)
+                }
             }
 
-            fn serialize(&self, value: &Self::Output) -> ConvertResult<GenericArray<DatabaseValue, ValueCountOf<Self::Output>>> {
-                Ok(arr![DatabaseValue; DatabaseValue::$enum_variant(value.clone())])
+            fn serialize(&self, value: Self::Output) -> ConvertResult<GenericArray<DatabaseValue, ValueCountOf<Self::Output>>> {
+                Ok(arr![DatabaseValue; DatabaseValue::$enum_variant(value)])
             }
         }
 
@@ -65,19 +64,21 @@ macro_rules! optional_basic_ty_converter {
                 &Self::INSTANCE
             }
 
-            fn deserializer(
+            fn deserialize(
                 &self,
-            ) -> Box<dyn Fn(&GenericArray<DatabaseValue, U1>) -> ConvertResult<Self::Output>> {
-                Box::new(|v| match v.iter().next().unwrap() {
-                    DatabaseValue::$enum_variant(nested) => Ok(Some(nested.clone())),
+                data: GenericArray<DatabaseValue, ValueCountOf<Self::Output>>
+            ) -> ConvertResult<Self::Output> {
+                let [v]: [DatabaseValue; 1] = data.into();
+                match v {
+                    DatabaseValue::$enum_variant(nested) => Ok(Some(nested)),
                     DatabaseValue::Null(DatabaseType::$enum_variant) => Ok(None),
-                    _ => Err(ConvertError::UnexpectedValueType),
-                })
+                    _ => Err(ConvertError::UnexpectedValueType)
+                }
             }
 
-            fn serialize(&self, value: &Self::Output) -> ConvertResult<GenericArray<DatabaseValue, ValueCountOf<Self::Output>>> {
+            fn serialize(&self, value: Self::Output) -> ConvertResult<GenericArray<DatabaseValue, ValueCountOf<Self::Output>>> {
                 if let Some(nested) = value {
-                    Ok(arr![DatabaseValue; DatabaseValue::$enum_variant(nested.clone())])
+                    Ok(arr![DatabaseValue; DatabaseValue::$enum_variant(nested)])
                 } else {
                     Ok(arr![DatabaseValue; DatabaseValue::Null(DatabaseType::$enum_variant)])
                 }

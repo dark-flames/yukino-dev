@@ -2,7 +2,7 @@ use generic_array::{arr, GenericArray};
 
 use query_builder::DatabaseValue;
 
-use crate::converter::{Converter, ConverterInstance, ConvertResult, Deserializer};
+use crate::converter::{Converter, ConverterInstance, ConvertResult};
 use crate::view::ValueCountOf;
 
 pub struct UnitConverter;
@@ -17,13 +17,16 @@ impl Converter for UnitConverter {
         &<Self as ConverterInstance>::INSTANCE
     }
 
-    fn deserializer(&self) -> Deserializer<Self::Output> {
-        Box::new(|_v| Ok(()))
+    fn deserialize(
+        &self,
+        _data: GenericArray<DatabaseValue, ValueCountOf<Self::Output>>,
+    ) -> ConvertResult<Self::Output> {
+        Ok(())
     }
 
     fn serialize(
         &self,
-        _value: &Self::Output,
+        _value: Self::Output,
     ) -> ConvertResult<GenericArray<DatabaseValue, ValueCountOf<Self::Output>>> {
         Ok(arr![DatabaseValue;])
     }

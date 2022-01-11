@@ -61,7 +61,10 @@ impl ToSql for Join {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for Join where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for Join
+where
+    DatabaseValue: for<'p> AppendToArgs<'p, DB>,
+{
     fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,

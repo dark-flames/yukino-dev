@@ -53,8 +53,10 @@ where
         Concat::concat(self.0.collect_expr(), self.1.collect_expr())
     }
 
-    fn eval(&self, v: &GenericArray<DatabaseValue, ValueCountOf<(L, R)>>) -> RuntimeResult<(L, R)> {
-        (*<(L, R)>::converter().deserializer())(v).map_err(|e| e.as_runtime_err())
+    fn eval(&self, v: GenericArray<DatabaseValue, ValueCountOf<(L, R)>>) -> RuntimeResult<(L, R)> {
+        <(L, R)>::converter()
+            .deserialize(v)
+            .map_err(|e| e.as_runtime_err())
     }
 }
 

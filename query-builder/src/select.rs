@@ -4,7 +4,10 @@ use sqlx::Database;
 use sqlx::database::HasArguments;
 use sqlx::query::QueryAs;
 
-use crate::{Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Delete, Expr, Join, Query, QueryBuildState, ToSql, Update, UpdateQuery};
+use crate::{
+    Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Delete, Expr, Join, Query,
+    QueryBuildState, ToSql, Update, UpdateQuery,
+};
 use crate::delete::DeleteQuery;
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -367,7 +370,10 @@ impl ToSql for OrderByItem {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for OrderByItem where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for OrderByItem
+where
+    DatabaseValue: for<'p> AppendToArgs<'p, DB>,
+{
     fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
@@ -403,7 +409,10 @@ impl ToSql for SelectSource {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SelectSource where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SelectSource
+where
+    DatabaseValue: for<'p> AppendToArgs<'p, DB>,
+{
     fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
@@ -415,7 +424,10 @@ impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SelectSource where DatabaseVal
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SelectFrom where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SelectFrom
+where
+    DatabaseValue: for<'p> AppendToArgs<'p, DB>,
+{
     fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
@@ -442,7 +454,10 @@ impl ToSql for GroupSelect {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for GroupSelect where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for GroupSelect
+where
+    DatabaseValue: for<'p> AppendToArgs<'p, DB>,
+{
     fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
@@ -464,7 +479,10 @@ impl ToSql for SelectItem {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SelectItem where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SelectItem
+where
+    DatabaseValue: for<'p> AppendToArgs<'p, DB>,
+{
     fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
@@ -499,7 +517,10 @@ impl ToSql for SelectQuery {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SelectQuery where DatabaseValue: for<'p> AppendToArgs<'p, DB> {
+impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SelectQuery
+where
+    DatabaseValue: for<'p> AppendToArgs<'p, DB>,
+{
     fn bind_args(
         self,
         query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,

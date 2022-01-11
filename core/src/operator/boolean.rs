@@ -37,15 +37,18 @@ impl<T: Value + ExprNot, Tags: TagList> Not for ExprViewBoxWithTag<T, Tags> {
 }
 
 pub trait ExprIn: Value {
-    fn expr_in_arr<Tags: TagList>(
+    fn expr_in_arr<Tags: TagList, L: IntoIterator<Item = Self>>(
         e: ExprViewBoxWithTag<Self, Tags>,
-        arr: &[Self],
+        arr: L,
     ) -> ExprViewBoxWithTag<bool, Tags>;
 }
 
 pub trait In<T: Value> {
     type OutputTags: TagList;
-    fn in_arr(self, arr: &[T]) -> ExprViewBoxWithTag<bool, Self::OutputTags>;
+    fn in_arr<L: IntoIterator<Item = T>>(
+        self,
+        arr: L,
+    ) -> ExprViewBoxWithTag<bool, Self::OutputTags>;
 }
 
 impl<T: Value, TTags: TagList> In<T> for ExprViewBoxWithTag<T, TTags>
@@ -54,7 +57,10 @@ where
 {
     type OutputTags = TTags;
 
-    fn in_arr(self, arr: &[T]) -> ExprViewBoxWithTag<bool, Self::OutputTags> {
+    fn in_arr<L: IntoIterator<Item = T>>(
+        self,
+        arr: L,
+    ) -> ExprViewBoxWithTag<bool, Self::OutputTags> {
         T::expr_in_arr(self, arr)
     }
 }
@@ -112,12 +118,12 @@ macro_rules! impl_expr_in_for {
     ([$($ty: ty),*])  => {
         $(
         impl ExprIn for $ty {
-            fn expr_in_arr<Tags: TagList>(
+            fn expr_in_arr<Tags: TagList, L: IntoIterator<Item=Self>>(
                 e: ExprViewBoxWithTag<Self, Tags>,
-                arr: &[Self]
+                arr: L
             ) -> ExprViewBoxWithTag<bool, Tags> {
                 let mut expr_iter = e.collect_expr().zip(
-                    arr.iter().map(
+                    arr.into_iter().map(
                         |item| (*Self::converter()).serialize(item).unwrap()
                     ).fold(
                         GenericArray::<Vec<DatabaseValue>, ValueCountOf<Self>>::default(),

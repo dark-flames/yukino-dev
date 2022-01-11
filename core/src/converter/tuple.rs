@@ -9,7 +9,7 @@ use generic_array::{
 
 use query_builder::DatabaseValue;
 
-use crate::converter::{Converter, ConverterInstance, ConvertResult, Deserializer};
+use crate::converter::{Converter, ConverterInstance, ConvertResult};
 use crate::view::{MergeList, TagsOfValueView, Value, ValueCount, ValueCountOf};
 
 pub struct TupleConverter<L: Value, R: Value>(PhantomData<(L, R)>);
@@ -30,23 +30,24 @@ where
         &Self::INSTANCE
     }
 
-    fn deserializer(&self) -> Deserializer<Self::Output> {
-        Box::new(|v| {
-            let (v1, v2) = Split::split(v);
-            Ok((
-                (*L::converter().deserializer())(v1)?,
-                (*R::converter().deserializer())(v2)?,
-            ))
-        })
+    fn deserialize(
+        &self,
+        data: GenericArray<DatabaseValue, ValueCountOf<Self::Output>>,
+    ) -> ConvertResult<Self::Output> {
+        let (v1, v2) = Split::split(data);
+        Ok((
+            L::converter().deserialize(v1)?,
+            R::converter().deserialize(v2)?,
+        ))
     }
 
     fn serialize(
         &self,
-        value: &Self::Output,
+        value: Self::Output,
     ) -> ConvertResult<GenericArray<DatabaseValue, ValueCountOf<Self::Output>>> {
         Ok(Concat::concat(
-            L::converter().serialize(&value.0)?,
-            R::converter().serialize(&value.1)?,
+            L::converter().serialize(value.0)?,
+            R::converter().serialize(value.1)?,
         ))
     }
 }

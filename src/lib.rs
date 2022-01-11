@@ -18,7 +18,7 @@ pub mod prelude {
     pub use crate::query::{
         BatchInsert, BelongsToEntities, BelongsToQueryResult, BelongsToView, Delete, Executable,
         FetchMulti, FetchOne, Filter, Filter2, Fold, Fold2, GroupBy, GroupFold, JoinChildren, Map,
-        Map2, Sort, Sort2, Update,
+        Map2, RightSideData, Sort, Sort2, Update,
     };
     pub use crate::view::{
         Deletable, EntityWithView, Identifiable, Insertable, SingleRowSubqueryView,

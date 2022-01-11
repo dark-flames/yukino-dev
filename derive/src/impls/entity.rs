@@ -28,50 +28,49 @@ impl Implementor for EntityImplementor {
                 yukino::generic_array::typenum::#type_num
             }
         };
-        let (count, iters, binds, columns): (usize, Vec<_>, Vec<_>, Vec<_>) = resolved.fields.iter().fold(
-            (0, vec![], vec![], vec![]),
-            |(mut c_count, mut c_iters, mut c_binds, mut c_columns), field| {
-                let field_name = &field.name;
-                let iter = format_ident!("{}_tmp", field.name.to_string().to_snake_case());
-                let (s, b, c): (usize, Vec<_>, Vec<_>) = field
-                    .definition
-                    .columns
-                    .iter()
-                    .fold((0, vec![], vec![]), |(mut c_s, mut c_b, mut c_c), c| {
-                        let column_name = &c.name;
-                        c_s += 1;
+        let (count, iters, binds, columns): (usize, Vec<_>, Vec<_>, Vec<_>) =
+            resolved.fields.iter().fold(
+                (0, vec![], vec![], vec![]),
+                |(mut c_count, mut c_iters, mut c_binds, mut c_columns), field| {
+                    let field_name = &field.name;
+                    let iter = format_ident!("{}_tmp", field.name.to_string().to_snake_case());
+                    let (s, b, c): (usize, Vec<_>, Vec<_>) = field.definition.columns.iter().fold(
+                        (0, vec![], vec![]),
+                        |(mut c_s, mut c_b, mut c_c), c| {
+                            let column_name = &c.name;
+                            c_s += 1;
 
-                        c_b.push(quote! {
-                            let query = {
-                                use yukino::query_builder::BindArgs;
-                                yukino::query_builder::BindArgs::<'_, DB, O>::bind_args(
-                                    #iter.next().unwrap(),
-                                    query
-                                )
-                            };
-                        });
+                            c_b.push(quote! {
+                                let query = {
+                                    use yukino::query_builder::BindArgs;
+                                    yukino::query_builder::BindArgs::<'_, DB, O>::bind_args(
+                                        #iter.next().unwrap(),
+                                        query
+                                    )
+                                };
+                            });
 
-                        c_c.push(quote! {
-                            #column_name.to_string()
-                        });
+                            c_c.push(quote! {
+                                #column_name.to_string()
+                            });
 
-                        (c_s, c_b, c_c)
+                            (c_s, c_b, c_c)
+                        },
+                    );
+
+                    c_iters.push(quote! {
+                        let mut #iter = {
+                            use yukino::view::Value;
+                            self.#field_name.to_database_values().into_iter()
+                        };
                     });
+                    c_count += s;
+                    c_binds.extend(b);
+                    c_columns.extend(c);
 
-                c_iters.push(quote! {
-                    let mut #iter = {
-                        use yukino::view::Value;
-                        self.#field_name.to_database_values().into_iter()
-                    };
-                });
-                c_count += s;
-                c_binds.extend(b);
-                c_columns.extend(c);
-
-
-                (c_count, c_iters, c_binds, c_columns)
-            },
-        );
+                    (c_count, c_iters, c_binds, c_columns)
+                },
+            );
 
         vec![quote! {
             impl yukino::YukinoEntity for #name {
