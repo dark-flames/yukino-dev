@@ -185,11 +185,11 @@ pub async fn main() -> Result<(), sqlx::Error> {
         .connect(&url)
         .await?;
 
-    Person::all().delete().exec(&pool).await.unwrap();
-    Meeting::all().delete().exec(&pool).await.unwrap();
+    //Person::all().delete().exec(&pool).await.unwrap();
+    //Meeting::all().delete().exec(&pool).await.unwrap();
 
     //prepare_data(&pool).await;
-    bit_data_person(&pool, 10000).await;
+    //bit_data_person(&pool, 10000).await;
     simple_query(&pool).await;
 
     /*

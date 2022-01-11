@@ -44,6 +44,12 @@ pub enum DatabaseValue {
     Null(DatabaseType),
 }
 
+impl Default for DatabaseValue {
+    fn default() -> Self {
+        DatabaseValue::Bool(false)
+    }
+}
+
 pub trait AppendToArgs<'q, DB: Database> {
     fn bind_on<O>(
         self,
@@ -291,26 +297,15 @@ where
     DatabaseValue: Decode<'r, DB>,
 {
     fn from_row(row: &'r R) -> Result<Self, Error> {
-        GenericArray::from_exact_iter(
-            (0..L::to_usize())
-                .into_iter()
-                .map(|index| {
-                    let name = format!("result_{}", index);
-                    let value_ref = row.try_get_raw(name.as_str()).unwrap();
-                    let result = DatabaseValue::decode(value_ref)
-                        .map_err(Error::Decode)
-                        .unwrap();
+        let mut data: GenericArray<DatabaseValue, L> = GenericArray::default();
+        for (idx, value) in data.iter_mut().enumerate() {
+            let name = format!("r{}", idx);
+            let value_ref = row.try_get_raw(name.as_str()).unwrap();
+            *value = DatabaseValue::decode(value_ref).map_err(
+                Error::Decode
+            )?;
+        }
 
-                    Ok(result)
-                })
-                .collect::<Result<Vec<_>, Error>>()?,
-        )
-        .ok_or_else(|| {
-            Error::Decode(Box::new(ExecuteError::ResultLengthError(
-                L::to_usize(),
-                row.len(),
-            )))
-        })
-        .map(Into::into)
+        Ok(data.into())
     }
 }
