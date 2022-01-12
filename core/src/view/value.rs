@@ -4,16 +4,15 @@ use std::marker::PhantomData;
 use generic_array::{arr, ArrayLength, functional::FunctionalSequence, GenericArray};
 use generic_array::typenum::{U1, UInt, UTerm};
 use generic_array::typenum::bit::{B0, B1};
-use sqlx::{ColumnIndex, Database, Decode, MySql, Row};
+use sqlx::{ColumnIndex, Database, Decode, Encode, Error, MySql, Row, Type};
 use sqlx::types::Decimal;
 use sqlx::types::time::{Date, PrimitiveDateTime, Time};
 
 use interface::DatabaseType;
-use query_builder::{DatabaseValue, Expr, RowOf};
+use query_builder::{DatabaseValue, Expr, QueryOf, RowOf};
 
 use crate::view::{
-    AnyTagExprView, EvalResult, ExprView, ExprViewBox, ExprViewBoxWithTag, OrdViewTag, TagList,
-    TagList1,
+    AnyTagExprView, ExprView, ExprViewBox, ExprViewBoxWithTag, OrdViewTag, TagList, TagList1,
 };
 use crate::view::index::ResultIndex;
 
@@ -51,8 +50,14 @@ pub trait Value: 'static + Clone + Debug + Send + Sync {
     fn to_database_values(self) -> GenericArray<DatabaseValue, Self::L>;
 }
 
-pub trait FromQueryResult<'r, DB: Database, H: ResultIndex>: Value {
-    fn from_result(values: &'r RowOf<DB>) -> EvalResult<Self>
+pub type ConvertResult<T> = Result<T, Error>;
+
+pub trait DBMapping<'r, DB: Database, H: ResultIndex>: Value {
+    fn from_result(values: &'r RowOf<DB>) -> ConvertResult<Self>
+    where
+        Self: Sized;
+
+    fn bind_on_query(self, query: QueryOf<DB>) -> QueryOf<DB>
     where
         Self: Sized;
 }
@@ -111,16 +116,21 @@ impl<T: Value<L = U1>, Tags: TagList> AnyTagExprView<T> for SingleExprView<T, Ta
 
 macro_rules! impl_value {
     (@inner $ty: ty, $enum: ident) => {
-        impl<'r, DB: Database, H: ResultIndex> FromQueryResult<'r, DB, H> for $ty where
+        impl<'r, DB: Database, H: ResultIndex> DBMapping<'r, DB, H> for $ty where
             Self: Decode<'r, DB>,
-            for<'n> &'n str: ColumnIndex<RowOf<DB>>
+            for<'n> &'n str: ColumnIndex<RowOf<DB>>,
+            for<'q> Self: Encode<'q, DB> + Type<DB>
         {
             fn from_result(
                 values: &'r RowOf<DB>
-            ) -> EvalResult<Self>
+            ) -> ConvertResult<Self>
                 where Self: Sized
             {
                 values.try_get_unchecked(H::index())
+            }
+
+            fn bind_on_query(self, query: QueryOf<DB>) -> QueryOf<DB> where Self: Sized {
+                query.bind(self)
             }
         }
 

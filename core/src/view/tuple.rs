@@ -4,11 +4,11 @@ use generic_array::{ArrayLength, GenericArray, sequence::Concat, typenum::Sum};
 use generic_array::sequence::Split;
 use sqlx::Database;
 
-use query_builder::{ColumnOf, DatabaseValue, Expr, RowOf};
+use query_builder::{ColumnOf, DatabaseValue, Expr, QueryOf, RowOf};
 
 use crate::view::{
-    ConcreteList, EvalResult, ExprView, ExprViewBox, ExprViewBoxWithTag, FromQueryResult,
-    MergeList, TagList, TagsOfValueView, Value, ValueCount, ValueCountOf,
+    ConcreteList, ConvertResult, DBMapping, ExprView, ExprViewBox, ExprViewBoxWithTag, MergeList,
+    TagList, TagsOfValueView, Value, ValueCount, ValueCountOf,
 };
 use crate::view::index::ResultIndex;
 
@@ -70,9 +70,9 @@ impl<
         'r,
         DB: Database,
         H: ResultIndex,
-        L: Value + FromQueryResult<'r, DB, H>,
-        R: Value + FromQueryResult<'r, DB, Sum<ValueCountOf<L>, H>>,
-    > FromQueryResult<'r, DB, H> for (L, R)
+        L: Value + DBMapping<'r, DB, H>,
+        R: Value + DBMapping<'r, DB, Sum<ValueCountOf<L>, H>>,
+    > DBMapping<'r, DB, H> for (L, R)
 where
     TagsOfValueView<L>: MergeList<TagsOfValueView<R>>,
     ValueCountOf<L>: Add<ValueCountOf<R>> + ArrayLength<ColumnOf<DB>>,
@@ -81,11 +81,18 @@ where
     Sum<ValueCountOf<L>, ValueCountOf<R>>:
         ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
 {
-    fn from_result(values: &'r RowOf<DB>) -> EvalResult<Self>
+    fn from_result(values: &'r RowOf<DB>) -> ConvertResult<Self>
     where
         Self: Sized,
     {
         Ok((L::from_result(values)?, R::from_result(values)?))
+    }
+
+    fn bind_on_query(self, query: QueryOf<DB>) -> QueryOf<DB>
+    where
+        Self: Sized,
+    {
+        self.1.bind_on_query(self.0.bind_on_query(query))
     }
 }
 

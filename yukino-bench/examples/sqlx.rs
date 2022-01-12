@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use yukino_bench::Handler;
 use yukino_bench::sqlx_benches::SqlxHandler;
 

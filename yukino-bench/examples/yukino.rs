@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use yukino_bench::*;
 use yukino_bench::yukino_benches::YukinoHandler;
 

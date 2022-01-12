@@ -10,7 +10,7 @@ use query_builder::{
     AppendToArgs, BindArgs, ColumnOf, DatabaseValue, QueryBuildState, ToSql, YukinoQuery,
 };
 
-use crate::view::{FromQueryResult, Value, ValueCountOf};
+use crate::view::{DBMapping, Value, ValueCountOf};
 
 #[derive(Debug, Clone)]
 pub struct SingleRow;
@@ -30,7 +30,7 @@ impl ExecuteResultType for SingleRow {}
 impl ExecuteResultType for MultiRows {}
 
 #[async_trait]
-pub trait FetchOne<T: Value + for<'r> FromQueryResult<'r, MySql, U0>>:
+pub trait FetchOne<T: Value + for<'r> DBMapping<'r, MySql, U0>>:
     Executable<T, MySql, ResultType = SingleRow>
 {
     async fn exec<'c, 'e, E: 'e + Executor<'c, Database = MySql>>(
@@ -60,8 +60,7 @@ pub struct QueryResultIterator<DB: Database, T: Value> {
     _marker: PhantomData<T>,
 }
 
-impl<DB: Database, T: Value + for<'r> FromQueryResult<'r, DB, U0>> Iterator
-    for QueryResultIterator<DB, T>
+impl<DB: Database, T: Value + for<'r> DBMapping<'r, DB, U0>> Iterator for QueryResultIterator<DB, T>
 where
     ValueCountOf<T>: for<'r> ArrayLength<ColumnOf<DB>>,
 {
@@ -82,7 +81,7 @@ where
 }
 
 #[async_trait]
-pub trait FetchMulti<T: Value + for<'r> FromQueryResult<'r, MySql, U0>>:
+pub trait FetchMulti<T: Value + for<'r> DBMapping<'r, MySql, U0>>:
     Executable<T, MySql, ResultType = MultiRows>
 {
     async fn exec<'c: 'e, 'e, E: 'e + Executor<'c, Database = MySql>>(
@@ -115,13 +114,13 @@ pub trait FetchMulti<T: Value + for<'r> FromQueryResult<'r, MySql, U0>>:
 }
 
 impl<
-        T: Value + for<'r> FromQueryResult<'r, MySql, U0>,
+        T: Value + for<'r> DBMapping<'r, MySql, U0>,
         E: Executable<T, MySql, ResultType = SingleRow>,
     > FetchOne<T> for E
 {
 }
 impl<
-        T: Value + for<'r> FromQueryResult<'r, MySql, U0>,
+        T: Value + for<'r> DBMapping<'r, MySql, U0>,
         E: Executable<T, MySql, ResultType = MultiRows>,
     > FetchMulti<T> for E
 {

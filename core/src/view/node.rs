@@ -1,5 +1,4 @@
 use generic_array::GenericArray;
-use sqlx::Error;
 
 use query_builder::Expr;
 
@@ -7,7 +6,6 @@ use crate::view::{TagList, TagsOfValueView, Value, ValueCountOf};
 
 pub type ExprViewBox<T> = ExprViewBoxWithTag<T, TagsOfValueView<T>>;
 pub type ExprViewBoxWithTag<T, Tags> = Box<dyn ExprView<T, Tags = Tags>>;
-pub type EvalResult<T> = Result<T, Error>;
 
 pub trait ExprView<T: Value>: Send + Sync {
     type Tags: TagList;

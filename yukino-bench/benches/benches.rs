@@ -52,9 +52,7 @@ fn drop_all() {
 
 fn bench_insert(c: &mut Criterion) {
     for (name, size, introduction_size) in INSERT {
-        let mut group = c.benchmark_group(
-            format!("bench_insert_{}", *name)
-        );
+        let mut group = c.benchmark_group(format!("bench_insert_{}", *name));
         let data = generate_user(*size, *introduction_size);
         drop_all();
         group.bench_with_input(
@@ -88,7 +86,6 @@ fn bench_insert(c: &mut Criterion) {
         );
         group.finish();
     }
-
 }
 
 fn bench_fetch_all(c: &mut Criterion) {

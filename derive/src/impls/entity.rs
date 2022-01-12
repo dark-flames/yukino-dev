@@ -1,4 +1,3 @@
-use heck::SnakeCase;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 
@@ -29,13 +28,12 @@ impl Implementor for EntityImplementor {
         };
         let (
             count,
-            iters,
-            binds,
             columns,
             deserialize_branches,
             serialize_tmp,
             serialize,
             where_branches,
+            binding_body,
         ) =
             resolved.fields.iter().fold(
                 (
@@ -43,48 +41,30 @@ impl Implementor for EntityImplementor {
                         vec![],
                         vec![],
                         vec![],
-                        vec![],
-                        vec![],
                         quote! {
                             yukino::generic_array::arr![yukino::query_builder::DatabaseValue;]
                         },
-                        vec![]
+                        vec![],
+                        quote! {
+                            query
+                        }
                 ),
-                |(mut c_count, mut c_iters, mut c_binds, mut c_columns, mut de, mut ser_tmp, ser, mut w_branches), field| {
+                |(mut c_count, mut c_columns, mut de, mut ser_tmp, ser, mut w_branches, binding), field| {
                     let field_name = &field.name;
                     let field_ty = &field.ty;
-                    let iter = format_ident!("{}_tmp", field.name.to_string().to_snake_case());
-                    let (s, b, c): (usize, Vec<_>, Vec<_>) = field.definition.columns.iter().fold(
-                        (0, vec![], vec![]),
-                        |(mut c_s, mut c_b, mut c_c), c| {
+                    let (s, c): (usize, Vec<_>) = field.definition.columns.iter().fold(
+                        (0, vec![]),
+                        |(mut c_s, mut c_c), c| {
                             let column_name = &c.name;
                             c_s += 1;
-
-                            c_b.push(quote! {
-                                let query = {
-                                    use yukino::query_builder::BindArgs;
-                                    yukino::query_builder::BindArgs::<'_, DB>::bind_args(
-                                        #iter.next().unwrap(),
-                                        query
-                                    )
-                                };
-                            });
 
                             c_c.push(quote! {
                                 #column_name.to_string()
                             });
 
-                            (c_s, c_b, c_c)
+                            (c_s, c_c)
                         },
                     );
-                    c_iters.push(quote! {
-                        let mut #iter = {
-                            use yukino::view::Value;
-                            self.#field_name.to_database_values().into_iter()
-                        };
-                    });
-
-                    c_binds.extend(b);
                     c_columns.extend(c);
                     let offset = {
                         let type_num = format_ident!("U{}", c_count);
@@ -94,7 +74,7 @@ impl Implementor for EntityImplementor {
                     };
 
                     de.push(quote! {
-                        #field_name: yukino::view::FromQueryResult::<
+                        #field_name: yukino::view::DBMapping::<
                             'r,
                             DB,
                             yukino::generic_array::typenum::Sum<#offset, H>
@@ -109,21 +89,24 @@ impl Implementor for EntityImplementor {
                         quote! {
                             #offset: std::ops::Add<H>,
                             yukino::generic_array::typenum::Sum<#offset, H>: yukino::view::ResultIndex,
-                            #field_ty: yukino::view::FromQueryResult<'r, DB, yukino::generic_array::typenum::Sum<#offset, H>>
+                            #field_ty: yukino::view::DBMapping<'r, DB, yukino::generic_array::typenum::Sum<#offset, H>>
                         }
                     );
+
+
                     c_count += s;
                     (
                         c_count,
-                        c_iters,
-                        c_binds,
                         c_columns,
                         de,
                         ser_tmp,
                         quote! {
                             yukino::generic_array::sequence::Concat::concat(#ser, #field_name)
                         },
-                        w_branches
+                        w_branches,
+                        quote! {
+                            yukino::view::DBMapping::<'r, DB, yukino::generic_array::typenum::Sum<#offset, H>>::bind_on_query(self.#field_name, #binding)
+                        }
                     )
                 },
             );
@@ -158,22 +141,29 @@ impl Implementor for EntityImplementor {
                 }
             }
 
-            impl<'r, DB: sqlx::Database, H: yukino::view::ResultIndex> yukino::view::FromQueryResult<'r, DB, H> for #name
+            impl<'r, DB: sqlx::Database, H: yukino::view::ResultIndex> yukino::view::DBMapping<'r, DB, H> for #name
                 where #(#where_branches),*
             {
                 fn from_result(
                     values: &'r yukino::query_builder::RowOf<DB>
-                ) -> yukino::view::EvalResult<Self>
+                ) -> yukino::view::ConvertResult<Self>
                     where Self: Sized
                 {
                     Ok(#name {
                         #(#deserialize_branches),*
                     })
                 }
+
+                fn bind_on_query(
+                    self,
+                    query: yukino::query_builder::QueryOf<DB>
+                ) -> yukino::query_builder::QueryOf<DB> where Self: Sized {
+                    #binding_body
+                }
             }
 
             impl<DB: sqlx::Database> yukino::view::Insertable<DB> for #name
-                where yukino::query_builder::DatabaseValue: for<'p> yukino::query_builder::AppendToArgs<'p, DB> {
+                where Self: for<'r> yukino::view::DBMapping::<'r, DB, yukino::generic_array::typenum::U0> {
                 type Entity = Self;
                 type Source = Vec<Self>;
 
@@ -192,7 +182,7 @@ impl Implementor for EntityImplementor {
             }
 
             impl<'q, DB: sqlx::Database> yukino::query_builder::ArgSource<'q, DB> for #name
-                where yukino::query_builder::DatabaseValue: for<'p> yukino::query_builder::AppendToArgs<'p, DB> {
+                where Self: for<'r> yukino::view::DBMapping::<'r, DB, yukino::generic_array::typenum::U0> {
                 fn insert_value_count() -> usize {
                     #count
                 }
@@ -201,11 +191,7 @@ impl Implementor for EntityImplementor {
                     self,
                     query: yukino::query_builder::QueryOf<'q, DB>
                 ) ->  yukino::query_builder::QueryOf<'q, DB> where Self: Sized {
-                    #(#iters)*
-
-                    #(#binds)*
-
-                    query
+                    yukino::view::DBMapping::<DB, yukino::generic_array::typenum::U0>::bind_on_query(self, query)
                 }
             }
         }]

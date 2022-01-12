@@ -4,11 +4,11 @@ use generic_array::{arr, GenericArray};
 use generic_array::typenum::U0;
 use sqlx::Database;
 
-use query_builder::{DatabaseValue, Expr, RowOf};
+use query_builder::{DatabaseValue, Expr, QueryOf, RowOf};
 
 use crate::view::{
-    AnyTagExprView, AnyTagsValue, EmptyTagList, EvalResult, ExprView, ExprViewBox,
-    ExprViewBoxWithTag, FromQueryResult, TagList, Value, ValueCountOf,
+    AnyTagExprView, AnyTagsValue, ConvertResult, DBMapping, EmptyTagList, ExprView, ExprViewBox,
+    ExprViewBoxWithTag, TagList, Value, ValueCountOf,
 };
 use crate::view::index::ResultIndex;
 
@@ -53,12 +53,19 @@ impl Value for () {
     }
 }
 
-impl<'r, DB: Database, H: ResultIndex> FromQueryResult<'r, DB, H> for () {
-    fn from_result(_values: &'r RowOf<DB>) -> EvalResult<Self>
+impl<'r, DB: Database, H: ResultIndex> DBMapping<'r, DB, H> for () {
+    fn from_result(_values: &'r RowOf<DB>) -> ConvertResult<Self>
     where
         Self: Sized,
     {
         Ok(())
+    }
+
+    fn bind_on_query(self, query: QueryOf<DB>) -> QueryOf<DB>
+    where
+        Self: Sized,
+    {
+        query
     }
 }
 
