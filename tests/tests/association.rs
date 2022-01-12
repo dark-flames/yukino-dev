@@ -21,8 +21,7 @@ fn test_association_query() {
 
     let query = bar
         .filter(|b| eq!(b.name, "test".to_string()))
-        .generate_query()
-        .0;
+        .generate_query();
 
     println!("{}", query)
 }
@@ -37,8 +36,7 @@ fn test_subquery_from_view() {
                 .fold(|b| b.name.join(Some(", ")))
                 .as_expr()
         })
-        .generate_query()
-        .0;
+        .generate_query();
 
     println!("{}", query)
 }
@@ -58,8 +56,7 @@ fn test_subquery_fn() {
                 .fold(|b| b.name.join(Some(", ")))
                 .as_expr()
         })
-        .generate_query()
-        .0;
+        .generate_query();
 
     println!("{}", query)
 }

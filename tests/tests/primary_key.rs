@@ -12,7 +12,7 @@ fn test_parse_primary_key() {
 
 #[test]
 fn test_get() {
-    let query = Foo::get(114514).generate_query().0;
+    let query = Foo::get(114514).generate_query();
 
     println!("{}", query)
 }
@@ -21,7 +21,7 @@ fn test_get() {
 fn test_delete() {
     let foo = create_foo();
 
-    let query = foo.delete().generate_query().0;
+    let query = foo.delete().generate_query();
 
     println!("{}", query)
 }

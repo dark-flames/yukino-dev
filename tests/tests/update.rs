@@ -12,8 +12,7 @@ fn test_update() {
         .set_by(foo::long, |l| l + 1)
         .sort(|f| f.id.asc())
         .limit(20)
-        .generate_query()
-        .0;
+        .generate_query();
 
     println!("{}", query);
 }
