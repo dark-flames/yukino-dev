@@ -157,17 +157,6 @@ impl Implementor for ViewImplementor {
 
                     #collect_rst
                 }
-
-                fn eval(
-                    &self,
-                    v: yukino::generic_array::GenericArray<
-                        yukino::query_builder::DatabaseValue,
-                        yukino::view::ValueCountOf<#entity_name>>
-                ) -> yukino::err::RuntimeResult<#entity_name> {
-                    use yukino::view::Value;
-                    use yukino::err::YukinoError;
-                    #entity_name::converter().deserialize(v).map_err(|e| e.as_runtime_err())
-                }
             }
 
             impl yukino::view::EntityView for #name {

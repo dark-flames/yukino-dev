@@ -195,7 +195,7 @@ impl<View: GroupResult, E: EntityWithView> Sort<View> for GroupedQueryResult<Vie
     }
 }
 
-impl<View: GroupResult, E: EntityWithView, DB: Database> Executable<View::Value, View::Tags, DB>
+impl<View: GroupResult, E: EntityWithView, DB: Database> Executable<View::Value, DB>
     for GroupedQueryResult<View, (), E>
 where
     SelectQuery: YukinoQuery<DB>,
@@ -203,37 +203,27 @@ where
     type ResultType = MultiRows;
     type Query = SelectQuery;
 
-    fn generate_query(self) -> (Self::Query, ExprViewBoxWithTag<View::Value, View::Tags>) {
-        (
-            SelectQuery::create(
-                self.query.source(),
-                self.alias_generator
-                    .generate_select_list(self.view.collect_expr_vec(), true),
-                vec![],
-                None,
-                0,
-            ),
-            self.view.expr_box(),
+    fn generate_query(self) -> Self::Query {
+        SelectQuery::create(
+            self.query.source(),
+            self.alias_generator
+                .generate_select_list(self.view.collect_expr_vec(), true),
+            vec![],
+            None,
+            0,
         )
     }
 }
 
 type ValueTuple<G, A> = (ValueOfGroupResult<G>, ValueOfFoldResult<A>);
-type TagOfGroupResult<G> = <G as GroupResult>::Tags;
-type TagOfFoldResult<A> = <A as FoldResult>::Tags;
 type ValueOfGroupResult<G> = <G as GroupResult>::Value;
 type ValueOfFoldResult<A> = <A as FoldResult>::Value;
-type ConcretedTags<G, A> = ConcreteList<TagOfGroupResult<G>, TagOfFoldResult<A>>;
-type ResultExprViewBox<G, A> = ExprViewBoxWithTag<ValueTuple<G, A>, ConcretedTags<G, A>>;
 
 impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView, DB: Database>
-    Executable<ValueTuple<View, AggregateView>, ConcretedTags<View, AggregateView>, DB>
-    for GroupedQueryResult<View, AggregateView, E>
+    Executable<ValueTuple<View, AggregateView>, DB> for GroupedQueryResult<View, AggregateView, E>
 where
     SelectQuery: YukinoQuery<DB>,
     ValueTuple<View, AggregateView>: Value,
-    TagsOfValueView<View::Value>: MergeList<TagsOfValueView<AggregateView::Value>>,
-    TagOfGroupResult<View>: MergeList<TagOfFoldResult<AggregateView>>,
     ValueCountOf<View::Value>: Add<
         ValueCountOf<AggregateView::Value>,
         Output = ValueCountOf<ValueTuple<View, AggregateView>>,
@@ -244,22 +234,19 @@ where
     type ResultType = MultiRows;
     type Query = SelectQuery;
 
-    fn generate_query(self) -> (Self::Query, ResultExprViewBox<View, AggregateView>) {
-        (
-            SelectQuery::create(
-                self.query.source(),
-                self.alias_generator.generate_select_list(
-                    self.view
-                        .collect_expr_vec()
-                        .into_iter()
-                        .chain(self.aggregate.collect_fold_expr_vec()),
-                    true,
-                ),
-                vec![],
-                None,
-                0,
+    fn generate_query(self) -> Self::Query {
+        SelectQuery::create(
+            self.query.source(),
+            self.alias_generator.generate_select_list(
+                self.view
+                    .collect_expr_vec()
+                    .into_iter()
+                    .chain(self.aggregate.collect_fold_expr_vec()),
+                true,
             ),
-            (self.view.expr_box(), self.aggregate.expr_box()).into(),
+            vec![],
+            None,
+            0,
         )
     }
 }
@@ -324,7 +311,7 @@ impl<View: GroupResult, E: EntityWithView> Map<View> for SortedGroupedQueryResul
     }
 }
 
-impl<View: GroupResult, E: EntityWithView, DB: Database> Executable<View::Value, View::Tags, DB>
+impl<View: GroupResult, E: EntityWithView, DB: Database> Executable<View::Value, DB>
     for SortedGroupedQueryResult<View, (), E>
 where
     SelectQuery: YukinoQuery<DB>,
@@ -332,30 +319,25 @@ where
     type ResultType = MultiRows;
     type Query = SelectQuery;
 
-    fn generate_query(self) -> (Self::Query, ExprViewBoxWithTag<View::Value, View::Tags>) {
-        (
-            SelectQuery::create(
-                self.nested.query.source(),
-                self.nested
-                    .alias_generator
-                    .generate_select_list(self.nested.view.collect_expr_vec(), true),
-                self.order_by,
-                None,
-                0,
-            ),
-            self.nested.view.expr_box(),
+    fn generate_query(self) -> Self::Query {
+        SelectQuery::create(
+            self.nested.query.source(),
+            self.nested
+                .alias_generator
+                .generate_select_list(self.nested.view.collect_expr_vec(), true),
+            self.order_by,
+            None,
+            0,
         )
     }
 }
 
 impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView, DB: Database>
-    Executable<ValueTuple<View, AggregateView>, ConcretedTags<View, AggregateView>, DB>
+    Executable<ValueTuple<View, AggregateView>, DB>
     for SortedGroupedQueryResult<View, AggregateView, E>
 where
     SelectQuery: YukinoQuery<DB>,
     ValueTuple<View, AggregateView>: Value,
-    TagsOfValueView<View::Value>: MergeList<TagsOfValueView<AggregateView::Value>>,
-    TagOfGroupResult<View>: MergeList<TagOfFoldResult<AggregateView>>,
     ValueCountOf<View::Value>: Add<
         ValueCountOf<AggregateView::Value>,
         Output = ValueCountOf<ValueTuple<View, AggregateView>>,
@@ -366,27 +348,20 @@ where
     type ResultType = MultiRows;
     type Query = SelectQuery;
 
-    fn generate_query(self) -> (Self::Query, ResultExprViewBox<View, AggregateView>) {
-        (
-            SelectQuery::create(
-                self.nested.query.source(),
-                self.nested.alias_generator.generate_select_list(
-                    self.nested
-                        .view
-                        .collect_expr_vec()
-                        .into_iter()
-                        .chain(self.nested.aggregate.collect_fold_expr_vec()),
-                    true,
-                ),
-                vec![],
-                None,
-                0,
+    fn generate_query(self) -> Self::Query {
+        SelectQuery::create(
+            self.nested.query.source(),
+            self.nested.alias_generator.generate_select_list(
+                self.nested
+                    .view
+                    .collect_expr_vec()
+                    .into_iter()
+                    .chain(self.nested.aggregate.collect_fold_expr_vec()),
+                true,
             ),
-            (
-                self.nested.view.expr_box(),
-                self.nested.aggregate.expr_box(),
-            )
-                .into(),
+            vec![],
+            None,
+            0,
         )
     }
 }

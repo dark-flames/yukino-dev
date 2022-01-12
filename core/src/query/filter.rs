@@ -17,8 +17,8 @@ use crate::query::{
 };
 use crate::view::{
     AssociatedView, EntityView, EntityWithView, ExprBoxOfAssociatedView, ExprView,
-    ExprViewBoxWithTag, FieldMarkerWithView, TagList, TagOfMarker, TagsOfEntity, TypeOfMarker,
-    Value, ViewWithPrimaryKey,
+    ExprViewBoxWithTag, FieldMarkerWithView, TagList, TagOfMarker, TypeOfMarker, Value,
+    ViewWithPrimaryKey,
 };
 
 pub struct QueryResultFilter<E: EntityWithView> {
@@ -121,26 +121,23 @@ impl<E: EntityWithView> Sort<E::View> for QueryResultFilter<E> {
     }
 }
 
-impl<E: EntityWithView, DB: Database> Executable<E, TagsOfEntity<E>, DB> for QueryResultFilter<E>
+impl<E: EntityWithView, DB: Database> Executable<E, DB> for QueryResultFilter<E>
 where
     SelectQuery: YukinoQuery<DB>,
 {
     type ResultType = MultiRows;
     type Query = SelectQuery;
 
-    fn generate_query(self) -> (Self::Query, ExprViewBoxWithTag<E, TagsOfEntity<E>>) {
+    fn generate_query(self) -> Self::Query {
         let view = E::View::pure(&self.root_alias);
 
-        (
-            SelectQuery::create(
-                self.query.source(),
-                self.alias_generator
-                    .generate_select_list(view.collect_expr().into_iter(), true),
-                vec![],
-                None,
-                0,
-            ),
-            Box::new(view),
+        SelectQuery::create(
+            self.query.source(),
+            self.alias_generator
+                .generate_select_list(view.collect_expr().into_iter(), true),
+            vec![],
+            None,
+            0,
         )
     }
 }
@@ -205,28 +202,24 @@ impl<E: EntityWithView> Map<E::View> for SortedQueryResultFilter<E> {
     }
 }
 
-impl<E: EntityWithView, DB: Database> Executable<E, TagsOfEntity<E>, DB>
-    for SortedQueryResultFilter<E>
+impl<E: EntityWithView, DB: Database> Executable<E, DB> for SortedQueryResultFilter<E>
 where
     SelectQuery: YukinoQuery<DB>,
 {
     type ResultType = MultiRows;
     type Query = SelectQuery;
 
-    fn generate_query(self) -> (Self::Query, ExprViewBoxWithTag<E, TagsOfEntity<E>>) {
+    fn generate_query(self) -> Self::Query {
         let view = E::View::pure(&self.nested.root_alias);
 
-        (
-            SelectQuery::create(
-                self.nested.query.source(),
-                self.nested
-                    .alias_generator
-                    .generate_select_list(view.collect_expr(), true),
-                vec![],
-                None,
-                0,
-            ),
-            Box::new(view),
+        SelectQuery::create(
+            self.nested.query.source(),
+            self.nested
+                .alias_generator
+                .generate_select_list(view.collect_expr(), true),
+            vec![],
+            None,
+            0,
         )
     }
 }

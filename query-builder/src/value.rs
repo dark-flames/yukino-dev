@@ -1,19 +1,15 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
-use generic_array::{ArrayLength, GenericArray};
 use serde_json::Value;
-use sqlx::{
-    Column, ColumnIndex, Database, Decode, Encode, Error, FromRow, Row, Type, TypeInfo, ValueRef,
-};
+use sqlx::{Database, Encode, Type};
 use sqlx::database::HasValueRef;
-use sqlx::error::BoxDynError;
 use sqlx::types::Decimal;
 use sqlx::types::time::{Date, PrimitiveDateTime, Time};
 
 use interface::DatabaseType;
 
-use crate::{BindArgs, ExecuteError, QueryBuildState, QueryOf, ToSql};
+use crate::{BindArgs, QueryBuildState, QueryOf, ToSql};
 
 pub type Binary = Vec<u8>;
 
@@ -200,104 +196,6 @@ where
     }
 }
 
-#[cfg(feature = "mysql")]
-impl<'r, DB: Database> Decode<'r, DB> for DatabaseValue
-where
-    bool: Decode<'r, DB>,
-    u16: Decode<'r, DB>,
-    i16: Decode<'r, DB>,
-    u32: Decode<'r, DB>,
-    i32: Decode<'r, DB>,
-    u64: Decode<'r, DB>,
-    i64: Decode<'r, DB>,
-    f32: Decode<'r, DB>,
-    f64: Decode<'r, DB>,
-    Decimal: Decode<'r, DB>,
-    Value: Decode<'r, DB>,
-    String: Decode<'r, DB>,
-    Date: Decode<'r, DB>,
-    Time: Decode<'r, DB>,
-    PrimitiveDateTime: Decode<'r, DB>,
-{
-    fn decode(value: <DB as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
-        match (value.type_info().name(), value.is_null()) {
-            ("BOOLEAN", false) => bool::decode(value).map(DatabaseValue::Bool),
-            ("BOOLEAN", true) => Ok(DatabaseValue::Null(DatabaseType::Bool)),
-            ("SMALLINT UNSIGNED", false) => {
-                u16::decode(value).map(DatabaseValue::UnsignedSmallInteger)
-            }
-            ("SMALLINT UNSIGNED", true) => {
-                Ok(DatabaseValue::Null(DatabaseType::UnsignedSmallInteger))
-            }
-            ("SMALLINT", false) => i16::decode(value).map(DatabaseValue::SmallInteger),
-            ("SMALLINT", true) => Ok(DatabaseValue::Null(DatabaseType::SmallInteger)),
-            ("INT UNSIGNED", false) => u32::decode(value).map(DatabaseValue::UnsignedInteger),
-            ("INT UNSIGNED", true) => Ok(DatabaseValue::Null(DatabaseType::UnsignedInteger)),
-            ("INT", false) => i32::decode(value).map(DatabaseValue::Integer),
-            ("INT", true) => Ok(DatabaseValue::Null(DatabaseType::Integer)),
-            ("BIGINT UNSIGNED", false) => u64::decode(value).map(DatabaseValue::UnsignedBigInteger),
-            ("BIGINT UNSIGNED", true) => Ok(DatabaseValue::Null(DatabaseType::UnsignedBigInteger)),
-            ("BIGINT", false) => i64::decode(value).map(DatabaseValue::BigInteger),
-            ("BIGINT", true) => Ok(DatabaseValue::Null(DatabaseType::BigInteger)),
-            ("FLOAT", false) => f32::decode(value).map(DatabaseValue::Float),
-            ("FLOAT", true) => Ok(DatabaseValue::Null(DatabaseType::Float)),
-            ("DOUBLE", false) => f64::decode(value).map(DatabaseValue::Double),
-            ("DOUBLE", true) => Ok(DatabaseValue::Null(DatabaseType::Double)),
-            ("DECIMAL", false) => Decimal::decode(value).map(DatabaseValue::Decimal),
-            ("DECIMAL", true) => Ok(DatabaseValue::Null(DatabaseType::Decimal)),
-            ("JSON", false) => Value::decode(value).map(DatabaseValue::Json),
-            ("JSON", true) => Ok(DatabaseValue::Null(DatabaseType::Json)),
-            ("TEXT", false) => String::decode(value).map(DatabaseValue::String),
-            ("TEXT", true) => Ok(DatabaseValue::Null(DatabaseType::String)),
-            ("LONGTEXT", false) => String::decode(value).map(DatabaseValue::String),
-            ("LONGTEXT", true) => Ok(DatabaseValue::Null(DatabaseType::String)),
-            ("VARCHAR", false) => String::decode(value).map(DatabaseValue::String),
-            ("VARCHAR", true) => Ok(DatabaseValue::Null(DatabaseType::String)),
-            ("CHAR", false) => String::decode(value).map(DatabaseValue::String),
-            ("CHAR", true) => Ok(DatabaseValue::Null(DatabaseType::String)),
-            ("DATE", false) => Date::decode(value).map(DatabaseValue::Date),
-            ("DATE", true) => Ok(DatabaseValue::Null(DatabaseType::Date)),
-            ("TIME", false) => Time::decode(value).map(DatabaseValue::Time),
-            ("TIME", true) => Ok(DatabaseValue::Null(DatabaseType::Time)),
-            ("DATETIME", false) => PrimitiveDateTime::decode(value).map(DatabaseValue::DateTime),
-            ("DATETIME", true) => Ok(DatabaseValue::Null(DatabaseType::DateTime)),
-            (t, _) => Err(Box::new(ExecuteError::DecodeError(format!(
-                "Unsupported DB type {}",
-                t
-            )))),
-        }
-    }
-}
-
-pub struct ResultRow<L: ArrayLength<DatabaseValue>> {
-    values: GenericArray<DatabaseValue, L>,
-}
-
-impl<L: ArrayLength<DatabaseValue>> From<GenericArray<DatabaseValue, L>> for ResultRow<L> {
-    fn from(values: GenericArray<DatabaseValue, L>) -> Self {
-        ResultRow { values }
-    }
-}
-
-impl<L: ArrayLength<DatabaseValue>> From<ResultRow<L>> for GenericArray<DatabaseValue, L> {
-    fn from(r: ResultRow<L>) -> Self {
-        r.values
-    }
-}
-
-impl<'r, DB: Database, R: Row<Database = DB>, L: ArrayLength<DatabaseValue>> FromRow<'r, R>
-    for ResultRow<L>
-where
-    for<'n> &'n str: ColumnIndex<R>,
-    DatabaseValue: Decode<'r, DB>,
-{
-    fn from_row(row: &'r R) -> Result<Self, Error> {
-        let mut data: GenericArray<DatabaseValue, L> = GenericArray::default();
-
-        for (idx, column) in row.columns().iter().enumerate() {
-            data[idx] = row.try_get_unchecked(column.name())?;
-        }
-
-        Ok(data.into())
-    }
-}
+pub type ValueRefOf<'r, DB> = <DB as HasValueRef<'r>>::ValueRef;
+pub type RowOf<DB> = <DB as Database>::Row;
+pub type ColumnOf<DB> = <DB as Database>::Column;

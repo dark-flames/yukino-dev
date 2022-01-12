@@ -9,4 +9,3 @@ pub mod yukino_benches;
 
 mod diesel_schema;
 mod interface;
-

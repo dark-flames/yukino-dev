@@ -1,3 +1,5 @@
+#![feature(vec_into_raw_parts)]
+
 pub use backend::*;
 pub use delete::*;
 pub use err::*;

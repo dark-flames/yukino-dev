@@ -3,11 +3,8 @@ use std::marker::PhantomData;
 use generic_array::{arr, GenericArray};
 use generic_array::typenum::U1;
 
-use query_builder::{
-    DatabaseValue, Expr, FunctionCall, SelectQuery, SubqueryFunction, SubqueryFunctionCall,
-};
+use query_builder::{Expr, FunctionCall, SelectQuery, SubqueryFunction, SubqueryFunctionCall};
 
-use crate::err::{RuntimeResult, YukinoError};
 use crate::view::{
     ExprView, ExprViewBox, ExprViewBoxWithTag, TagsOfValueView, Value, ValueCountOf,
 };
@@ -89,12 +86,6 @@ impl ExprView<bool> for InSubqueryView {
     fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<bool>> {
         arr![Expr; Expr::In(Box::new(self.expr.clone()), self.subquery.clone())]
     }
-
-    fn eval(&self, v: GenericArray<DatabaseValue, ValueCountOf<bool>>) -> RuntimeResult<bool> {
-        bool::converter()
-            .deserialize(v)
-            .map_err(|e| e.as_runtime_err())
-    }
 }
 
 impl ExprView<bool> for ExistsView {
@@ -114,12 +105,6 @@ impl ExprView<bool> for ExistsView {
     fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<bool>> {
         arr![Expr; Expr::Exists(self.subquery.clone())]
     }
-
-    fn eval(&self, v: GenericArray<DatabaseValue, ValueCountOf<bool>>) -> RuntimeResult<bool> {
-        bool::converter()
-            .deserialize(v)
-            .map_err(|e| e.as_runtime_err())
-    }
 }
 
 impl ExprView<bool> for NotExistsView {
@@ -138,12 +123,6 @@ impl ExprView<bool> for NotExistsView {
 
     fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<bool>> {
         arr![Expr; Expr::NotExists(self.subquery.clone())]
-    }
-
-    fn eval(&self, v: GenericArray<DatabaseValue, ValueCountOf<bool>>) -> RuntimeResult<bool> {
-        bool::converter()
-            .deserialize(v)
-            .map_err(|e| e.as_runtime_err())
     }
 }
 

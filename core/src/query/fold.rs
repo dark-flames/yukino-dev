@@ -4,9 +4,8 @@ use generic_array::{arr, GenericArray};
 use generic_array::typenum::U1;
 use sqlx::Database;
 
-use query_builder::{DatabaseValue, Expr, SelectQuery, SelectSource, YukinoQuery};
+use query_builder::{Expr, SelectQuery, SelectSource, YukinoQuery};
 
-use crate::err::{RuntimeResult, YukinoError};
 use crate::query::{AliasGenerator, Executable, Map, QueryResultMap};
 use crate::query::exec::SingleRow;
 use crate::view::{
@@ -52,25 +51,21 @@ impl<View: FoldResult> Map<View> for FoldQueryResult<View> {
     }
 }
 
-impl<View: FoldResult, DB: Database> Executable<View::Value, View::Tags, DB>
-    for FoldQueryResult<View>
+impl<View: FoldResult, DB: Database> Executable<View::Value, DB> for FoldQueryResult<View>
 where
     SelectQuery: YukinoQuery<DB>,
 {
     type ResultType = SingleRow;
     type Query = SelectQuery;
 
-    fn generate_query(self) -> (Self::Query, ExprViewBoxWithTag<View::Value, View::Tags>) {
-        (
-            SelectQuery::create(
-                self.query,
-                self.alias_generator
-                    .generate_select_list(self.view.collect_fold_expr_vec(), true),
-                vec![],
-                None,
-                0,
-            ),
-            self.view.expr_box(),
+    fn generate_query(self) -> Self::Query {
+        SelectQuery::create(
+            self.query,
+            self.alias_generator
+                .generate_select_list(self.view.collect_fold_expr_vec(), true),
+            vec![],
+            None,
+            0,
         )
     }
 }
@@ -116,12 +111,6 @@ impl<T: Value<L = U1>, View: FoldResult<Value = T>> ExprView<T> for FoldQueryRes
 
     fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<T>> {
         arr![Expr; Expr::Subquery(self.subquery())]
-    }
-
-    fn eval(&self, v: GenericArray<DatabaseValue, ValueCountOf<T>>) -> RuntimeResult<T> {
-        T::converter()
-            .deserialize(v)
-            .map_err(|e| e.as_runtime_err())
     }
 }
 

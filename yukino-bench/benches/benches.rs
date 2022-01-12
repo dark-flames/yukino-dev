@@ -93,21 +93,21 @@ fn bench_fetch_all(c: &mut Criterion) {
     for (name, size, introduction_size) in FETCH_ALL {
         drop_all();
         let mut handler = YukinoHandler::create(URL);
-        println!("Insert: {} x {}", size, introduction_size);
+
         handler.bench_insert(YukinoHandler::convert_users(generate_user(
             *size,
             *introduction_size,
         )));
 
-        let id = format!("{}.fetch_all/{}", YukinoHandler::orm_name(), name);
-        group.bench_function(id, |c| {
-            let mut handler = YukinoHandler::create(URL);
-            c.iter(|| handler.bench_fetch_all())
-        });
-
         let id = format!("{}.fetch_all/{}", DieselHandler::orm_name(), name);
         group.bench_function(id, |c| {
             let mut handler = DieselHandler::create(URL);
+            c.iter(|| handler.bench_fetch_all())
+        });
+
+        let id = format!("{}.fetch_all/{}", YukinoHandler::orm_name(), name);
+        group.bench_function(id, |c| {
+            let mut handler = YukinoHandler::create(URL);
             c.iter(|| handler.bench_fetch_all())
         });
 

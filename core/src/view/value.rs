@@ -4,20 +4,25 @@ use std::marker::PhantomData;
 use generic_array::{arr, ArrayLength, functional::FunctionalSequence, GenericArray};
 use generic_array::typenum::{U1, UInt, UTerm};
 use generic_array::typenum::bit::{B0, B1};
+use sqlx::{ColumnIndex, Database, Decode, MySql, Row};
 use sqlx::types::Decimal;
 use sqlx::types::time::{Date, PrimitiveDateTime, Time};
 
-use query_builder::{DatabaseValue, Expr};
+use interface::DatabaseType;
+use query_builder::{DatabaseValue, Expr, RowOf};
 
-use crate::converter::*;
-use crate::err::{RuntimeResult, YukinoError};
 use crate::view::{
-    AnyTagExprView, ExprView, ExprViewBox, ExprViewBoxWithTag, OrdViewTag, TagList, TagList1,
+    AnyTagExprView, EvalResult, ExprView, ExprViewBox, ExprViewBoxWithTag, OrdViewTag, TagList,
+    TagList1,
 };
+use crate::view::index::ResultIndex;
 
 pub type ValueCountOf<T> = <T as Value>::L;
 
-pub trait ValueCount: ArrayLength<Expr> + ArrayLength<DatabaseValue> + ArrayLength<String> {}
+pub trait ValueCount:
+    ArrayLength<Expr> + ArrayLength<DatabaseValue> + ArrayLength<String> + ArrayLength<MySql>
+{
+}
 
 impl ValueCount for UTerm {}
 
@@ -28,10 +33,6 @@ impl<N: ValueCount> ValueCount for UInt<N, B1> {}
 pub trait Value: 'static + Clone + Debug + Send + Sync {
     type L: ValueCount;
     type ValueExprView: ExprView<Self>;
-
-    fn converter() -> ConverterRef<Self>
-    where
-        Self: Sized;
 
     fn view(self) -> ExprViewBox<Self>
     where
@@ -47,9 +48,13 @@ pub trait Value: 'static + Clone + Debug + Send + Sync {
         Self::ValueExprView::from_exprs(exprs)
     }
 
-    fn to_database_values(self) -> GenericArray<DatabaseValue, Self::L> {
-        Self::converter().serialize(self).unwrap()
-    }
+    fn to_database_values(self) -> GenericArray<DatabaseValue, Self::L>;
+}
+
+pub trait FromQueryResult<'r, DB: Database, H: ResultIndex>: Value {
+    fn from_result(values: &'r RowOf<DB>) -> EvalResult<Self>
+    where
+        Self: Sized;
 }
 
 pub trait AnyTagsValue: Value {
@@ -88,12 +93,6 @@ impl<T: Value<L = U1>, Tags: TagList> ExprView<T> for SingleExprView<T, Tags> {
     fn collect_expr(&self) -> GenericArray<Expr, U1> {
         arr![Expr; self.expr.clone()]
     }
-
-    fn eval(&self, v: GenericArray<DatabaseValue, U1>) -> RuntimeResult<T> {
-        T::converter()
-            .deserialize(v)
-            .map_err(|e| e.as_runtime_err())
-    }
 }
 
 impl<T: Value<L = U1>, Tags: TagList> AnyTagExprView<T> for SingleExprView<T, Tags> {
@@ -111,25 +110,24 @@ impl<T: Value<L = U1>, Tags: TagList> AnyTagExprView<T> for SingleExprView<T, Ta
 }
 
 macro_rules! impl_value {
-    ($ty: ty, $converter: ty) => {
-        impl Value for $ty {
-            type L = U1;
-            type ValueExprView = SingleExprView<$ty, TagList1<OrdViewTag>>;
-
-            fn converter() -> ConverterRef<Self>
-            where
-                Self: Sized,
+    (@inner $ty: ty, $enum: ident) => {
+        impl<'r, DB: Database, H: ResultIndex> FromQueryResult<'r, DB, H> for $ty where
+            Self: Decode<'r, DB>,
+            for<'n> &'n str: ColumnIndex<RowOf<DB>>
+        {
+            fn from_result(
+                values: &'r RowOf<DB>
+            ) -> EvalResult<Self>
+                where Self: Sized
             {
-                <$converter>::instance()
+                values.try_get_unchecked(H::index())
             }
         }
 
         impl AnyTagsValue for $ty {
             fn view_with_tags<Tags: TagList>(self) -> ExprViewBoxWithTag<Self, Tags> {
                 Box::new(SingleExprView {
-                    expr: Self::converter()
-                        .serialize(self)
-                        .unwrap()
+                    expr: self.to_database_values()
                         .map(Expr::Lit)
                         .into_iter()
                         .next()
@@ -140,27 +138,45 @@ macro_rules! impl_value {
         }
     };
 
-    ($ty: ty, $converter: ty, $optional_converter: ty) => {
-        impl_value!($ty, $converter);
-        impl_value!(Option<$ty>, $optional_converter);
+    ($ty: ty, $enum: ident) => {
+        impl Value for $ty {
+            type L = U1;
+            type ValueExprView = SingleExprView<Self, TagList1<OrdViewTag>>;
+
+            fn to_database_values(self) -> GenericArray<DatabaseValue, Self::L>{
+                arr![DatabaseValue; DatabaseValue::$enum(self)]
+            }
+        }
+
+        impl Value for Option<$ty> {
+            type L = U1;
+            type ValueExprView = SingleExprView<Self, TagList1<OrdViewTag>>;
+
+            fn to_database_values(self) -> GenericArray<DatabaseValue, Self::L>{
+                if let Some(nested) = self {
+                    arr![DatabaseValue; DatabaseValue::$enum(nested)]
+                } else {
+                    arr![DatabaseValue; DatabaseValue::Null(DatabaseType::$enum)]
+                }
+            }
+        }
+
+        impl_value!(@inner $ty, $enum);
+        impl_value!(@inner Option<$ty>, $enum);
     };
 }
 
-impl_value!(bool, BoolConverter, OptionalBoolConverter);
-impl_value!(u16, UnsignedShortConverter, OptionalUnsignedShortConverter);
-impl_value!(u32, UnsignedIntConverter, OptionalUnsignedIntConverter);
-impl_value!(u64, UnsignedLongConverter, OptionalUnsignedLongConverter);
-impl_value!(i16, ShortConverter, OptionalShortConverter);
-impl_value!(i32, IntConverter, OptionalIntConverter);
-impl_value!(i64, LongConverter, OptionalLongConverter);
-impl_value!(f32, FloatConverter, OptionalFloatConverter);
-impl_value!(f64, DoubleConverter, OptionalDoubleConverter);
-impl_value!(Decimal, DecimalConverter, OptionalDecimalConverter);
-impl_value!(Date, DateConverter, OptionalDateConverter);
-impl_value!(Time, TimeConverter, OptionalTimeConverter);
-impl_value!(
-    PrimitiveDateTime,
-    DateTimeConverter,
-    OptionalDateTimeConverter
-);
-impl_value!(String, StringConverter, OptionalStringConverter);
+impl_value!(bool, Bool);
+impl_value!(u16, UnsignedSmallInteger);
+impl_value!(u32, UnsignedInteger);
+impl_value!(u64, UnsignedBigInteger);
+impl_value!(i16, SmallInteger);
+impl_value!(i32, Integer);
+impl_value!(i64, BigInteger);
+impl_value!(f32, Float);
+impl_value!(f64, Double);
+impl_value!(Decimal, Decimal);
+impl_value!(Date, Date);
+impl_value!(Time, Time);
+impl_value!(PrimitiveDateTime, DateTime);
+impl_value!(String, String);

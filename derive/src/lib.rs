@@ -7,8 +7,8 @@ use syn::{Error, ExprTuple, parse_macro_input, parse_quote, TypeTuple};
 use crate::entity::EntityResolver;
 use crate::fields::{BasicFieldResolver, DateTimeFieldResolver, DecimalFieldResolver};
 use crate::impls::{
-    AssociationImplementor, ConverterImplementor, EntityImplementor, FieldMarkerImplementor,
-    InsertImplementor, PrimaryImplementor, ViewImplementor,
+    AssociationImplementor, EntityImplementor, FieldMarkerImplementor, InsertImplementor,
+    PrimaryImplementor, ViewImplementor,
 };
 
 mod entity;
@@ -26,7 +26,6 @@ pub fn derive_entity(tokens: TokenStream) -> TokenStream {
             Box::new(DateTimeFieldResolver),
         ],
         vec![
-            Box::new(ConverterImplementor),
             Box::new(EntityImplementor),
             Box::new(ViewImplementor),
             Box::new(PrimaryImplementor),
@@ -39,8 +38,6 @@ pub fn derive_entity(tokens: TokenStream) -> TokenStream {
     let result = resolver
         .get_implements(&item_struct)
         .unwrap_or_else(|err| err.to_compile_error());
-
-    //println!("{}", result);
 
     result.into()
 }

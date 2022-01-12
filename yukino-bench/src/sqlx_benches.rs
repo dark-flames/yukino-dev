@@ -76,10 +76,12 @@ impl Handler for SqlxHandler {
 
     fn bench_fetch_all(&mut self) {
         self.runtime.block_on(async {
-            sqlx::query_as::<_, User>("SELECT id, name, hair_color FROM user")
-                .fetch_all(&mut self.connection)
-                .await
-                .unwrap();
+            sqlx::query_as::<_, User>(
+                "SELECT id, name, age, phone, address, birthday, since, introduction FROM user",
+            )
+            .fetch_all(&mut self.connection)
+            .await
+            .unwrap();
         })
     }
 }

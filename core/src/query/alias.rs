@@ -35,7 +35,7 @@ impl AliasGenerator {
             .map(|(index, expr)| SelectItem {
                 expr,
                 alias: if with_alias {
-                    Some(format!("r{}", index))
+                    Some(format!("U{}", index))
                 } else {
                     None
                 },

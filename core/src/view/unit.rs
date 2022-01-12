@@ -2,15 +2,15 @@ use std::marker::PhantomData;
 
 use generic_array::{arr, GenericArray};
 use generic_array::typenum::U0;
+use sqlx::Database;
 
-use query_builder::{DatabaseValue, Expr};
+use query_builder::{DatabaseValue, Expr, RowOf};
 
-use crate::converter::{Converter, ConverterRef, UnitConverter};
-use crate::err::{RuntimeResult, YukinoError};
 use crate::view::{
-    AnyTagExprView, AnyTagsValue, EmptyTagList, ExprView, ExprViewBox, ExprViewBoxWithTag, TagList,
-    Value, ValueCountOf,
+    AnyTagExprView, AnyTagsValue, EmptyTagList, EvalResult, ExprView, ExprViewBox,
+    ExprViewBoxWithTag, FromQueryResult, TagList, Value, ValueCountOf,
 };
+use crate::view::index::ResultIndex;
 
 pub struct UnitView<Tags: TagList>(PhantomData<Tags>);
 
@@ -31,12 +31,6 @@ impl<Tags: TagList> ExprView<()> for UnitView<Tags> {
     fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<()>> {
         arr![Expr;]
     }
-
-    fn eval(&self, v: GenericArray<DatabaseValue, ValueCountOf<()>>) -> RuntimeResult<()> {
-        <() as Value>::converter()
-            .deserialize(v)
-            .map_err(|e| e.as_runtime_err())
-    }
 }
 
 impl<Tags: TagList> AnyTagExprView<()> for UnitView<Tags> {
@@ -54,11 +48,17 @@ impl Value for () {
     type L = U0;
     type ValueExprView = UnitView<EmptyTagList>;
 
-    fn converter() -> ConverterRef<Self>
+    fn to_database_values(self) -> GenericArray<DatabaseValue, Self::L> {
+        arr![DatabaseValue;]
+    }
+}
+
+impl<'r, DB: Database, H: ResultIndex> FromQueryResult<'r, DB, H> for () {
+    fn from_result(_values: &'r RowOf<DB>) -> EvalResult<Self>
     where
         Self: Sized,
     {
-        UnitConverter::instance()
+        Ok(())
     }
 }
 

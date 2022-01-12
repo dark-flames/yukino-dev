@@ -124,7 +124,7 @@ macro_rules! impl_expr_in_for {
             ) -> ExprViewBoxWithTag<bool, Tags> {
                 let mut expr_iter = e.collect_expr().zip(
                     arr.into_iter().map(
-                        |item| (*Self::converter()).serialize(item).unwrap()
+                        |item| item.to_database_values()
                     ).fold(
                         GenericArray::<Vec<DatabaseValue>, ValueCountOf<Self>>::default(),
                         |carry, item| {

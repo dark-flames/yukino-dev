@@ -1,15 +1,16 @@
+use std::marker::PhantomData;
 use std::vec::IntoIter;
 
 use async_trait::async_trait;
-use generic_array::ArrayLength;
-use sqlx::{Database, Error, Executor, FromRow, MySql, query};
+use generic_array::{ArrayLength, typenum::U0};
+use sqlx::{Database, Error, Executor, MySql, query};
 use sqlx::query::Query;
 
 use query_builder::{
-    AppendToArgs, BindArgs, DatabaseValue, QueryBuildState, ResultRow, ToSql, YukinoQuery,
+    AppendToArgs, BindArgs, ColumnOf, DatabaseValue, QueryBuildState, ToSql, YukinoQuery,
 };
 
-use crate::view::{ExprViewBoxWithTag, TagList, Value, ValueCountOf};
+use crate::view::{FromQueryResult, Value, ValueCountOf};
 
 #[derive(Debug, Clone)]
 pub struct SingleRow;
@@ -18,19 +19,19 @@ pub struct MultiRows;
 
 pub trait ExecuteResultType: Clone {}
 
-pub trait Executable<T: Value, TTags: TagList, DB: Database> {
+pub trait Executable<T: Value, DB: Database> {
     type ResultType: ExecuteResultType;
     type Query: YukinoQuery<DB>;
 
-    fn generate_query(self) -> (Self::Query, ExprViewBoxWithTag<T, TTags>);
+    fn generate_query(self) -> Self::Query;
 }
 
 impl ExecuteResultType for SingleRow {}
 impl ExecuteResultType for MultiRows {}
 
 #[async_trait]
-pub trait FetchOne<T: Value, TTags: TagList>:
-    Executable<T, TTags, MySql, ResultType = SingleRow>
+pub trait FetchOne<T: Value + for<'r> FromQueryResult<'r, MySql, U0>>:
+    Executable<T, MySql, ResultType = SingleRow>
 {
     async fn exec<'c, 'e, E: 'e + Executor<'c, Database = MySql>>(
         self,
@@ -40,43 +41,38 @@ pub trait FetchOne<T: Value, TTags: TagList>:
         Self: Sized,
         DatabaseValue: for<'q> AppendToArgs<'q, MySql>,
         <ValueCountOf<T> as ArrayLength<DatabaseValue>>::ArrayType: Unpin,
-        ResultRow<ValueCountOf<T>>: for<'r> FromRow<'r, <MySql as Database>::Row>,
+        ValueCountOf<T>: for<'r> ArrayLength<ColumnOf<MySql>>,
     {
-        let (yukino_query, view) = self.generate_query();
+        let yukino_query = self.generate_query();
         let mut state = QueryBuildState::default();
         yukino_query.to_sql(&mut state).unwrap();
         let raw_query = state.to_string();
         let query: Query<MySql, _> = query(&raw_query);
         let query_with_args = yukino_query.bind_args(query);
-        let result = query_with_args.fetch_one(executor).await?;
-        view.eval(ResultRow::<ValueCountOf<T>>::from_row(&result)?.into())
-            .map_err(|e| Error::Decode(Box::new(e)))
+        let row = query_with_args.fetch_one(executor).await?;
+
+        T::from_result(&row)
     }
 }
 
-pub struct QueryResultIterator<DB: Database, T: Value, TTags: TagList> {
-    view: ExprViewBoxWithTag<T, TTags>,
+pub struct QueryResultIterator<DB: Database, T: Value> {
     query_result: IntoIter<<DB as Database>::Row>,
+    _marker: PhantomData<T>,
 }
 
-impl<DB: Database, T: Value, TTags: TagList> Iterator for QueryResultIterator<DB, T, TTags>
+impl<DB: Database, T: Value + for<'r> FromQueryResult<'r, DB, U0>> Iterator
+    for QueryResultIterator<DB, T>
 where
-    for<'r> ResultRow<ValueCountOf<T>>: FromRow<'r, <DB as Database>::Row>,
+    ValueCountOf<T>: for<'r> ArrayLength<ColumnOf<DB>>,
 {
     type Item = Result<T, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.query_result.next().map(|row| {
-            ResultRow::<ValueCountOf<T>>::from_row(&row).and_then(|result_row| {
-                self.view
-                    .eval(result_row.into())
-                    .map_err(|e| Error::Decode(Box::new(e)))
-            })
-        })
+        self.query_result.next().map(|row| T::from_result(&row))
     }
 }
 
-impl<DB: Database, T: Value, TTags: TagList> QueryResultIterator<DB, T, TTags>
+impl<DB: Database, T: Value> QueryResultIterator<DB, T>
 where
     Self: Iterator<Item = Result<T, Error>>,
 {
@@ -86,20 +82,20 @@ where
 }
 
 #[async_trait]
-pub trait FetchMulti<T: Value, TTags: TagList>:
-    Executable<T, TTags, MySql, ResultType = MultiRows>
+pub trait FetchMulti<T: Value + for<'r> FromQueryResult<'r, MySql, U0>>:
+    Executable<T, MySql, ResultType = MultiRows>
 {
     async fn exec<'c: 'e, 'e, E: 'e + Executor<'c, Database = MySql>>(
         self,
         executor: E,
-    ) -> Result<QueryResultIterator<MySql, T, TTags>, Error>
+    ) -> Result<QueryResultIterator<MySql, T>, Error>
     where
         Self: Sized,
         DatabaseValue: for<'q> AppendToArgs<'q, MySql>,
         <ValueCountOf<T> as ArrayLength<DatabaseValue>>::ArrayType: Unpin,
-        ResultRow<ValueCountOf<T>>: for<'r> FromRow<'r, <MySql as Database>::Row>,
+        ValueCountOf<T>: for<'r> ArrayLength<ColumnOf<MySql>>,
     {
-        let (yukino_query, view) = self.generate_query();
+        let yukino_query = self.generate_query();
 
         let mut state = QueryBuildState::default();
         yukino_query.to_sql(&mut state).unwrap();
@@ -111,15 +107,22 @@ pub trait FetchMulti<T: Value, TTags: TagList>:
             .await?
             .into_iter();
 
-        Ok(QueryResultIterator { view, query_result })
+        Ok(QueryResultIterator {
+            query_result,
+            _marker: PhantomData,
+        })
     }
 }
 
-impl<T: Value, TTags: TagList, E: Executable<T, TTags, MySql, ResultType = SingleRow>>
-    FetchOne<T, TTags> for E
+impl<
+        T: Value + for<'r> FromQueryResult<'r, MySql, U0>,
+        E: Executable<T, MySql, ResultType = SingleRow>,
+    > FetchOne<T> for E
 {
 }
-impl<T: Value, TTags: TagList, E: Executable<T, TTags, MySql, ResultType = MultiRows>>
-    FetchMulti<T, TTags> for E
+impl<
+        T: Value + for<'r> FromQueryResult<'r, MySql, U0>,
+        E: Executable<T, MySql, ResultType = MultiRows>,
+    > FetchMulti<T> for E
 {
 }

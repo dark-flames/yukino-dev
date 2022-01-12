@@ -1,19 +1,16 @@
 use std::ops::{Add, Sub};
 
-use generic_array::{
-    GenericArray,
-    sequence::{Concat, Split},
-    typenum::Sum,
-};
+use generic_array::{ArrayLength, GenericArray, sequence::Concat, typenum::Sum};
+use generic_array::sequence::Split;
+use sqlx::Database;
 
-use query_builder::{DatabaseValue, Expr};
+use query_builder::{ColumnOf, DatabaseValue, Expr, RowOf};
 
-use crate::converter::{Converter, ConverterRef, TupleConverter};
-use crate::err::{RuntimeResult, YukinoError};
 use crate::view::{
-    ConcreteList, ExprView, ExprViewBox, ExprViewBoxWithTag, MergeList, TagList, TagsOfValueView,
-    Value, ValueCount, ValueCountOf,
+    ConcreteList, EvalResult, ExprView, ExprViewBox, ExprViewBoxWithTag, FromQueryResult,
+    MergeList, TagList, TagsOfValueView, Value, ValueCount, ValueCountOf,
 };
+use crate::view::index::ResultIndex;
 
 pub struct TupleExprView<L: Value, R: Value, LTags: TagList, RTags: TagList>(
     pub ExprViewBoxWithTag<L, LTags>,
@@ -52,12 +49,6 @@ where
     fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<(L, R)>> {
         Concat::concat(self.0.collect_expr(), self.1.collect_expr())
     }
-
-    fn eval(&self, v: GenericArray<DatabaseValue, ValueCountOf<(L, R)>>) -> RuntimeResult<(L, R)> {
-        <(L, R)>::converter()
-            .deserialize(v)
-            .map_err(|e| e.as_runtime_err())
-    }
 }
 
 impl<L: Value, R: Value> Value for (L, R)
@@ -70,11 +61,31 @@ where
     type L = Sum<ValueCountOf<L>, ValueCountOf<R>>;
     type ValueExprView = TupleExprView<L, R, TagsOfValueView<L>, TagsOfValueView<R>>;
 
-    fn converter() -> ConverterRef<Self>
+    fn to_database_values(self) -> GenericArray<DatabaseValue, Self::L> {
+        Concat::concat(self.0.to_database_values(), self.1.to_database_values())
+    }
+}
+
+impl<
+        'r,
+        DB: Database,
+        H: ResultIndex,
+        L: Value + FromQueryResult<'r, DB, H>,
+        R: Value + FromQueryResult<'r, DB, Sum<ValueCountOf<L>, H>>,
+    > FromQueryResult<'r, DB, H> for (L, R)
+where
+    TagsOfValueView<L>: MergeList<TagsOfValueView<R>>,
+    ValueCountOf<L>: Add<ValueCountOf<R>> + ArrayLength<ColumnOf<DB>>,
+    ValueCountOf<L>: Add<H>,
+    Sum<ValueCountOf<L>, H>: ResultIndex,
+    Sum<ValueCountOf<L>, ValueCountOf<R>>:
+        ValueCount + Sub<ValueCountOf<L>, Output = ValueCountOf<R>>,
+{
+    fn from_result(values: &'r RowOf<DB>) -> EvalResult<Self>
     where
         Self: Sized,
     {
-        TupleConverter::<L, R>::instance()
+        Ok((L::from_result(values)?, R::from_result(values)?))
     }
 }
 

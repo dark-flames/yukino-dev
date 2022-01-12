@@ -172,7 +172,7 @@ pub async fn prepare_data(pool: &MySqlPool) {
     meeting_list.insert_all().exec(pool).await.unwrap();
 }
 
-pub async fn bit_data_person(pool: &MySqlPool, size: usize) {
+pub async fn big_data_person(pool: &MySqlPool, size: usize) {
     (0..size)
         .map(|idx| NewPerson {
             name: format!("Person {}", idx),
@@ -187,7 +187,12 @@ pub async fn bit_data_person(pool: &MySqlPool, size: usize) {
 }
 
 pub async fn simple_query(pool: &MySqlPool) {
-    Person::all().exec(pool).await.unwrap();
+    Person::all()
+        .exec(pool)
+        .await
+        .unwrap()
+        .try_collect()
+        .unwrap();
 }
 
 #[tokio::main]
@@ -198,36 +203,39 @@ pub async fn main() -> Result<(), sqlx::Error> {
         .connect(&url)
         .await?;
 
-    Person::all().delete().exec(&pool).await.unwrap();
-    Meeting::all().delete().exec(&pool).await.unwrap();
+    //big_data_person(&pool, 10000).await;
+    simple_query(&pool).await;
+    /*
+        Person::all().delete().exec(&pool).await.unwrap();
+        Meeting::all().delete().exec(&pool).await.unwrap();
 
-    prepare_data(&pool).await;
+        prepare_data(&pool).await;
 
-    assert_eq!(adult_hosted_meeting_length(&pool).await, vec![9, 9, 9]);
+        assert_eq!(adult_hosted_meeting_length(&pool).await, vec![9, 9, 9]);
 
-    assert_eq!(
-        meeting_count_by_level(&pool).await,
-        vec![(1, Some(Decimal::from(3))), (2, Some(Decimal::from(2)))]
-    );
+        assert_eq!(
+            meeting_count_by_level(&pool).await,
+            vec![(1, Some(Decimal::from(3))), (2, Some(Decimal::from(2)))]
+        );
 
-    assert_eq!(
-        hosted_meeting_titles(&pool).await,
-        vec![
-            (1, Some("Meeting 1, Meeting 2".to_string())),
-            (2, Some("Meeting 3".to_string())),
-            (3, Some("Meeting 4, Meeting 5".to_string())),
-            (4, None),
-        ]
-    );
+        assert_eq!(
+            hosted_meeting_titles(&pool).await,
+            vec![
+                (1, Some("Meeting 1, Meeting 2".to_string())),
+                (2, Some("Meeting 3".to_string())),
+                (3, Some("Meeting 4, Meeting 5".to_string())),
+                (4, None),
+            ]
+        );
 
-    assert_eq!(
-        person_and_hosted_meeting(&pool)
-            .await
-            .into_iter()
-            .map(|(person, meetings)| (person.id, meetings.into_iter().map(|m| m.id).collect()))
-            .collect::<Vec<(u32, Vec<u32>)>>(),
-        vec![(1, vec![1, 2]), (2, vec![3]), (3, vec![4, 5]), (4, vec![]),]
-    );
-
+        assert_eq!(
+            person_and_hosted_meeting(&pool)
+                .await
+                .into_iter()
+                .map(|(person, meetings)| (person.id, meetings.into_iter().map(|m| m.id).collect()))
+                .collect::<Vec<(u32, Vec<u32>)>>(),
+            vec![(1, vec![1, 2]), (2, vec![3]), (3, vec![4, 5]), (4, vec![]),]
+        );
+    */
     Ok(())
 }

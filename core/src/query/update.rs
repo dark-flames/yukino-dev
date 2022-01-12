@@ -10,8 +10,7 @@ use query_builder::{AssignmentValue, Expr, OrderByItem, SelectFrom, UpdateQuery,
 use crate::operator::SortResult;
 use crate::query::{Executable, SingleRow, Sort};
 use crate::view::{
-    EntityView, EntityWithView, ExprViewBox, ExprViewBoxWithTag, FieldMarkerWithView, TagList,
-    TagsOfValueView, Value,
+    EntityView, EntityWithView, ExprViewBoxWithTag, FieldMarkerWithView, TagList, Value,
 };
 
 pub struct UpdateQueryResult<E: EntityWithView> {
@@ -126,19 +125,18 @@ impl<E: EntityWithView> Sort<E::View> for UpdateQueryResult<E> {
     }
 }
 
-impl<E: EntityWithView, DB: Database> Executable<(), TagsOfValueView<()>, DB>
-    for UpdateQueryResult<E>
+impl<E: EntityWithView, DB: Database> Executable<(), DB> for UpdateQueryResult<E>
 where
     UpdateQuery: YukinoQuery<DB>,
 {
     type ResultType = SingleRow;
     type Query = UpdateQuery;
 
-    fn generate_query(mut self) -> (Self::Query, ExprViewBox<()>) {
+    fn generate_query(mut self) -> Self::Query {
         for (column, value) in self.assignments {
             self.query.set(column, value);
         }
 
-        (self.query, ().view())
+        self.query
     }
 }
