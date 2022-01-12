@@ -31,7 +31,10 @@ macro_rules! basic_ty_converter {
                 let [v]: [DatabaseValue; 1] = data.into();
                 match v {
                     DatabaseValue::$enum_variant(nested) => Ok(nested),
-                    _ => Err(ConvertError::UnexpectedValueType)
+                    v => Err(ConvertError::UnexpectedValueType(
+                        DatabaseType::$enum_variant,
+                        (&v).into()
+                    ))
                 }
             }
 
@@ -69,7 +72,10 @@ macro_rules! optional_basic_ty_converter {
                 match v {
                     DatabaseValue::$enum_variant(nested) => Ok(Some(nested)),
                     DatabaseValue::Null(DatabaseType::$enum_variant) => Ok(None),
-                    _ => Err(ConvertError::UnexpectedValueType)
+                    v => Err(ConvertError::UnexpectedValueType(
+                        DatabaseType::$enum_variant,
+                        (&v).into()
+                    ))
                 }
             }
 

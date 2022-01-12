@@ -65,6 +65,7 @@ impl Implementor for InsertImplementor {
             );
 
         vec![quote! {
+            #[derive(Clone, Debug)]
             pub struct #name {
                 #(#fields),*
             }
