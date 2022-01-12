@@ -51,12 +51,14 @@ fn drop_all() {
 }
 
 fn bench_insert(c: &mut Criterion) {
-    let mut group = c.benchmark_group("bench_insert");
     for (name, size, introduction_size) in INSERT {
+        let mut group = c.benchmark_group(
+            format!("bench_insert_{}", *name)
+        );
         let data = generate_user(*size, *introduction_size);
         drop_all();
         group.bench_with_input(
-            BenchmarkId::new(format!("{}.insert", YukinoHandler::orm_name()), name),
+            BenchmarkId::new(YukinoHandler::orm_name(), ""),
             &data,
             |c, i| {
                 let mut handler = YukinoHandler::create(URL);
@@ -66,7 +68,7 @@ fn bench_insert(c: &mut Criterion) {
         );
         drop_all();
         group.bench_with_input(
-            BenchmarkId::new(format!("{}.insert", DieselHandler::orm_name()), name),
+            BenchmarkId::new(DieselHandler::orm_name(), ""),
             &data,
             |c, i| {
                 let mut handler = DieselHandler::create(URL);
@@ -76,7 +78,7 @@ fn bench_insert(c: &mut Criterion) {
         );
         drop_all();
         group.bench_with_input(
-            BenchmarkId::new(format!("{}.insert", SqlxHandler::orm_name()), name),
+            BenchmarkId::new(SqlxHandler::orm_name(), ""),
             &data,
             |c, i| {
                 let mut handler = SqlxHandler::create(URL);
@@ -84,13 +86,14 @@ fn bench_insert(c: &mut Criterion) {
                 c.iter(|| handler.bench_insert(data.clone()))
             },
         );
+        group.finish();
     }
-    group.finish();
+
 }
 
 fn bench_fetch_all(c: &mut Criterion) {
-    let mut group = c.benchmark_group("bench_fetch_all");
     for (name, size, introduction_size) in FETCH_ALL {
+        let mut group = c.benchmark_group(format!("fetch_{}", name));
         drop_all();
         let mut handler = YukinoHandler::create(URL);
 
@@ -99,31 +102,28 @@ fn bench_fetch_all(c: &mut Criterion) {
             *introduction_size,
         )));
 
-        let id = format!("{}.fetch_all/{}", DieselHandler::orm_name(), name);
-        group.bench_function(id, |c| {
+        group.bench_function(DieselHandler::orm_name(), |c| {
             let mut handler = DieselHandler::create(URL);
             c.iter(|| handler.bench_fetch_all())
         });
 
-        let id = format!("{}.fetch_all/{}", YukinoHandler::orm_name(), name);
-        group.bench_function(id, |c| {
+        group.bench_function(YukinoHandler::orm_name(), |c| {
             let mut handler = YukinoHandler::create(URL);
             c.iter(|| handler.bench_fetch_all())
         });
 
-        let id = format!("{}.fetch_all/{}", SqlxHandler::orm_name(), name);
-        group.bench_function(id, |c| {
-            let mut handler = DieselHandler::create(URL);
+        group.bench_function(SqlxHandler::orm_name(), |c| {
+            let mut handler = SqlxHandler::create(URL);
             c.iter(|| handler.bench_fetch_all())
         });
+        group.finish();
     }
-    group.finish();
 }
 
 criterion::criterion_group!(
     name = benches;
     config = Criterion::default();
-    targets = //bench_insert,
+    targets = bench_insert,
         bench_fetch_all
 );
 
