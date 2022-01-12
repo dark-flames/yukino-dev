@@ -1,5 +1,4 @@
 use generic_array::{arr, GenericArray};
-use iroha::ToTokens;
 use sqlx::types::Decimal;
 use sqlx::types::time::{Date, PrimitiveDateTime, Time};
 
@@ -12,8 +11,7 @@ use crate::view::ValueCountOf;
 
 macro_rules! basic_ty_converter {
     ($field_type:ty, $name:ident, $enum_variant:ident) => {
-        #[derive(ToTokens, Clone)]
-        #[Iroha(mod_path = "yukino::converter::basic")]
+        #[derive(Clone)]
         pub struct $name;
 
         impl Converter for $name {
@@ -50,8 +48,7 @@ macro_rules! basic_ty_converter {
 
 macro_rules! optional_basic_ty_converter {
     ($field_type:ty, $name:ident, $enum_variant:ident) => {
-        #[derive(ToTokens, Clone)]
-        #[Iroha(mod_path = "yukino::converter::basic")]
+        #[derive(Clone)]
         pub struct $name;
 
         impl Converter for $name {

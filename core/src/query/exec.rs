@@ -1,10 +1,12 @@
+use std::vec::IntoIter;
+
 use async_trait::async_trait;
 use generic_array::ArrayLength;
-use sqlx::{Database, Error, Executor, FromRow, MySql, query_as};
-use sqlx::query::QueryAs;
+use sqlx::{Database, Error, Executor, FromRow, MySql, query};
+use sqlx::query::Query;
 
 use query_builder::{
-    AppendToArgs, BindArgs, DatabaseValue, Query, QueryBuildState, ResultRow, ToSql,
+    AppendToArgs, BindArgs, DatabaseValue, QueryBuildState, ResultRow, ToSql, YukinoQuery,
 };
 
 use crate::view::{ExprViewBoxWithTag, TagList, Value, ValueCountOf};
@@ -18,7 +20,7 @@ pub trait ExecuteResultType: Clone {}
 
 pub trait Executable<T: Value, TTags: TagList, DB: Database> {
     type ResultType: ExecuteResultType;
-    type Query: Query<DB, ResultRow<ValueCountOf<T>>>;
+    type Query: YukinoQuery<DB>;
 
     fn generate_query(self) -> (Self::Query, ExprViewBoxWithTag<T, TTags>);
 }
@@ -40,16 +42,46 @@ pub trait FetchOne<T: Value, TTags: TagList>:
         <ValueCountOf<T> as ArrayLength<DatabaseValue>>::ArrayType: Unpin,
         ResultRow<ValueCountOf<T>>: for<'r> FromRow<'r, <MySql as Database>::Row>,
     {
-        let (query, view) = self.generate_query();
+        let (yukino_query, view) = self.generate_query();
         let mut state = QueryBuildState::default();
-        query.to_sql(&mut state).unwrap();
+        yukino_query.to_sql(&mut state).unwrap();
         let raw_query = state.to_string();
-        let query_as: QueryAs<MySql, ResultRow<ValueCountOf<T>>, _> = query_as(&raw_query);
-        let query_as = query.bind_args(query_as);
-        let result = query_as.fetch_one(executor).await?;
+        let query: Query<MySql, _> = query(&raw_query);
+        let query_with_args = yukino_query.bind_args(query);
+        let result = query_with_args.fetch_one(executor).await?;
+        view.eval(ResultRow::<ValueCountOf<T>>::from_row(&result)?.into())
+            .map_err(|e| Error::Decode(Box::new(e)))
+    }
+}
 
-        let arr = result.into();
-        view.eval(arr).map_err(|e| Error::Decode(Box::new(e)))
+pub struct QueryResultIterator<DB: Database, T: Value, TTags: TagList> {
+    view: ExprViewBoxWithTag<T, TTags>,
+    query_result: IntoIter<<DB as Database>::Row>,
+}
+
+impl<DB: Database, T: Value, TTags: TagList> Iterator for QueryResultIterator<DB, T, TTags>
+where
+    for<'r> ResultRow<ValueCountOf<T>>: FromRow<'r, <DB as Database>::Row>,
+{
+    type Item = Result<T, Error>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.query_result.next().map(|row| {
+            ResultRow::<ValueCountOf<T>>::from_row(&row).and_then(|result_row| {
+                self.view
+                    .eval(result_row.into())
+                    .map_err(|e| Error::Decode(Box::new(e)))
+            })
+        })
+    }
+}
+
+impl<DB: Database, T: Value, TTags: TagList> QueryResultIterator<DB, T, TTags>
+where
+    Self: Iterator<Item = Result<T, Error>>,
+{
+    pub fn try_collect(self) -> Result<Vec<T>, Error> {
+        self.collect()
     }
 }
 
@@ -57,30 +89,29 @@ pub trait FetchOne<T: Value, TTags: TagList>:
 pub trait FetchMulti<T: Value, TTags: TagList>:
     Executable<T, TTags, MySql, ResultType = MultiRows>
 {
-    async fn exec<'c, 'e, E: 'e + Executor<'c, Database = MySql>>(
+    async fn exec<'c: 'e, 'e, E: 'e + Executor<'c, Database = MySql>>(
         self,
         executor: E,
-    ) -> Result<Vec<T>, Error>
+    ) -> Result<QueryResultIterator<MySql, T, TTags>, Error>
     where
         Self: Sized,
         DatabaseValue: for<'q> AppendToArgs<'q, MySql>,
         <ValueCountOf<T> as ArrayLength<DatabaseValue>>::ArrayType: Unpin,
         ResultRow<ValueCountOf<T>>: for<'r> FromRow<'r, <MySql as Database>::Row>,
     {
-        let (query, view) = self.generate_query();
+        let (yukino_query, view) = self.generate_query();
+
         let mut state = QueryBuildState::default();
-        query.to_sql(&mut state).unwrap();
-        let raw_query = state.to_string();
-        let query_as: QueryAs<MySql, ResultRow<ValueCountOf<T>>, _> = query_as(&raw_query);
-        let query_as = query.bind_args(query_as);
-        let result = query_as.fetch_all(executor).await?;
-        result
-            .into_iter()
-            .map(|r| {
-                let arr = r.into();
-                view.eval(arr).map_err(|e| Error::Decode(Box::new(e)))
-            })
-            .collect()
+        yukino_query.to_sql(&mut state).unwrap();
+        let query_str = state.to_string();
+
+        let query_result = yukino_query
+            .bind_args(query(&query_str))
+            .fetch_all(executor)
+            .await?
+            .into_iter();
+
+        Ok(QueryResultIterator { view, query_result })
     }
 }
 

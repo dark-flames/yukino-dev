@@ -43,7 +43,7 @@ impl Implementor for EntityImplementor {
                             c_b.push(quote! {
                                 let query = {
                                     use yukino::query_builder::BindArgs;
-                                    yukino::query_builder::BindArgs::<'_, DB, O>::bind_args(
+                                    yukino::query_builder::BindArgs::<'_, DB>::bind_args(
                                         #iter.next().unwrap(),
                                         query
                                     )
@@ -99,16 +99,16 @@ impl Implementor for EntityImplementor {
                 }
             }
 
-            impl<DB: sqlx::Database, O> yukino::view::Insertable<DB, O> for #name
+            impl<DB: sqlx::Database> yukino::view::Insertable<DB> for #name
                 where yukino::query_builder::DatabaseValue: for<'p> yukino::query_builder::AppendToArgs<'p, DB> {
                 type Entity = Self;
                 type Source = Vec<Self>;
 
-                fn insert(self) -> yukino::query_builder::InsertQuery<DB, O, Self::Source> {
+                fn insert(self) -> yukino::query_builder::InsertQuery<DB, Self::Source> {
                     use yukino::view::Value;
                     yukino::query_builder::Insert::into(
                         #table_name.to_string(),
-                        <Self as yukino::view::Insertable<DB, O>>::columns(),
+                        <Self as yukino::view::Insertable<DB>>::columns(),
                         vec![self]
                     )
                 }
@@ -118,7 +118,7 @@ impl Implementor for EntityImplementor {
                 }
             }
 
-            impl<'q, DB: sqlx::Database, O> yukino::query_builder::ArgSource<'q, DB, O> for #name
+            impl<'q, DB: sqlx::Database> yukino::query_builder::ArgSource<'q, DB> for #name
                 where yukino::query_builder::DatabaseValue: for<'p> yukino::query_builder::AppendToArgs<'p, DB> {
                 fn insert_value_count() -> usize {
                     #count
@@ -126,8 +126,8 @@ impl Implementor for EntityImplementor {
 
                 fn bind_args(
                     self,
-                    query: yukino::query_builder::QueryOf<'q, DB, O>
-                ) ->  yukino::query_builder::QueryOf<'q, DB, O> where Self: Sized {
+                    query: yukino::query_builder::QueryOf<'q, DB>
+                ) ->  yukino::query_builder::QueryOf<'q, DB> where Self: Sized {
                     #(#iters)*
 
                     #(#binds)*

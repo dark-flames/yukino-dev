@@ -1,11 +1,10 @@
 use std::fmt::{Display, Formatter, Result as FmtResult, Write};
 
 use sqlx::Database;
-use sqlx::database::HasArguments;
-use sqlx::query::QueryAs;
 
 use crate::{
-    AppendToArgs, BindArgs, DatabaseValue, FunctionCall, Ident, QueryBuildState, SelectQuery, ToSql,
+    AppendToArgs, BindArgs, DatabaseValue, FunctionCall, Ident, QueryBuildState, QueryOf,
+    SelectQuery, ToSql,
 };
 
 pub type ExprBox = Box<Expr>;
@@ -272,14 +271,11 @@ impl ToSql for Expr {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for Expr
+impl<'q, DB: Database> BindArgs<'q, DB> for Expr
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         match self {
             Expr::Ident(i) => i.bind_args(query),
             Expr::Lit(l) => l.bind_args(query),

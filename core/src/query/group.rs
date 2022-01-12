@@ -4,7 +4,7 @@ use std::ops::{Add, Sub};
 use sqlx::Database;
 
 use query_builder::{
-    Alias, Expr, GroupSelect, IntoSelectSource, OrderByItem, Query, ResultRow, SelectQuery,
+    Alias, Expr, GroupSelect, IntoSelectSource, OrderByItem, SelectQuery, YukinoQuery,
 };
 
 use crate::operator::SortResult;
@@ -198,7 +198,7 @@ impl<View: GroupResult, E: EntityWithView> Sort<View> for GroupedQueryResult<Vie
 impl<View: GroupResult, E: EntityWithView, DB: Database> Executable<View::Value, View::Tags, DB>
     for GroupedQueryResult<View, (), E>
 where
-    SelectQuery: Query<DB, ResultRow<ValueCountOf<View::Value>>>,
+    SelectQuery: YukinoQuery<DB>,
 {
     type ResultType = MultiRows;
     type Query = SelectQuery;
@@ -230,7 +230,7 @@ impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView, DB: Databa
     Executable<ValueTuple<View, AggregateView>, ConcretedTags<View, AggregateView>, DB>
     for GroupedQueryResult<View, AggregateView, E>
 where
-    SelectQuery: Query<DB, ResultRow<ValueCountOf<ValueTuple<View, AggregateView>>>>,
+    SelectQuery: YukinoQuery<DB>,
     ValueTuple<View, AggregateView>: Value,
     TagsOfValueView<View::Value>: MergeList<TagsOfValueView<AggregateView::Value>>,
     TagOfGroupResult<View>: MergeList<TagOfFoldResult<AggregateView>>,
@@ -327,7 +327,7 @@ impl<View: GroupResult, E: EntityWithView> Map<View> for SortedGroupedQueryResul
 impl<View: GroupResult, E: EntityWithView, DB: Database> Executable<View::Value, View::Tags, DB>
     for SortedGroupedQueryResult<View, (), E>
 where
-    SelectQuery: Query<DB, ResultRow<ValueCountOf<View::Value>>>,
+    SelectQuery: YukinoQuery<DB>,
 {
     type ResultType = MultiRows;
     type Query = SelectQuery;
@@ -352,7 +352,7 @@ impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView, DB: Databa
     Executable<ValueTuple<View, AggregateView>, ConcretedTags<View, AggregateView>, DB>
     for SortedGroupedQueryResult<View, AggregateView, E>
 where
-    SelectQuery: Query<DB, ResultRow<ValueCountOf<ValueTuple<View, AggregateView>>>>,
+    SelectQuery: YukinoQuery<DB>,
     ValueTuple<View, AggregateView>: Value,
     TagsOfValueView<View::Value>: MergeList<TagsOfValueView<AggregateView::Value>>,
     TagOfGroupResult<View>: MergeList<TagOfFoldResult<AggregateView>>,

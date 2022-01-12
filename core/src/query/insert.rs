@@ -1,16 +1,14 @@
 use sqlx::Database;
 
-use query_builder::{ArgSourceList, Insert, InsertQuery, Query, ResultRow};
+use query_builder::{ArgSourceList, Insert, InsertQuery, YukinoQuery};
 
 use crate::query::{Executable, MultiRows};
-use crate::view::{
-    EntityWithView, ExprViewBoxWithTag, Insertable, TagsOfValueView, Value, ValueCountOf,
-};
+use crate::view::{EntityWithView, ExprViewBoxWithTag, Insertable, TagsOfValueView, Value};
 
-impl<DB: Database, S: for<'q> ArgSourceList<'q, DB, ResultRow<ValueCountOf<()>>>>
-    Executable<(), TagsOfValueView<()>, DB> for InsertQuery<DB, ResultRow<ValueCountOf<()>>, S>
+impl<DB: Database, S: for<'q> ArgSourceList<'q, DB>> Executable<(), TagsOfValueView<()>, DB>
+    for InsertQuery<DB, S>
 where
-    Self: Query<DB, ResultRow<ValueCountOf<()>>>,
+    Self: YukinoQuery<DB>,
 {
     type ResultType = MultiRows;
     type Query = Self;
@@ -20,19 +18,18 @@ where
     }
 }
 
-pub trait BatchInsert<DB: Database, O, S: for<'q> ArgSourceList<'q, DB, O>> {
-    fn insert_all(self) -> InsertQuery<DB, O, S>;
+pub trait BatchInsert<DB: Database, S: for<'q> ArgSourceList<'q, DB>> {
+    fn insert_all(self) -> InsertQuery<DB, S>;
 }
 
 impl<
         DB: Database,
-        O,
         E: EntityWithView,
-        InsertObject: Insertable<DB, O, Entity = E>,
+        InsertObject: Insertable<DB, Entity = E>,
         List: IntoIterator<Item = InsertObject>,
-    > BatchInsert<DB, O, Vec<InsertObject>> for List
+    > BatchInsert<DB, Vec<InsertObject>> for List
 {
-    fn insert_all(self) -> InsertQuery<DB, O, Vec<InsertObject>> {
+    fn insert_all(self) -> InsertQuery<DB, Vec<InsertObject>> {
         Insert::into(
             E::table_name().to_string(),
             InsertObject::columns(),

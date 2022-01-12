@@ -2,29 +2,30 @@ use std::fmt::{Display, Formatter, Write};
 use std::marker::PhantomData;
 
 use sqlx::Database;
-use sqlx::database::HasArguments;
-use sqlx::query::QueryAs;
 
-use crate::{AppendToArgs, ArgSourceList, BindArgs, DatabaseValue, Query, QueryBuildState, ToSql};
+use crate::{
+    AppendToArgs, ArgSourceList, BindArgs, DatabaseValue, QueryBuildState, QueryOf, ToSql,
+    YukinoQuery,
+};
 
 pub struct Insert;
 
-pub struct InsertQuery<DB: Database, O, S: for<'q> ArgSourceList<'q, DB, O>> {
+pub struct InsertQuery<DB: Database, S: for<'q> ArgSourceList<'q, DB>> {
     table: String,
     columns: Vec<String>,
     values: S,
-    _db: PhantomData<(DB, O)>,
+    _db: PhantomData<DB>,
 }
 
-unsafe impl<DB: Database, O, S: for<'q> ArgSourceList<'q, DB, O>> Send for InsertQuery<DB, O, S> {}
-unsafe impl<DB: Database, O, S: for<'q> ArgSourceList<'q, DB, O>> Sync for InsertQuery<DB, O, S> {}
+unsafe impl<DB: Database, S: for<'q> ArgSourceList<'q, DB>> Send for InsertQuery<DB, S> {}
+unsafe impl<DB: Database, S: for<'q> ArgSourceList<'q, DB>> Sync for InsertQuery<DB, S> {}
 
 impl Insert {
-    pub fn into<DB: Database, O, S: for<'q> ArgSourceList<'q, DB, O>>(
+    pub fn into<DB: Database, S: for<'q> ArgSourceList<'q, DB>>(
         table: String,
         columns: Vec<String>,
         values: S,
-    ) -> InsertQuery<DB, O, S> {
+    ) -> InsertQuery<DB, S> {
         InsertQuery {
             table,
             columns,
@@ -34,7 +35,7 @@ impl Insert {
     }
 }
 
-impl<DB: Database, O, S: for<'q> ArgSourceList<'q, DB, O>> ToSql for InsertQuery<DB, O, S> {
+impl<DB: Database, S: for<'q> ArgSourceList<'q, DB>> ToSql for InsertQuery<DB, S> {
     fn to_sql(&self, state: &mut QueryBuildState) -> std::fmt::Result {
         write!(state, "INSERT INTO {} (", self.table)?;
         state.join_by(&self.columns, |s, c| write!(s, "{}", c), |s| write!(s, ","))?;
@@ -43,20 +44,16 @@ impl<DB: Database, O, S: for<'q> ArgSourceList<'q, DB, O>> ToSql for InsertQuery
     }
 }
 
-impl<'q, DB: Database, O, S: for<'p> ArgSourceList<'p, DB, O>> BindArgs<'q, DB, O>
-    for InsertQuery<DB, O, S>
+impl<'q, DB: Database, S: for<'p> ArgSourceList<'p, DB>> BindArgs<'q, DB> for InsertQuery<DB, S>
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         self.values.bind_args(query)
     }
 }
 
-impl<DB: Database, O, S: for<'q> ArgSourceList<'q, DB, O>> Display for InsertQuery<DB, O, S>
+impl<DB: Database, S: for<'q> ArgSourceList<'q, DB>> Display for InsertQuery<DB, S>
 where
     DatabaseValue: for<'q> AppendToArgs<'q, DB>,
 {
@@ -67,7 +64,7 @@ where
     }
 }
 
-impl<DB: Database, O, S: for<'q> ArgSourceList<'q, DB, O>> Query<DB, O> for InsertQuery<DB, O, S> where
+impl<DB: Database, S: for<'q> ArgSourceList<'q, DB>> YukinoQuery<DB> for InsertQuery<DB, S> where
     DatabaseValue: for<'q> AppendToArgs<'q, DB>
 {
 }

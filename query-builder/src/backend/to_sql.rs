@@ -3,7 +3,7 @@ use std::iter::repeat;
 
 use sqlx::Database;
 use sqlx::database::HasArguments;
-use sqlx::query::QueryAs;
+use sqlx::query::Query;
 
 use crate::QueryBuildState;
 
@@ -11,43 +11,38 @@ pub trait ToSql {
     fn to_sql(&self, state: &mut QueryBuildState) -> Result;
 }
 
-pub type QueryOf<'q, DB, O> = QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>;
+pub type QueryOf<'q, DB> = Query<'q, DB, <DB as HasArguments<'q>>::Arguments>;
 
-pub trait ArgSource<'q, DB: Database, O> {
+pub trait ArgSource<'q, DB: Database> {
     fn insert_value_count() -> usize;
 
-    fn bind_args(self, query: QueryOf<'q, DB, O>) -> QueryOf<'q, DB, O>
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB>
     where
         Self: Sized;
 }
 
-pub trait ArgSourceList<'q, DB: Database, O> {
+pub trait ArgSourceList<'q, DB: Database> {
     fn query_part(&self) -> String;
 
-    fn bind_args(self, query: QueryOf<'q, DB, O>) -> QueryOf<'q, DB, O>
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB>
     where
         Self: Sized;
 }
 
-pub trait BindArgs<'q, DB: Database, O> {
+pub trait BindArgs<'q, DB: Database> {
     fn bind_args(
         self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>;
+        query: Query<'q, DB, <DB as HasArguments<'q>>::Arguments>,
+    ) -> Query<'q, DB, <DB as HasArguments<'q>>::Arguments>;
 }
 
-impl<'q, DB: Database, O, I: BindArgs<'q, DB, O>, L: IntoIterator<Item = I>> BindArgs<'q, DB, O>
-    for L
-{
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+impl<'q, DB: Database, I: BindArgs<'q, DB>, L: IntoIterator<Item = I>> BindArgs<'q, DB> for L {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         self.into_iter().fold(query, |q, i| i.bind_args(q))
     }
 }
 
-impl<'q, DB: Database, O, S: ArgSource<'q, DB, O>> ArgSourceList<'q, DB, O> for Vec<S> {
+impl<'q, DB: Database, S: ArgSource<'q, DB>> ArgSourceList<'q, DB> for Vec<S> {
     fn query_part(&self) -> String {
         let row = format!(
             "({})",
@@ -60,7 +55,7 @@ impl<'q, DB: Database, O, S: ArgSource<'q, DB, O>> ArgSourceList<'q, DB, O> for 
         repeat(row).take(self.len()).collect::<Vec<_>>().join(",")
     }
 
-    fn bind_args(self, query: QueryOf<'q, DB, O>) -> QueryOf<'q, DB, O>
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB>
     where
         Self: Sized,
     {

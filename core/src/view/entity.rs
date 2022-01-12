@@ -98,11 +98,11 @@ pub trait Deletable: Identifiable {
     }
 }
 
-pub trait Insertable<DB: Database, O>: for<'q> ArgSource<'q, DB, O> {
+pub trait Insertable<DB: Database>: for<'q> ArgSource<'q, DB> {
     type Entity: EntityWithView;
-    type Source: for<'q> ArgSourceList<'q, DB, O>;
+    type Source: for<'q> ArgSourceList<'q, DB>;
 
-    fn insert(self) -> InsertQuery<DB, O, Self::Source>
+    fn insert(self) -> InsertQuery<DB, Self::Source>
     where
         Self: Sized;
 

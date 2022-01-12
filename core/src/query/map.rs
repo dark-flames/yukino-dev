@@ -4,9 +4,7 @@ use generic_array::{arr, GenericArray};
 use generic_array::typenum::U1;
 use sqlx::Database;
 
-use query_builder::{
-    DatabaseValue, Expr, OrderByItem, Query, ResultRow, SelectQuery, SelectSource,
-};
+use query_builder::{DatabaseValue, Expr, OrderByItem, SelectQuery, SelectSource, YukinoQuery};
 
 use crate::err::{RuntimeResult, YukinoError};
 use crate::query::{AliasGenerator, Executable, ExecuteResultType, SingleRow};
@@ -65,7 +63,7 @@ impl<R: Value, RTags: TagList, ResultType: ExecuteResultType> QueryResultMap<R, 
 impl<R: Value, RTags: TagList, ResultType: ExecuteResultType, DB: Database> Executable<R, RTags, DB>
     for QueryResultMap<R, RTags, ResultType>
 where
-    SelectQuery: Query<DB, ResultRow<ValueCountOf<R>>>,
+    SelectQuery: YukinoQuery<DB>,
 {
     type ResultType = ResultType;
     type Query = SelectQuery;

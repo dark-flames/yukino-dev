@@ -4,8 +4,8 @@ use sqlx::Database;
 
 use crate::{BindArgs, ToSql};
 
-pub trait Query<DB: Database, O>: ToSql + Display + Send + Sync
+pub trait YukinoQuery<DB: Database>: ToSql + Display + Send + Sync
 where
-    Self: for<'q> BindArgs<'q, DB, O>,
+    Self: for<'q> BindArgs<'q, DB>,
 {
 }

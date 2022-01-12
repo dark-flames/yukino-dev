@@ -2,11 +2,11 @@ use std::marker::PhantomData;
 
 use sqlx::Database;
 
-use query_builder::{DeleteQuery, OrderByItem, Query, ResultRow, SelectFrom};
+use query_builder::{DeleteQuery, OrderByItem, SelectFrom, YukinoQuery};
 
 use crate::operator::SortResult;
 use crate::query::{Executable, MultiRows, Sort};
-use crate::view::{EntityView, EntityWithView, ExprViewBox, TagsOfValueView, Value, ValueCountOf};
+use crate::view::{EntityView, EntityWithView, ExprViewBox, TagsOfValueView, Value};
 
 pub struct DeleteQueryResult<E: EntityWithView> {
     query: DeleteQuery,
@@ -56,7 +56,7 @@ impl<E: EntityWithView> Sort<E::View> for DeleteQueryResult<E> {
 impl<E: EntityWithView, DB: Database> Executable<(), TagsOfValueView<()>, DB>
     for DeleteQueryResult<E>
 where
-    DeleteQuery: Query<DB, ResultRow<ValueCountOf<()>>>,
+    DeleteQuery: YukinoQuery<DB>,
 {
     type ResultType = MultiRows;
     type Query = DeleteQuery;

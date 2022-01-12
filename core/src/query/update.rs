@@ -5,15 +5,13 @@ use generic_array::ArrayLength;
 use sqlx::Database;
 
 use interface::FieldMarker;
-use query_builder::{
-    AssignmentValue, Expr, OrderByItem, Query, ResultRow, SelectFrom, UpdateQuery,
-};
+use query_builder::{AssignmentValue, Expr, OrderByItem, SelectFrom, UpdateQuery, YukinoQuery};
 
 use crate::operator::SortResult;
 use crate::query::{Executable, SingleRow, Sort};
 use crate::view::{
     EntityView, EntityWithView, ExprViewBox, ExprViewBoxWithTag, FieldMarkerWithView, TagList,
-    TagsOfValueView, Value, ValueCountOf,
+    TagsOfValueView, Value,
 };
 
 pub struct UpdateQueryResult<E: EntityWithView> {
@@ -131,7 +129,7 @@ impl<E: EntityWithView> Sort<E::View> for UpdateQueryResult<E> {
 impl<E: EntityWithView, DB: Database> Executable<(), TagsOfValueView<()>, DB>
     for UpdateQueryResult<E>
 where
-    UpdateQuery: Query<DB, ResultRow<ValueCountOf<()>>>,
+    UpdateQuery: YukinoQuery<DB>,
 {
     type ResultType = SingleRow;
     type Query = UpdateQuery;

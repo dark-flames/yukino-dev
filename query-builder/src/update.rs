@@ -1,12 +1,10 @@
 use std::fmt::{Display, Formatter, Write};
 
 use sqlx::Database;
-use sqlx::database::HasArguments;
-use sqlx::query::QueryAs;
 
 use crate::{
-    Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Expr, OrderByItem, Query,
-    QueryBuildState, ToSql,
+    Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Expr, OrderByItem, QueryBuildState,
+    QueryOf, ToSql, YukinoQuery,
 };
 
 pub struct Update;
@@ -89,14 +87,11 @@ impl ToSql for AssignmentValue {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for AssignmentValue
+impl<'q, DB: Database> BindArgs<'q, DB> for AssignmentValue
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         if let AssignmentValue::Expr(e) = self {
             e.bind_args(query)
         } else {
@@ -113,14 +108,11 @@ impl ToSql for AssignmentItem {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for AssignmentItem
+impl<'q, DB: Database> BindArgs<'q, DB> for AssignmentItem
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         self.value.bind_args(query)
     }
 }
@@ -151,14 +143,11 @@ impl ToSql for UpdateQuery {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for UpdateQuery
+impl<'q, DB: Database> BindArgs<'q, DB> for UpdateQuery
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         self.order_by.bind_args(self.where_clauses.bind_args(query))
     }
 }
@@ -171,4 +160,4 @@ impl Display for UpdateQuery {
     }
 }
 
-impl<DB: Database, O> Query<DB, O> for UpdateQuery where DatabaseValue: for<'q> AppendToArgs<'q, DB> {}
+impl<DB: Database> YukinoQuery<DB> for UpdateQuery where DatabaseValue: for<'q> AppendToArgs<'q, DB> {}

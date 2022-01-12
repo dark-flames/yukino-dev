@@ -1,10 +1,8 @@
 use std::fmt::{Display, Formatter, Result as FmtResult, Write};
 
 use sqlx::Database;
-use sqlx::database::HasArguments;
-use sqlx::query::QueryAs;
 
-use crate::{AppendToArgs, BindArgs, DatabaseValue, Expr, QueryBuildState, ToSql};
+use crate::{AppendToArgs, BindArgs, DatabaseValue, Expr, QueryBuildState, QueryOf, ToSql};
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Ident {
@@ -90,14 +88,11 @@ impl ToSql for Ident {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for Ident
+impl<'q, DB: Database> BindArgs<'q, DB> for Ident
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         query
     }
 }

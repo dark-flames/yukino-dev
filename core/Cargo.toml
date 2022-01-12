@@ -8,14 +8,9 @@ edition = "2018"
 [dependencies]
 interface = { package = "yukino-interface", path = "../interface", version = "0.1.0" }
 query-builder = { package = "yukino-query-builder", path = "../query-builder", version = "0.1.0" }
-annotation-rs = "0.1.0"
-iroha = "0.1.7"
-quote = "1.0"
 heck = "0.3.3"
-syn = { version = "1.0", features= ["full"] }
 proc-macro2 = { version = "1.0", features= ["span-locations"] }
 thiserror = "1.0"
-unzip3 = "1.0.0"
 generic-array = "0.14.4"
 rand = "0.8.4"
 sqlx = { version = "0.5.9", features = ["runtime-tokio-rustls", "json", "time", "decimal"]}

@@ -1,12 +1,10 @@
 use std::fmt::{Debug, Display, Formatter, Write};
 
 use sqlx::Database;
-use sqlx::database::HasArguments;
-use sqlx::query::QueryAs;
 
 use crate::{
-    Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Delete, Expr, Join, Query,
-    QueryBuildState, ToSql, Update, UpdateQuery,
+    Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Delete, Expr, Join,
+    QueryBuildState, QueryOf, ToSql, Update, UpdateQuery, YukinoQuery,
 };
 use crate::delete::DeleteQuery;
 
@@ -370,14 +368,11 @@ impl ToSql for OrderByItem {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for OrderByItem
+impl<'q, DB: Database> BindArgs<'q, DB> for OrderByItem
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         self.expr.bind_args(query)
     }
 }
@@ -409,14 +404,11 @@ impl ToSql for SelectSource {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SelectSource
+impl<'q, DB: Database> BindArgs<'q, DB> for SelectSource
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         match self {
             SelectSource::From(from) => from.bind_args(query),
             SelectSource::Group(group) => group.bind_args(query),
@@ -424,14 +416,11 @@ where
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SelectFrom
+impl<'q, DB: Database> BindArgs<'q, DB> for SelectFrom
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         self.where_clauses.bind_args(self.join.bind_args(query))
     }
 }
@@ -454,14 +443,11 @@ impl ToSql for GroupSelect {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for GroupSelect
+impl<'q, DB: Database> BindArgs<'q, DB> for GroupSelect
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         self.having
             .bind_args(self.group_by.bind_args(self.base.bind_args(query)))
     }
@@ -479,14 +465,11 @@ impl ToSql for SelectItem {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SelectItem
+impl<'q, DB: Database> BindArgs<'q, DB> for SelectItem
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         self.expr.bind_args(query)
     }
 }
@@ -517,14 +500,11 @@ impl ToSql for SelectQuery {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SelectQuery
+impl<'q, DB: Database> BindArgs<'q, DB> for SelectQuery
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         let after_select = self.select.bind_args(query);
 
         let after_source = self.base.bind_args(after_select);
@@ -556,4 +536,4 @@ impl From<SelectFrom> for DeleteQuery {
     }
 }
 
-impl<DB: Database, O> Query<DB, O> for SelectQuery where DatabaseValue: for<'q> AppendToArgs<'q, DB> {}
+impl<DB: Database> YukinoQuery<DB> for SelectQuery where DatabaseValue: for<'q> AppendToArgs<'q, DB> {}

@@ -1,12 +1,10 @@
 use std::fmt::{Display, Formatter, Write};
 
 use sqlx::Database;
-use sqlx::database::HasArguments;
-use sqlx::query::QueryAs;
 
 use crate::{
-    Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Expr, OrderByItem, Query,
-    QueryBuildState, ToSql,
+    Alias, AliasedTable, AppendToArgs, BindArgs, DatabaseValue, Expr, OrderByItem, QueryBuildState,
+    QueryOf, ToSql, YukinoQuery,
 };
 
 pub struct Delete;
@@ -80,14 +78,11 @@ impl ToSql for DeleteQuery {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for DeleteQuery
+impl<'q, DB: Database> BindArgs<'q, DB> for DeleteQuery
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         self.order_by.bind_args(self.where_clauses.bind_args(query))
     }
 }
@@ -100,4 +95,4 @@ impl Display for DeleteQuery {
     }
 }
 
-impl<DB: Database, O> Query<DB, O> for DeleteQuery where DatabaseValue: for<'p> AppendToArgs<'p, DB> {}
+impl<DB: Database> YukinoQuery<DB> for DeleteQuery where DatabaseValue: for<'p> AppendToArgs<'p, DB> {}

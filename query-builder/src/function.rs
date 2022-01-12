@@ -1,11 +1,10 @@
 use std::fmt::{Debug, Display, Formatter};
 
 use sqlx::Database;
-use sqlx::database::HasArguments;
-use sqlx::query::QueryAs;
 
 use crate::{
-    AppendToArgs, BindArgs, DatabaseValue, Expr, OrderByItem, QueryBuildState, SelectQuery, ToSql,
+    AppendToArgs, BindArgs, DatabaseValue, Expr, OrderByItem, QueryBuildState, QueryOf,
+    SelectQuery, ToSql,
 };
 use crate::drivers::{convert_group_concat, convert_normal_aggregate_fn_call, convert_subquery_fn};
 
@@ -107,14 +106,11 @@ impl ToSql for NormalAggregateFunctionCall {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for NormalAggregateFunctionCall
+impl<'q, DB: Database> BindArgs<'q, DB> for NormalAggregateFunctionCall
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         self.param.bind_args(query)
     }
 }
@@ -144,14 +140,11 @@ impl ToSql for GroupConcatFunctionCall {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for GroupConcatFunctionCall
+impl<'q, DB: Database> BindArgs<'q, DB> for GroupConcatFunctionCall
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         self.order_by.bind_args(self.expr.bind_args(query))
     }
 }
@@ -168,14 +161,11 @@ impl ToSql for SubqueryFunctionCall {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for SubqueryFunctionCall
+impl<'q, DB: Database> BindArgs<'q, DB> for SubqueryFunctionCall
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         self.subquery.bind_args(query)
     }
 }
@@ -189,14 +179,11 @@ impl ToSql for AggregateFunctionCall {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for AggregateFunctionCall
+impl<'q, DB: Database> BindArgs<'q, DB> for AggregateFunctionCall
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         match self {
             AggregateFunctionCall::Normal(normal) => normal.bind_args(query),
             AggregateFunctionCall::GroupConcat(group) => group.bind_args(query),
@@ -213,14 +200,11 @@ impl ToSql for FunctionCall {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for FunctionCall
+impl<'q, DB: Database> BindArgs<'q, DB> for FunctionCall
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         match self {
             FunctionCall::Aggregate(a) => a.bind_args(query),
             FunctionCall::Subquery(s) => s.bind_args(query),

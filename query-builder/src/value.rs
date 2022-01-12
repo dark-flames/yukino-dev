@@ -6,15 +6,14 @@ use serde_json::Value;
 use sqlx::{
     Column, ColumnIndex, Database, Decode, Encode, Error, FromRow, Row, Type, TypeInfo, ValueRef,
 };
-use sqlx::database::{HasArguments, HasValueRef};
+use sqlx::database::HasValueRef;
 use sqlx::error::BoxDynError;
-use sqlx::query::QueryAs;
 use sqlx::types::Decimal;
 use sqlx::types::time::{Date, PrimitiveDateTime, Time};
 
 use interface::DatabaseType;
 
-use crate::{BindArgs, ExecuteError, QueryBuildState, ToSql};
+use crate::{BindArgs, ExecuteError, QueryBuildState, QueryOf, ToSql};
 
 pub type Binary = Vec<u8>;
 
@@ -53,10 +52,7 @@ impl Default for DatabaseValue {
 }
 
 pub trait AppendToArgs<'q, DB: Database> {
-    fn bind_on<O>(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments>::Arguments>;
+    fn bind_on(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB>;
 }
 
 impl Display for DatabaseValue {
@@ -115,14 +111,11 @@ impl ToSql for DatabaseValue {
     }
 }
 
-impl<'q, DB: Database, O> BindArgs<'q, DB, O> for DatabaseValue
+impl<'q, DB: Database> BindArgs<'q, DB> for DatabaseValue
 where
     DatabaseValue: for<'p> AppendToArgs<'p, DB>,
 {
-    fn bind_args(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_args(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         self.bind_on(query)
     }
 }
@@ -162,10 +155,7 @@ where
     Binary: Encode<'q, DB> + Type<DB>,
     Option<Binary>: Encode<'q, DB> + Type<DB>,
 {
-    fn bind_on<O>(
-        self,
-        query: QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments>,
-    ) -> QueryAs<'q, DB, O, <DB as HasArguments<'q>>::Arguments> {
+    fn bind_on(self, query: QueryOf<'q, DB>) -> QueryOf<'q, DB> {
         match self {
             DatabaseValue::Bool(b) => query.bind(b),
             DatabaseValue::SmallInteger(i) => query.bind(i),

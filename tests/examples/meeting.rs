@@ -38,6 +38,8 @@ pub async fn adult_hosted_meeting_length(pool: &MySqlPool) -> Vec<u64> {
         .exec(pool)
         .await
         .unwrap()
+        .try_collect()
+        .unwrap()
 }
 
 pub async fn meeting_count_by_level(pool: &MySqlPool) -> Vec<(u16, Option<Decimal>)> {
@@ -54,13 +56,22 @@ pub async fn meeting_count_by_level(pool: &MySqlPool) -> Vec<(u16, Option<Decima
         .exec(pool)
         .await
         .unwrap()
+        .try_collect()
+        .unwrap()
 }
 
 pub async fn person_and_hosted_meeting(executor: &MySqlPool) -> Vec<(Person, Vec<Meeting>)> {
-    let persons: Vec<Person> = Person::all().exec(executor).await.unwrap();
+    let persons: Vec<Person> = Person::all()
+        .exec(executor)
+        .await
+        .unwrap()
+        .try_collect()
+        .unwrap();
     let meetings = Meeting::belonging_to::<meeting::host_id>(&persons)
         .exec(executor)
         .await
+        .unwrap()
+        .try_collect()
         .unwrap();
 
     persons.join::<meeting::host_id>(meetings)
@@ -78,6 +89,8 @@ pub async fn hosted_meeting_titles(pool: &MySqlPool) -> Vec<(u32, Option<String>
         })
         .exec(pool)
         .await
+        .unwrap()
+        .try_collect()
         .unwrap()
 }
 
@@ -185,16 +198,11 @@ pub async fn main() -> Result<(), sqlx::Error> {
         .connect(&url)
         .await?;
 
-    //Person::all().delete().exec(&pool).await.unwrap();
-    //Meeting::all().delete().exec(&pool).await.unwrap();
+    Person::all().delete().exec(&pool).await.unwrap();
+    Meeting::all().delete().exec(&pool).await.unwrap();
 
-    //prepare_data(&pool).await;
-    //bit_data_person(&pool, 10000).await;
-    for _ in 0..100 {
-        simple_query(&pool).await;
-    }
+    prepare_data(&pool).await;
 
-    /*
     assert_eq!(adult_hosted_meeting_length(&pool).await, vec![9, 9, 9]);
 
     assert_eq!(
@@ -219,7 +227,7 @@ pub async fn main() -> Result<(), sqlx::Error> {
             .map(|(person, meetings)| (person.id, meetings.into_iter().map(|m| m.id).collect()))
             .collect::<Vec<(u32, Vec<u32>)>>(),
         vec![(1, vec![1, 2]), (2, vec![3]), (3, vec![4, 5]), (4, vec![]),]
-    );*/
+    );
 
     Ok(())
 }

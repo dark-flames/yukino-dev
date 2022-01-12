@@ -4,7 +4,7 @@ use generic_array::{arr, GenericArray};
 use generic_array::typenum::U1;
 use sqlx::Database;
 
-use query_builder::{DatabaseValue, Expr, Query, ResultRow, SelectQuery, SelectSource};
+use query_builder::{DatabaseValue, Expr, SelectQuery, SelectSource, YukinoQuery};
 
 use crate::err::{RuntimeResult, YukinoError};
 use crate::query::{AliasGenerator, Executable, Map, QueryResultMap};
@@ -55,7 +55,7 @@ impl<View: FoldResult> Map<View> for FoldQueryResult<View> {
 impl<View: FoldResult, DB: Database> Executable<View::Value, View::Tags, DB>
     for FoldQueryResult<View>
 where
-    SelectQuery: Query<DB, ResultRow<ValueCountOf<View::Value>>>,
+    SelectQuery: YukinoQuery<DB>,
 {
     type ResultType = SingleRow;
     type Query = SelectQuery;
