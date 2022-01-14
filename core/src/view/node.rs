@@ -16,7 +16,7 @@ pub trait ExprView<T: Value>: Send + Sync {
     fn expr_clone(&self) -> ExprViewBoxWithTag<T, Self::Tags>;
 
     fn collect_expr(&self) -> GenericArray<Expr, ValueCountOf<T>>;
-    
+
     fn into_expr(self) -> ExprViewBoxWithTag<T, Self::Tags>
     where
         Self: Sized + 'static,

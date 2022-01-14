@@ -1,3 +1,4 @@
+use yukino_bench::*;
 use yukino_bench::diesel_benches::*;
 
 const URL: &str = "mysql://root@localhost:3306/bench";

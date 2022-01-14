@@ -121,7 +121,7 @@ impl Handler for YukinoHandler {
                 .map(|u| {
                     let examinations = Examination::belonging_to_view(&u);
                     (
-                        u.as_expr(),
+                        u.into_expr(),
                         examinations
                             .fold(|e_v| e_v.map(|e| e.end_time - e.start_time).average())
                             .into_expr(),
