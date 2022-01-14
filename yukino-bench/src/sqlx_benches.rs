@@ -1,4 +1,7 @@
-use sqlx::{Connection, MySqlConnection};
+use std::collections::HashMap;
+
+use sqlx::{Connection, FromRow, MySqlConnection, query, Row};
+use sqlx::types::Decimal;
 use tokio::runtime::Runtime;
 
 use crate::interface::{CommonNewUser, Handler};
@@ -13,6 +16,15 @@ pub struct User {
     pub birthday: sqlx::types::time::Date,
     pub since: sqlx::types::time::PrimitiveDateTime,
     pub introduction: String,
+}
+
+#[derive(sqlx::FromRow)]
+pub struct Examination {
+    pub id: i32,
+    pub user_id: i32,
+    pub start_time: i64,
+    pub end_time: i64,
+    pub comment: String,
 }
 
 pub struct SqlxHandler {
@@ -82,6 +94,64 @@ impl Handler for SqlxHandler {
             .fetch_all(&mut self.connection)
             .await
             .unwrap();
+        })
+    }
+
+    fn bench_zip_association(&mut self) {
+        self.runtime.block_on(async {
+            let users = sqlx::query_as::<_, User>(
+                "SELECT id, name, age, phone, address, birthday, since, introduction FROM user",
+            )
+                .fetch_all(&mut self.connection)
+                .await
+                .unwrap();
+
+            let mut exam_query = "SELECT id, user_id, start_time, end_time, comment FROM examination WHERE user_id IN (".to_string();
+
+            for i in 0..users.len() {
+                exam_query += &format!("{}?", if i == 0 { "" } else { "," });
+            }
+
+            exam_query += ")";
+
+            let exams = users.iter().fold(query(&exam_query), |q, u| {
+                q.bind(u.id)
+            }).fetch_all(&mut self.connection)
+                .await
+                .unwrap()
+                .into_iter()
+                .map(|row| Examination::from_row(&row).unwrap());
+
+            let mut result = users.into_iter().map(|u| {
+                (u.id, (u, Vec::new()))
+            }).collect::<HashMap<_, _>>();
+
+            for exam in exams {
+                result.get_mut(&exam.user_id).unwrap().1.push(exam)
+            }
+
+            let _: Vec<(User, Vec<Examination>)> = result.into_iter().map(|(_, r)| r).collect();
+        })
+    }
+
+    fn bench_associated_calc(&mut self) {
+        self.runtime.block_on(async {
+            let rows = sqlx::query(
+                "SELECT \
+                        u.id as id, u.name as name, u.age as age,\
+                         u.phone as phone, u.address as address, u.birthday as birthday,\
+                          u.since as since, u.introduction as introduction, \
+                            (SELECT AVG(e.end_time - e.start_time) FROM examination e WHERE e.user_id = u.id) as a
+                     FROM user u;",
+            ).fetch_all(&mut self.connection)
+                .await
+                .unwrap();
+
+            let _: Vec<(User, Option<Decimal>)> = rows.into_iter().map(|r| {
+                let user = User::from_row(&r).unwrap();
+                let avg: Option<Decimal> = r.get("a");
+                (user, avg)
+            }).collect();
         })
     }
 }

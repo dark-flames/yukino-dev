@@ -21,7 +21,7 @@ pub mod prelude {
         Map2, RightSideData, Sort, Sort2, Update,
     };
     pub use crate::view::{
-        Deletable, EntityWithView, Identifiable, Insertable, SingleRowSubqueryView,
-        SubqueryIntoView, SubqueryView, VerticalView,
+        Deletable, EntityWithView, ExprView, Identifiable, Insertable, SingleRowSubqueryView,
+        SubqueryIntoView, SubqueryView, TupleExprView, VerticalView,
     };
 }

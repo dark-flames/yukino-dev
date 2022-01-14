@@ -1,18 +1,10 @@
 use sqlx::{Connection, MySqlConnection};
+use sqlx::types::Decimal;
 use tokio::runtime::Runtime;
 
 use yukino::prelude::*;
 
 use crate::interface::{CommonNewUser, Handler};
-
-#[derive(Entity, Clone, Debug)]
-pub struct Problem {
-    #[id]
-    #[auto_increment]
-    pub id: i32,
-    pub title: String,
-    pub body: String,
-}
 
 #[derive(Entity, Clone, Debug)]
 #[name = "user"]
@@ -29,6 +21,23 @@ pub struct User {
     pub introduction: String,
 }
 
+#[derive(Entity, Clone, Debug)]
+pub struct Examination {
+    #[id]
+    #[auto_increment]
+    pub id: i32,
+    #[belongs_to(User)]
+    pub user_id: i32,
+    pub start_time: i64,
+    pub end_time: i64,
+    pub comment: String,
+}
+
+pub struct YukinoHandler {
+    connection: sqlx::MySqlConnection,
+    runtime: Runtime,
+}
+
 impl From<CommonNewUser> for NewUser {
     fn from(c: CommonNewUser) -> Self {
         NewUser {
@@ -41,45 +50,6 @@ impl From<CommonNewUser> for NewUser {
             introduction: c.introduction,
         }
     }
-}
-
-#[derive(Entity, Clone, Debug)]
-pub struct Examination {
-    #[id]
-    #[auto_increment]
-    pub id: i32,
-    #[belongs_to(User)]
-    pub user_id: i32,
-    pub start_time: sqlx::types::time::PrimitiveDateTime,
-    pub end_time: sqlx::types::time::PrimitiveDateTime,
-}
-
-#[derive(Entity, Clone, Debug)]
-pub struct ExamProblem {
-    #[id]
-    #[auto_increment]
-    pub id: i32,
-    #[belongs_to(Problem)]
-    pub problem_id: i32,
-    #[belongs_to(Examination)]
-    pub exam_id: i32,
-    pub full_score: sqlx::types::Decimal,
-}
-
-#[derive(Entity, Clone, Debug)]
-pub struct Answer {
-    #[id]
-    #[auto_increment]
-    pub id: i32,
-    pub content: String,
-    #[belongs_to(ExamProblem)]
-    pub exam_problem_id: i32,
-    pub score: sqlx::types::Decimal,
-}
-
-pub struct YukinoHandler {
-    connection: sqlx::MySqlConnection,
-    runtime: Runtime,
 }
 
 impl Handler for YukinoHandler {
@@ -124,5 +94,44 @@ impl Handler for YukinoHandler {
                 .try_collect()
                 .unwrap()
         });
+    }
+
+    fn bench_zip_association(&mut self) {
+        self.runtime.block_on(async {
+            let users = User::all()
+                .exec(&mut self.connection)
+                .await
+                .unwrap()
+                .try_collect()
+                .unwrap();
+            let entities = Examination::belonging_to(&users)
+                .exec(&mut self.connection)
+                .await
+                .unwrap()
+                .try_collect()
+                .unwrap();
+
+            let _: Vec<(User, Vec<Examination>)> = users.join(entities);
+        })
+    }
+
+    fn bench_associated_calc(&mut self) {
+        self.runtime.block_on(async {
+            let _: Vec<(User, Option<Decimal>)> = User::all()
+                .map(|u| {
+                    let examinations = Examination::belonging_to_view(&u);
+                    (
+                        u.as_expr(),
+                        examinations
+                            .fold(|e_v| e_v.map(|e| e.end_time - e.start_time).average())
+                            .into_expr(),
+                    )
+                })
+                .exec(&mut self.connection)
+                .await
+                .unwrap()
+                .try_collect()
+                .unwrap();
+        })
     }
 }

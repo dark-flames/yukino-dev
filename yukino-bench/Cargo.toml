@@ -13,6 +13,7 @@ diesel = { version = "1.4.8", features = ["mysql", "chrono"] }
 chrono = "0.4.19"
 dotenv = "0.15.0"
 criterion = "0.3.5"
+rand = "0.8.4"
 
 [[bench]]
 name = "benches"

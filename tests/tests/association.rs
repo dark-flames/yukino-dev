@@ -1,6 +1,5 @@
 use yukino::Association;
 use yukino::prelude::*;
-use yukino::view::SubqueryIntoView;
 use yukino_tests::*;
 
 #[test]
@@ -34,7 +33,7 @@ fn test_subquery_from_view() {
         .map(|f| {
             Bar::belonging_to_view(&f)
                 .fold(|b| b.name.join(Some(", ")))
-                .as_expr()
+                .into_expr()
         })
         .generate_query();
 
@@ -54,7 +53,7 @@ fn test_subquery_fn() {
         .map(|f| {
             Bar::belonging_to_view(&f)
                 .fold(|b| b.name.join(Some(", ")))
-                .as_expr()
+                .into_expr()
         })
         .generate_query();
 

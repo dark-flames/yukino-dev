@@ -49,7 +49,7 @@ pub async fn meeting_count_by_level(pool: &MySqlPool) -> Vec<(u16, Option<Decima
             p.map(|p| {
                 Meeting::belonging_to_view::<meeting::host_id>(&p)
                     .fold(|m| m.id.count())
-                    .as_expr()
+                    .into_expr()
             })
             .sum()
         })
@@ -84,7 +84,7 @@ pub async fn hosted_meeting_titles(pool: &MySqlPool) -> Vec<(u32, Option<String>
                 p.id.clone(),
                 Meeting::belonging_to_view::<meeting::host_id>(&p)
                     .fold(|m| m.sort(|m| m.id.asc()).map(|m| m.title).join(Some(", ")))
-                    .as_expr(),
+                    .into_expr(),
             )
         })
         .exec(pool)

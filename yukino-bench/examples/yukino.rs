@@ -5,7 +5,7 @@ const URL: &str = "mysql://root@localhost:3306/bench";
 
 fn main() {
     let mut handler = YukinoHandler::create(URL);
-    for _ in 0..1000 {
-        handler.bench_fetch_all();
+    for _ in 0..1 {
+        handler.bench_associated_calc();
     }
 }
