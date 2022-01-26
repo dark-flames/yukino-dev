@@ -8,18 +8,18 @@ use crate::operator::SortResult;
 use crate::query::{Executable, MultiRows, Sort};
 use crate::view::{EntityView, EntityWithView};
 
-pub struct DeleteQueryResult<E: EntityWithView> {
+pub struct DeletionBuilder<E: EntityWithView> {
     query: DeleteQuery,
     _entity: PhantomData<E>,
 }
 
 pub trait Delete<E: EntityWithView> {
-    fn delete(self) -> DeleteQueryResult<E>;
+    fn delete(self) -> DeletionBuilder<E>;
 }
 
-impl<E: EntityWithView> DeleteQueryResult<E> {
+impl<E: EntityWithView> DeletionBuilder<E> {
     pub fn create(source: SelectFrom) -> Self {
-        DeleteQueryResult {
+        DeletionBuilder {
             query: source.into(),
             _entity: PhantomData,
         }
@@ -41,8 +41,8 @@ impl<E: EntityWithView> DeleteQueryResult<E> {
     }
 }
 
-impl<E: EntityWithView> Sort<E::View> for DeleteQueryResult<E> {
-    type Result = DeleteQueryResult<E>;
+impl<E: EntityWithView> Sort<E::View> for DeletionBuilder<E> {
+    type Result = DeletionBuilder<E>;
 
     fn sort<R: SortResult, F: Fn(E::View) -> R>(mut self, f: F) -> Self::Result {
         let result = f(E::View::pure(self.query.root_alias()));
@@ -53,7 +53,7 @@ impl<E: EntityWithView> Sort<E::View> for DeleteQueryResult<E> {
     }
 }
 
-impl<E: EntityWithView, DB: Database> Executable<(), DB> for DeleteQueryResult<E>
+impl<E: EntityWithView, DB: Database> Executable<(), DB> for DeletionBuilder<E>
 where
     DeleteQuery: YukinoQuery<DB>,
 {

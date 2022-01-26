@@ -3,7 +3,7 @@ use std::hash::Hash;
 
 use interface::{Association, FieldMarker, PrimaryKeyTypeOf, WithPrimaryKey};
 
-use crate::query::QueryResultFilter;
+use crate::query::FilteredQueryBuilder;
 use crate::view::{EntityWithView, FieldMarkerWithView, TypeOfMarker, Value, ViewWithPrimaryKey};
 
 pub trait AssociationBuilder<
@@ -14,21 +14,21 @@ pub trait AssociationBuilder<
     Parent::View: ViewWithPrimaryKey<PrimaryKeyType = TypeOfMarker<ForeignField>>,
     TypeOfMarker<ForeignField>: Value + Ord + Hash,
 {
-    fn build_query(self) -> QueryResultFilter<Children>;
+    fn build_query(self) -> FilteredQueryBuilder<Children>;
 
-    fn build_from_parent_view(parent_view: &Parent::View) -> QueryResultFilter<Children>;
+    fn build_from_parent_view(parent_view: &Parent::View) -> FilteredQueryBuilder<Children>;
 
     fn build_from_parent_entities(
         primary_keys: Vec<TypeOfMarker<ForeignField>>,
-    ) -> QueryResultFilter<Children>;
+    ) -> FilteredQueryBuilder<Children>;
 }
 
-pub trait BelongsToQueryResult<Parent: EntityWithView>: EntityWithView {
+pub trait BelongsToQuery<Parent: EntityWithView>: EntityWithView {
     fn belonging_to_query<ForeignField: FieldMarkerWithView + FieldMarker<Entity = Self>>(
-        r: QueryResultFilter<Parent>,
-    ) -> QueryResultFilter<Self>
+        r: FilteredQueryBuilder<Parent>,
+    ) -> FilteredQueryBuilder<Self>
     where
-        QueryResultFilter<Parent>: AssociationBuilder<Self, Parent, ForeignField>,
+        FilteredQueryBuilder<Parent>: AssociationBuilder<Self, Parent, ForeignField>,
         Parent: WithPrimaryKey<PrimaryKeyType = TypeOfMarker<ForeignField>>,
         Parent::View: ViewWithPrimaryKey<PrimaryKeyType = TypeOfMarker<ForeignField>>,
         Self:
@@ -42,32 +42,32 @@ pub trait BelongsToQueryResult<Parent: EntityWithView>: EntityWithView {
 pub trait BelongsToView<Parent: EntityWithView>: EntityWithView {
     fn belonging_to_view<ForeignField: FieldMarkerWithView + FieldMarker<Entity = Self>>(
         r: &Parent::View,
-    ) -> QueryResultFilter<Self>
+    ) -> FilteredQueryBuilder<Self>
     where
-        QueryResultFilter<Parent>: AssociationBuilder<Self, Parent, ForeignField>,
+        FilteredQueryBuilder<Parent>: AssociationBuilder<Self, Parent, ForeignField>,
         Parent: WithPrimaryKey<PrimaryKeyType = TypeOfMarker<ForeignField>>,
         Parent::View: ViewWithPrimaryKey<PrimaryKeyType = TypeOfMarker<ForeignField>>,
         Self:
             Sized + Association<Parent, ForeignField, ForeignKeyType = TypeOfMarker<ForeignField>>,
         TypeOfMarker<ForeignField>: Value + Ord + Hash,
     {
-        QueryResultFilter::<Parent>::build_from_parent_view(r)
+        FilteredQueryBuilder::<Parent>::build_from_parent_view(r)
     }
 }
 
 pub trait BelongsToEntities<Parent: EntityWithView>: EntityWithView {
     fn belonging_to<ForeignField: FieldMarkerWithView + FieldMarker<Entity = Self>>(
         r: &[Parent],
-    ) -> QueryResultFilter<Self>
+    ) -> FilteredQueryBuilder<Self>
     where
-        QueryResultFilter<Parent>: AssociationBuilder<Self, Parent, ForeignField>,
+        FilteredQueryBuilder<Parent>: AssociationBuilder<Self, Parent, ForeignField>,
         Parent: WithPrimaryKey<PrimaryKeyType = TypeOfMarker<ForeignField>>,
         Parent::View: ViewWithPrimaryKey<PrimaryKeyType = TypeOfMarker<ForeignField>>,
         Self:
             Sized + Association<Parent, ForeignField, ForeignKeyType = TypeOfMarker<ForeignField>>,
         TypeOfMarker<ForeignField>: Value + Ord + Hash,
     {
-        QueryResultFilter::<Parent>::build_from_parent_entities(
+        FilteredQueryBuilder::<Parent>::build_from_parent_entities(
             r.iter().map(|i| i.primary_key().clone()).collect(),
         )
     }
@@ -161,7 +161,7 @@ impl<
     }
 }
 
-impl<Children: EntityWithView, Parent: EntityWithView> BelongsToQueryResult<Parent> for Children {}
+impl<Children: EntityWithView, Parent: EntityWithView> BelongsToQuery<Parent> for Children {}
 
 impl<Children: EntityWithView, Parent: EntityWithView> BelongsToView<Parent> for Children {}
 

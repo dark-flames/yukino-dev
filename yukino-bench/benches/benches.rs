@@ -221,7 +221,7 @@ fn bench_association_calc(c: &mut Criterion) {
         group.sampling_mode(SamplingMode::Flat);
         for size in ASSOC_CALC {
             drop_all();
-            generate_data(URL, *size, 200, comment_size);
+            generate_data(URL, *size, 1000, comment_size);
 
             group.bench_with_input(
                 BenchmarkId::new(YukinoHandler::orm_name(), size),
@@ -266,9 +266,9 @@ fn bench_association_calc(c: &mut Criterion) {
 criterion::criterion_group!(
     name = benches;
     config = Criterion::default();
-    targets = bench_insert,
-        bench_fetch_all,
-        bench_zip_association,
+    targets = //bench_insert,
+        //bench_fetch_all,
+        //bench_zip_association,
         bench_association_calc
 
 );

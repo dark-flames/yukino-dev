@@ -9,8 +9,8 @@ use query_builder::{
 
 use crate::operator::SortResult;
 use crate::query::{
-    AliasGenerator, Executable, Filter, Filter2, Fold, Fold2, FoldQueryResult, FoldResult, Map,
-    Map2, MultiRows, QueryResultMap, Sort, Sort2,
+    AliasGenerator, Executable, Filter, Filter2, Fold, Fold2, FoldedQueryBuilder, FoldResult, Map,
+    Map2, MappedQueryBuilder, MultiRows, Sort, Sort2,
 };
 use crate::view::{
     ConcreteList, EntityView, EntityViewTag, EntityWithView, ExprViewBoxWithTag, MergeList,
@@ -29,7 +29,7 @@ pub trait GroupResult: Clone {
 }
 
 pub trait GroupBy<E: EntityWithView, View> {
-    fn group_by<RV: GroupResult, F: Fn(View) -> RV>(self, f: F) -> GroupedQueryResult<RV, (), E>;
+    fn group_by<RV: GroupResult, F: Fn(View) -> RV>(self, f: F) -> GroupedQueryBuilder<RV, (), E>;
 }
 
 pub trait GroupFold<View: GroupResult, E: EntityWithView> {
@@ -37,7 +37,7 @@ pub trait GroupFold<View: GroupResult, E: EntityWithView> {
     fn fold_group<RV: FoldResult, F: Fn(E::VerticalView) -> RV>(self, f: F) -> Self::Result<RV>;
 }
 
-pub struct GroupedQueryResult<View: GroupResult, AggregateView: Clone, E: EntityWithView> {
+pub struct GroupedQueryBuilder<View: GroupResult, AggregateView: Clone, E: EntityWithView> {
     query: GroupSelect,
     view: View,
     aggregate: AggregateView,
@@ -47,18 +47,18 @@ pub struct GroupedQueryResult<View: GroupResult, AggregateView: Clone, E: Entity
 }
 
 pub struct SortedGroupedQueryResult<View: GroupResult, AggregateView: Clone, E: EntityWithView> {
-    nested: GroupedQueryResult<View, AggregateView, E>,
+    nested: GroupedQueryBuilder<View, AggregateView, E>,
     order_by: Vec<OrderByItem>,
 }
 
-impl<View: GroupResult, E: EntityWithView> GroupedQueryResult<View, (), E> {
+impl<View: GroupResult, E: EntityWithView> GroupedQueryBuilder<View, (), E> {
     pub fn create(
         query: GroupSelect,
         view: View,
         alias_generator: AliasGenerator,
         root_alias: Alias,
     ) -> Self {
-        GroupedQueryResult {
+        GroupedQueryBuilder {
             query,
             view,
             aggregate: (),
@@ -70,7 +70,7 @@ impl<View: GroupResult, E: EntityWithView> GroupedQueryResult<View, (), E> {
 }
 
 impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Map2<View, AggregateView>
-    for GroupedQueryResult<View, AggregateView, E>
+    for GroupedQueryBuilder<View, AggregateView, E>
 {
     type ResultType = MultiRows;
     fn map<
@@ -81,27 +81,27 @@ impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Map2<View,
     >(
         self,
         f: F,
-    ) -> QueryResultMap<R, RTags, Self::ResultType> {
+    ) -> MappedQueryBuilder<R, RTags, Self::ResultType> {
         let result = f(self.view, self.aggregate).into();
 
-        QueryResultMap::create(self.query.source(), vec![], result, self.alias_generator)
+        MappedQueryBuilder::create(self.query.source(), vec![], result, self.alias_generator)
     }
 }
 
-impl<View: GroupResult, E: EntityWithView> Map<View> for GroupedQueryResult<View, (), E> {
+impl<View: GroupResult, E: EntityWithView> Map<View> for GroupedQueryBuilder<View, (), E> {
     type ResultType = MultiRows;
     fn map<R: Value, RTags: TagList, RV: Into<ExprViewBoxWithTag<R, RTags>>, F: Fn(View) -> RV>(
         self,
         f: F,
-    ) -> QueryResultMap<R, RTags, Self::ResultType> {
+    ) -> MappedQueryBuilder<R, RTags, Self::ResultType> {
         let result = f(self.view).into();
 
-        QueryResultMap::create(self.query.source(), vec![], result, self.alias_generator)
+        MappedQueryBuilder::create(self.query.source(), vec![], result, self.alias_generator)
     }
 }
 
 impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Filter2<View, AggregateView>
-    for GroupedQueryResult<View, AggregateView, E>
+    for GroupedQueryBuilder<View, AggregateView, E>
 {
     fn filter<F, R: Into<ExprViewBoxWithTag<bool, Tags>>, Tags: TagList>(mut self, f: F) -> Self
     where
@@ -112,7 +112,7 @@ impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Filter2<Vi
         self.query
             .having(result.collect_expr().into_iter().collect());
 
-        GroupedQueryResult {
+        GroupedQueryBuilder {
             query: self.query,
             view: self.view,
             aggregate: self.aggregate,
@@ -123,7 +123,7 @@ impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Filter2<Vi
     }
 }
 
-impl<View: GroupResult, E: EntityWithView> Filter<View> for GroupedQueryResult<View, (), E> {
+impl<View: GroupResult, E: EntityWithView> Filter<View> for GroupedQueryBuilder<View, (), E> {
     fn filter<F, R: Into<ExprViewBoxWithTag<bool, Tags>>, Tags: TagList>(mut self, f: F) -> Self
     where
         F: Fn(View) -> R,
@@ -133,7 +133,7 @@ impl<View: GroupResult, E: EntityWithView> Filter<View> for GroupedQueryResult<V
         self.query
             .having(result.collect_expr().into_iter().collect());
 
-        GroupedQueryResult {
+        GroupedQueryBuilder {
             query: self.query,
             view: self.view,
             aggregate: self.aggregate,
@@ -145,30 +145,30 @@ impl<View: GroupResult, E: EntityWithView> Filter<View> for GroupedQueryResult<V
 }
 
 impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView>
-    Fold2<View::Vertical, AggregateView> for GroupedQueryResult<View, AggregateView, E>
+    Fold2<View::Vertical, AggregateView> for GroupedQueryBuilder<View, AggregateView, E>
 {
     fn fold<RV: FoldResult, F: Fn(View::Vertical, AggregateView) -> RV>(
         self,
         f: F,
-    ) -> FoldQueryResult<RV> {
+    ) -> FoldedQueryBuilder<RV> {
         let result = f(self.view.vertical_view(), self.aggregate);
 
-        FoldQueryResult::create(self.query.source(), result, self.alias_generator)
+        FoldedQueryBuilder::create(self.query.source(), result, self.alias_generator)
     }
 }
 
 impl<View: GroupResult, E: EntityWithView> Fold<View::Vertical>
-    for GroupedQueryResult<View, (), E>
+    for GroupedQueryBuilder<View, (), E>
 {
-    fn fold<RV: FoldResult, F: Fn(View::Vertical) -> RV>(self, f: F) -> FoldQueryResult<RV> {
+    fn fold<RV: FoldResult, F: Fn(View::Vertical) -> RV>(self, f: F) -> FoldedQueryBuilder<RV> {
         let result = f(self.view.vertical_view());
 
-        FoldQueryResult::create(self.query.source(), result, self.alias_generator)
+        FoldedQueryBuilder::create(self.query.source(), result, self.alias_generator)
     }
 }
 
 impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Sort2<View, AggregateView>
-    for GroupedQueryResult<View, AggregateView, E>
+    for GroupedQueryBuilder<View, AggregateView, E>
 {
     type Result = SortedGroupedQueryResult<View, AggregateView, E>;
 
@@ -182,7 +182,7 @@ impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Sort2<View
     }
 }
 
-impl<View: GroupResult, E: EntityWithView> Sort<View> for GroupedQueryResult<View, (), E> {
+impl<View: GroupResult, E: EntityWithView> Sort<View> for GroupedQueryBuilder<View, (), E> {
     type Result = SortedGroupedQueryResult<View, (), E>;
 
     fn sort<R: SortResult, F: Fn(View) -> R>(self, f: F) -> Self::Result {
@@ -196,7 +196,7 @@ impl<View: GroupResult, E: EntityWithView> Sort<View> for GroupedQueryResult<Vie
 }
 
 impl<View: GroupResult, E: EntityWithView, DB: Database> Executable<View::Value, DB>
-    for GroupedQueryResult<View, (), E>
+    for GroupedQueryBuilder<View, (), E>
 where
     SelectQuery: YukinoQuery<DB>,
 {
@@ -220,7 +220,7 @@ type ValueOfGroupResult<G> = <G as GroupResult>::Value;
 type ValueOfFoldResult<A> = <A as FoldResult>::Value;
 
 impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView, DB: Database>
-    Executable<ValueTuple<View, AggregateView>, DB> for GroupedQueryResult<View, AggregateView, E>
+    Executable<ValueTuple<View, AggregateView>, DB> for GroupedQueryBuilder<View, AggregateView, E>
 where
     SelectQuery: YukinoQuery<DB>,
     ValueTuple<View, AggregateView>: Value,
@@ -251,13 +251,13 @@ where
     }
 }
 
-impl<View: GroupResult, E: EntityWithView> GroupFold<View, E> for GroupedQueryResult<View, (), E> {
-    type Result<RV: FoldResult> = GroupedQueryResult<View, RV, E>;
+impl<View: GroupResult, E: EntityWithView> GroupFold<View, E> for GroupedQueryBuilder<View, (), E> {
+    type Result<RV: FoldResult> = GroupedQueryBuilder<View, RV, E>;
 
     fn fold_group<RV: FoldResult, F: Fn(E::VerticalView) -> RV>(self, f: F) -> Self::Result<RV> {
         let aggregate = f(E::View::pure(&self.root_alias).vertical());
 
-        GroupedQueryResult {
+        GroupedQueryBuilder {
             query: self.query,
             view: self.view,
             aggregate,
@@ -281,10 +281,10 @@ impl<View: GroupResult, AggregateView: FoldResult, E: EntityWithView> Map2<View,
     >(
         self,
         f: F,
-    ) -> QueryResultMap<R, RTags, Self::ResultType> {
+    ) -> MappedQueryBuilder<R, RTags, Self::ResultType> {
         let result = f(self.nested.view, self.nested.aggregate).into();
 
-        QueryResultMap::create(
+        MappedQueryBuilder::create(
             self.nested.query.source(),
             self.order_by,
             result,
@@ -299,10 +299,10 @@ impl<View: GroupResult, E: EntityWithView> Map<View> for SortedGroupedQueryResul
     fn map<R: Value, RTags: TagList, RV: Into<ExprViewBoxWithTag<R, RTags>>, F: Fn(View) -> RV>(
         self,
         f: F,
-    ) -> QueryResultMap<R, RTags, Self::ResultType> {
+    ) -> MappedQueryBuilder<R, RTags, Self::ResultType> {
         let result = f(self.nested.view).into();
 
-        QueryResultMap::create(
+        MappedQueryBuilder::create(
             self.nested.query.source(),
             self.order_by,
             result,

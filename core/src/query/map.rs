@@ -6,18 +6,20 @@ use sqlx::Database;
 
 use query_builder::{Expr, OrderByItem, SelectQuery, SelectSource, YukinoQuery};
 
-use crate::query::{AliasGenerator, Executable, ExecuteResultType, SingleRow};
+use crate::query::{AliasGenerator, Executable, ExecuteResultType, MultiRows, SingleRow};
 use crate::view::{
     ExprView, ExprViewBox, ExprViewBoxWithTag, SingleRowSubqueryView, SubqueryIntoView,
     SubqueryView, TagList, Value, ValueCountOf,
 };
 
 #[derive(Clone)]
-pub struct QueryResultMap<R: Value, RTags: TagList, ResultType: ExecuteResultType> {
+pub struct MappedQueryBuilder<R: Value, RTags: TagList, ResultType: ExecuteResultType> {
     query: SelectSource,
     order_by_items: Vec<OrderByItem>,
     view: ExprViewBoxWithTag<R, RTags>,
     alias_generator: AliasGenerator,
+    limit: Option<usize>,
+    offset: usize,
     _result_ty: PhantomData<ResultType>,
 }
 
@@ -26,7 +28,7 @@ pub trait Map<View> {
     fn map<R: Value, RTags: TagList, RV: Into<ExprViewBoxWithTag<R, RTags>>, F: Fn(View) -> RV>(
         self,
         f: F,
-    ) -> QueryResultMap<R, RTags, Self::ResultType>;
+    ) -> MappedQueryBuilder<R, RTags, Self::ResultType>;
 }
 
 pub trait Map2<View1, View2> {
@@ -39,28 +41,63 @@ pub trait Map2<View1, View2> {
     >(
         self,
         f: F,
-    ) -> QueryResultMap<R, RTags, Self::ResultType>;
+    ) -> MappedQueryBuilder<R, RTags, Self::ResultType>;
 }
 
-impl<R: Value, RTags: TagList, ResultType: ExecuteResultType> QueryResultMap<R, RTags, ResultType> {
+impl<R: Value, RTags: TagList, ResultType: ExecuteResultType> MappedQueryBuilder<R, RTags, ResultType> {
     pub fn create(
         query: SelectSource,
         order_by_items: Vec<OrderByItem>,
         view: ExprViewBoxWithTag<R, RTags>,
         alias_generator: AliasGenerator,
     ) -> Self {
-        QueryResultMap {
+        MappedQueryBuilder {
             query,
             order_by_items,
             view,
             alias_generator,
+            limit: None,
+            offset: 0,
+            _result_ty: Default::default(),
+        }
+    }
+
+    #[must_use]
+    pub fn offset(mut self, offset: usize) -> Self {
+        self.offset = offset;
+
+        self
+    }
+}
+
+impl<R: Value, RTags: TagList> MappedQueryBuilder<R, RTags, MultiRows> {
+    #[must_use]
+    pub fn limit(mut self, limit: usize) -> Self {
+        self.limit = Some(limit);
+
+        self
+    }
+
+    #[must_use]
+    pub fn first(self) -> MappedQueryBuilder<R, RTags, SingleRow> {
+        self.get(1)
+    }
+
+    pub fn get(self, idx: usize) -> MappedQueryBuilder<R, RTags, SingleRow> {
+        MappedQueryBuilder {
+            query: self.query,
+            order_by_items: self.order_by_items,
+            view: self.view,
+            alias_generator: self.alias_generator,
+            limit: Some(idx),
+            offset: self.offset,
             _result_ty: Default::default(),
         }
     }
 }
 
 impl<R: Value, RTags: TagList, ResultType: ExecuteResultType, DB: Database> Executable<R, DB>
-    for QueryResultMap<R, RTags, ResultType>
+    for MappedQueryBuilder<R, RTags, ResultType>
 where
     SelectQuery: YukinoQuery<DB>,
 {
@@ -73,14 +110,14 @@ where
             self.alias_generator
                 .generate_select_list(self.view.collect_expr(), true),
             self.order_by_items,
-            None,
-            0,
+            self.limit,
+            self.offset,
         )
     }
 }
 
 impl<T: Value<L = U1>, TTags: TagList, ResultType: ExecuteResultType> SubqueryView<T>
-    for QueryResultMap<T, TTags, ResultType>
+    for MappedQueryBuilder<T, TTags, ResultType>
 {
     fn subquery(&self) -> SelectQuery {
         SelectQuery::create(
@@ -94,7 +131,7 @@ impl<T: Value<L = U1>, TTags: TagList, ResultType: ExecuteResultType> SubqueryVi
     }
 }
 
-impl<T: Value<L = U1>, TTags: TagList> ExprView<T> for QueryResultMap<T, TTags, SingleRow> {
+impl<T: Value<L = U1>, TTags: TagList> ExprView<T> for MappedQueryBuilder<T, TTags, SingleRow> {
     type Tags = TTags;
 
     fn from_exprs(_exprs: GenericArray<Expr, ValueCountOf<T>>) -> ExprViewBox<T>
@@ -105,7 +142,7 @@ impl<T: Value<L = U1>, TTags: TagList> ExprView<T> for QueryResultMap<T, TTags, 
     }
 
     fn expr_clone(&self) -> ExprViewBoxWithTag<T, Self::Tags> {
-        Box::new(QueryResultMap::create(
+        Box::new(MappedQueryBuilder::create(
             self.query.clone(),
             self.order_by_items.clone(),
             self.view.expr_clone(),
@@ -118,13 +155,13 @@ impl<T: Value<L = U1>, TTags: TagList> ExprView<T> for QueryResultMap<T, TTags, 
     }
 }
 
-impl<T: Value<L = U1>, TTags: TagList> SubqueryIntoView<T> for QueryResultMap<T, TTags, SingleRow> {
+impl<T: Value<L = U1>, TTags: TagList> SubqueryIntoView<T> for MappedQueryBuilder<T, TTags, SingleRow> {
     fn as_expr(&self) -> ExprViewBox<T> {
         T::view_from_exprs(arr![Expr; Expr::Subquery(self.subquery())])
     }
 }
 
 impl<T: Value<L = U1>, TTags: TagList> SingleRowSubqueryView<T>
-    for QueryResultMap<T, TTags, SingleRow>
+    for MappedQueryBuilder<T, TTags, SingleRow>
 {
 }

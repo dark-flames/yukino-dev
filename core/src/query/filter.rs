@@ -11,9 +11,9 @@ use query_builder::{
 
 use crate::operator::{In, SortResult};
 use crate::query::{
-    AliasGenerator, AssociationBuilder, Delete, DeleteQueryResult, Executable, Fold,
-    FoldQueryResult, FoldResult, GroupBy, GroupedQueryResult, GroupResult, Map, MultiRows,
-    QueryResultMap, Sort, Update, UpdateQueryResult,
+    AliasGenerator, AssociationBuilder, Delete, DeletionBuilder, Executable, Fold,
+    FoldedQueryBuilder, FoldResult, GroupBy, GroupedQueryBuilder, GroupResult, Map, MappedQueryBuilder,
+    MultiRows, Sort, Update, UpdateQueryBuilder,
 };
 use crate::view::{
     AssociatedView, EntityView, EntityWithView, ExprBoxOfAssociatedView, ExprView,
@@ -21,15 +21,15 @@ use crate::view::{
     ViewWithPrimaryKey,
 };
 
-pub struct QueryResultFilter<E: EntityWithView> {
+pub struct FilteredQueryBuilder<E: EntityWithView> {
     query: SelectFrom,
     root_alias: Alias,
     alias_generator: AliasGenerator,
     _entity: PhantomData<E>,
 }
 
-pub struct SortedQueryResultFilter<E: EntityWithView> {
-    nested: QueryResultFilter<E>,
+pub struct SortedFilteredQueryBuilder<E: EntityWithView> {
+    nested: FilteredQueryBuilder<E>,
     order_by: Vec<OrderByItem>,
 }
 
@@ -47,7 +47,7 @@ pub trait Filter2<View1, View2> {
         F: Fn(View1, View2) -> R;
 }
 
-impl<E: EntityWithView> Filter<E::View> for QueryResultFilter<E> {
+impl<E: EntityWithView> Filter<E::View> for FilteredQueryBuilder<E> {
     fn filter<F, R: Into<ExprViewBoxWithTag<bool, Tags>>, Tags: TagList>(mut self, f: F) -> Self
     where
         F: Fn(E::View) -> R,
@@ -62,7 +62,7 @@ impl<E: EntityWithView> Filter<E::View> for QueryResultFilter<E> {
     }
 }
 
-impl<E: EntityWithView> Map<E::View> for QueryResultFilter<E> {
+impl<E: EntityWithView> Map<E::View> for FilteredQueryBuilder<E> {
     type ResultType = MultiRows;
     fn map<
         R: Value,
@@ -72,10 +72,10 @@ impl<E: EntityWithView> Map<E::View> for QueryResultFilter<E> {
     >(
         self,
         f: F,
-    ) -> QueryResultMap<R, RTags, Self::ResultType> {
+    ) -> MappedQueryBuilder<R, RTags, Self::ResultType> {
         let result_view = f(E::View::pure(&self.root_alias)).into();
 
-        QueryResultMap::create(
+        MappedQueryBuilder::create(
             self.query.source(),
             vec![],
             result_view,
@@ -84,22 +84,22 @@ impl<E: EntityWithView> Map<E::View> for QueryResultFilter<E> {
     }
 }
 
-impl<E: EntityWithView> Fold<E::VerticalView> for QueryResultFilter<E> {
-    fn fold<RV: FoldResult, F: Fn(E::VerticalView) -> RV>(self, f: F) -> FoldQueryResult<RV> {
+impl<E: EntityWithView> Fold<E::VerticalView> for FilteredQueryBuilder<E> {
+    fn fold<RV: FoldResult, F: Fn(E::VerticalView) -> RV>(self, f: F) -> FoldedQueryBuilder<RV> {
         let result = f(E::View::pure(&self.root_alias).vertical());
 
-        FoldQueryResult::create(self.query.source(), result, self.alias_generator)
+        FoldedQueryBuilder::create(self.query.source(), result, self.alias_generator)
     }
 }
 
-impl<E: EntityWithView> GroupBy<E, E::View> for QueryResultFilter<E> {
+impl<E: EntityWithView> GroupBy<E, E::View> for FilteredQueryBuilder<E> {
     fn group_by<RV: GroupResult, F: Fn(E::View) -> RV>(
         self,
         f: F,
-    ) -> GroupedQueryResult<RV, (), E> {
+    ) -> GroupedQueryBuilder<RV, (), E> {
         let result = f(E::View::pure(&self.root_alias));
 
-        GroupedQueryResult::create(
+        GroupedQueryBuilder::create(
             self.query.group_by(result.collect_expr_vec()),
             result,
             self.alias_generator,
@@ -108,20 +108,20 @@ impl<E: EntityWithView> GroupBy<E, E::View> for QueryResultFilter<E> {
     }
 }
 
-impl<E: EntityWithView> Sort<E::View> for QueryResultFilter<E> {
-    type Result = SortedQueryResultFilter<E>;
+impl<E: EntityWithView> Sort<E::View> for FilteredQueryBuilder<E> {
+    type Result = SortedFilteredQueryBuilder<E>;
 
     fn sort<R: SortResult, F: Fn(E::View) -> R>(self, f: F) -> Self::Result {
         let result = f(E::View::pure(&self.root_alias));
 
-        SortedQueryResultFilter {
+        SortedFilteredQueryBuilder {
             nested: self,
             order_by: result.order_by_items(),
         }
     }
 }
 
-impl<E: EntityWithView, DB: Database> Executable<E, DB> for QueryResultFilter<E>
+impl<E: EntityWithView, DB: Database> Executable<E, DB> for FilteredQueryBuilder<E>
 where
     SelectQuery: YukinoQuery<DB>,
 {
@@ -142,35 +142,35 @@ where
     }
 }
 
-impl<E: EntityWithView> Delete<E> for QueryResultFilter<E> {
-    fn delete(self) -> DeleteQueryResult<E> {
-        DeleteQueryResult::create(self.query)
+impl<E: EntityWithView> Delete<E> for FilteredQueryBuilder<E> {
+    fn delete(self) -> DeletionBuilder<E> {
+        DeletionBuilder::create(self.query)
     }
 }
 
-impl<E: EntityWithView> Delete<E> for SortedQueryResultFilter<E> {
-    fn delete(self) -> DeleteQueryResult<E> {
-        DeleteQueryResult::create_with_order(self.nested.query, self.order_by)
+impl<E: EntityWithView> Delete<E> for SortedFilteredQueryBuilder<E> {
+    fn delete(self) -> DeletionBuilder<E> {
+        DeletionBuilder::create_with_order(self.nested.query, self.order_by)
     }
 }
 
-impl<E: EntityWithView> Update<E> for QueryResultFilter<E> {
-    fn update(self) -> UpdateQueryResult<E> {
-        UpdateQueryResult::create(self.query)
+impl<E: EntityWithView> Update<E> for FilteredQueryBuilder<E> {
+    fn update(self) -> UpdateQueryBuilder<E> {
+        UpdateQueryBuilder::create(self.query)
     }
 }
 
-impl<E: EntityWithView> Update<E> for SortedQueryResultFilter<E> {
-    fn update(self) -> UpdateQueryResult<E> {
-        UpdateQueryResult::create_with_orders(self.nested.query, self.order_by)
+impl<E: EntityWithView> Update<E> for SortedFilteredQueryBuilder<E> {
+    fn update(self) -> UpdateQueryBuilder<E> {
+        UpdateQueryBuilder::create_with_orders(self.nested.query, self.order_by)
     }
 }
 
-impl<E: EntityWithView> QueryResultFilter<E> {
+impl<E: EntityWithView> FilteredQueryBuilder<E> {
     pub fn create() -> Self {
         let mut generator = AliasGenerator::create();
         let root_alias = generator.generate_root_alias::<E>();
-        QueryResultFilter {
+        FilteredQueryBuilder {
             query: Select::from(E::table_name().to_string(), root_alias.clone()),
             root_alias,
             alias_generator: generator,
@@ -179,7 +179,7 @@ impl<E: EntityWithView> QueryResultFilter<E> {
     }
 }
 
-impl<E: EntityWithView> Map<E::View> for SortedQueryResultFilter<E> {
+impl<E: EntityWithView> Map<E::View> for SortedFilteredQueryBuilder<E> {
     type ResultType = MultiRows;
 
     fn map<
@@ -190,10 +190,10 @@ impl<E: EntityWithView> Map<E::View> for SortedQueryResultFilter<E> {
     >(
         self,
         f: F,
-    ) -> QueryResultMap<R, TTags, Self::ResultType> {
+    ) -> MappedQueryBuilder<R, TTags, Self::ResultType> {
         let result_view = f(E::View::pure(&self.nested.root_alias)).into();
 
-        QueryResultMap::create(
+        MappedQueryBuilder::create(
             self.nested.query.source(),
             self.order_by,
             result_view,
@@ -202,7 +202,7 @@ impl<E: EntityWithView> Map<E::View> for SortedQueryResultFilter<E> {
     }
 }
 
-impl<E: EntityWithView, DB: Database> Executable<E, DB> for SortedQueryResultFilter<E>
+impl<E: EntityWithView, DB: Database> Executable<E, DB> for SortedFilteredQueryBuilder<E>
 where
     SelectQuery: YukinoQuery<DB>,
 {
@@ -229,7 +229,7 @@ impl<
             + Association<Parent, ForeignField, ForeignKeyType = TypeOfMarker<ForeignField>>,
         Parent: EntityWithView + WithPrimaryKey<PrimaryKeyType = TypeOfMarker<ForeignField>>,
         ForeignField: FieldMarkerWithView + FieldMarker<Entity = Children>,
-    > AssociationBuilder<Children, Parent, ForeignField> for QueryResultFilter<Parent>
+    > AssociationBuilder<Children, Parent, ForeignField> for FilteredQueryBuilder<Parent>
 where
     Parent::View: ViewWithPrimaryKey<PrimaryKeyType = TypeOfMarker<ForeignField>>,
     Children::View: AssociatedView<
@@ -242,7 +242,7 @@ where
         In<<Parent as WithPrimaryKey>::PrimaryKeyType>,
     TypeOfMarker<ForeignField>: Value + Ord + Hash,
 {
-    fn build_query(self) -> QueryResultFilter<Children> {
+    fn build_query(self) -> FilteredQueryBuilder<Children> {
         let subquery = self.query.select(vec![SelectItem {
             expr: self
                 .root_alias
@@ -260,7 +260,7 @@ where
         result
     }
 
-    fn build_from_parent_view(parent_view: &Parent::View) -> QueryResultFilter<Children> {
+    fn build_from_parent_view(parent_view: &Parent::View) -> FilteredQueryBuilder<Children> {
         let mut result = Children::all();
         let primary_key_view = parent_view;
 
@@ -285,7 +285,7 @@ where
 
     fn build_from_parent_entities(
         primary_keys: Vec<TypeOfMarker<ForeignField>>,
-    ) -> QueryResultFilter<Children> {
+    ) -> FilteredQueryBuilder<Children> {
         Children::all().filter(|view| view.foreign_key().clone().in_arr(primary_keys.clone()))
     }
 }

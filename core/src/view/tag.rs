@@ -219,7 +219,7 @@ macro_rules! create_tag {
 
 create_tag!(OrdViewTag, U0, And);
 create_tag!(EntityViewTag, U1, AlwaysFalse);
-create_tag!(AggregateViewTag, U2, And);
+create_tag!(AggregateViewTag, U2, Or);
 
 #[cfg(test)]
 mod test {

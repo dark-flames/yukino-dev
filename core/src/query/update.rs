@@ -13,19 +13,19 @@ use crate::view::{
     EntityView, EntityWithView, ExprViewBoxWithTag, FieldMarkerWithView, TagList, Value,
 };
 
-pub struct UpdateQueryResult<E: EntityWithView> {
+pub struct UpdateQueryBuilder<E: EntityWithView> {
     query: UpdateQuery,
     assignments: HashMap<String, AssignmentValue>,
     _entity: PhantomData<E>,
 }
 
 pub trait Update<E: EntityWithView> {
-    fn update(self) -> UpdateQueryResult<E>;
+    fn update(self) -> UpdateQueryBuilder<E>;
 }
 
-impl<E: EntityWithView> UpdateQueryResult<E> {
+impl<E: EntityWithView> UpdateQueryBuilder<E> {
     pub fn create(source: SelectFrom) -> Self {
-        UpdateQueryResult {
+        UpdateQueryBuilder {
             query: source.into(),
             assignments: HashMap::new(),
             _entity: PhantomData,
@@ -113,8 +113,8 @@ impl<E: EntityWithView> UpdateQueryResult<E> {
     }
 }
 
-impl<E: EntityWithView> Sort<E::View> for UpdateQueryResult<E> {
-    type Result = UpdateQueryResult<E>;
+impl<E: EntityWithView> Sort<E::View> for UpdateQueryBuilder<E> {
+    type Result = UpdateQueryBuilder<E>;
 
     fn sort<R: SortResult, F: Fn(E::View) -> R>(mut self, f: F) -> Self::Result {
         let result = f(E::View::pure(self.query.root_alias()));
@@ -125,7 +125,7 @@ impl<E: EntityWithView> Sort<E::View> for UpdateQueryResult<E> {
     }
 }
 
-impl<E: EntityWithView, DB: Database> Executable<(), DB> for UpdateQueryResult<E>
+impl<E: EntityWithView, DB: Database> Executable<(), DB> for UpdateQueryBuilder<E>
 where
     UpdateQuery: YukinoQuery<DB>,
 {

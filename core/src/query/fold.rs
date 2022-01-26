@@ -6,7 +6,7 @@ use sqlx::Database;
 
 use query_builder::{Expr, SelectQuery, SelectSource, YukinoQuery};
 
-use crate::query::{AliasGenerator, Executable, Map, QueryResultMap};
+use crate::query::{AliasGenerator, Executable, Map, MappedQueryBuilder};
 use crate::query::exec::SingleRow;
 use crate::view::{
     AggregateViewTag, ConcreteList, ExprView, ExprViewBox, ExprViewBoxWithTag, InList, MergeList,
@@ -22,15 +22,15 @@ pub trait FoldResult: 'static + Clone + Send + Sync {
     fn expr_box(self) -> ExprViewBoxWithTag<Self::Value, Self::Tags>;
 }
 
-pub struct FoldQueryResult<View: FoldResult> {
+pub struct FoldedQueryBuilder<View: FoldResult> {
     query: SelectSource,
     view: View,
     alias_generator: AliasGenerator,
 }
 
-impl<View: FoldResult> FoldQueryResult<View> {
+impl<View: FoldResult> FoldedQueryBuilder<View> {
     pub fn create(query: SelectSource, view: View, alias_generator: AliasGenerator) -> Self {
-        FoldQueryResult {
+        FoldedQueryBuilder {
             query,
             view,
             alias_generator,
@@ -38,20 +38,20 @@ impl<View: FoldResult> FoldQueryResult<View> {
     }
 }
 
-impl<View: FoldResult> Map<View> for FoldQueryResult<View> {
+impl<View: FoldResult> Map<View> for FoldedQueryBuilder<View> {
     type ResultType = SingleRow;
 
     fn map<R: Value, RTags: TagList, RV: Into<ExprViewBoxWithTag<R, RTags>>, F: Fn(View) -> RV>(
         self,
         f: F,
-    ) -> QueryResultMap<R, RTags, Self::ResultType> {
+    ) -> MappedQueryBuilder<R, RTags, Self::ResultType> {
         let result = f(self.view).into();
 
-        QueryResultMap::create(self.query, vec![], result, self.alias_generator)
+        MappedQueryBuilder::create(self.query, vec![], result, self.alias_generator)
     }
 }
 
-impl<View: FoldResult, DB: Database> Executable<View::Value, DB> for FoldQueryResult<View>
+impl<View: FoldResult, DB: Database> Executable<View::Value, DB> for FoldedQueryBuilder<View>
 where
     SelectQuery: YukinoQuery<DB>,
 {
@@ -71,14 +71,14 @@ where
 }
 
 pub trait Fold<View> {
-    fn fold<RV: FoldResult, F: Fn(View) -> RV>(self, f: F) -> FoldQueryResult<RV>;
+    fn fold<RV: FoldResult, F: Fn(View) -> RV>(self, f: F) -> FoldedQueryBuilder<RV>;
 }
 
 pub trait Fold2<View1, View2> {
-    fn fold<RV: FoldResult, F: Fn(View1, View2) -> RV>(self, f: F) -> FoldQueryResult<RV>;
+    fn fold<RV: FoldResult, F: Fn(View1, View2) -> RV>(self, f: F) -> FoldedQueryBuilder<RV>;
 }
 
-impl<T: Value<L = U1>, View: FoldResult<Value = T>> SubqueryView<T> for FoldQueryResult<View> {
+impl<T: Value<L = U1>, View: FoldResult<Value = T>> SubqueryView<T> for FoldedQueryBuilder<View> {
     fn subquery(&self) -> SelectQuery {
         SelectQuery::create(
             self.query.clone(),
@@ -91,7 +91,7 @@ impl<T: Value<L = U1>, View: FoldResult<Value = T>> SubqueryView<T> for FoldQuer
     }
 }
 
-impl<T: Value<L = U1>, View: FoldResult<Value = T>> ExprView<T> for FoldQueryResult<View> {
+impl<T: Value<L = U1>, View: FoldResult<Value = T>> ExprView<T> for FoldedQueryBuilder<View> {
     type Tags = View::Tags;
 
     fn from_exprs(_exprs: GenericArray<Expr, ValueCountOf<T>>) -> ExprViewBox<T>
@@ -102,7 +102,7 @@ impl<T: Value<L = U1>, View: FoldResult<Value = T>> ExprView<T> for FoldQueryRes
     }
 
     fn expr_clone(&self) -> ExprViewBoxWithTag<T, Self::Tags> {
-        Box::new(FoldQueryResult::create(
+        Box::new(FoldedQueryBuilder::create(
             self.query.clone(),
             self.view.clone(),
             self.alias_generator.clone(),
@@ -115,11 +115,11 @@ impl<T: Value<L = U1>, View: FoldResult<Value = T>> ExprView<T> for FoldQueryRes
 }
 
 impl<T: Value<L = U1>, View: FoldResult<Value = T>> SingleRowSubqueryView<T>
-    for FoldQueryResult<View>
+    for FoldedQueryBuilder<View>
 {
 }
 
-impl<T: Value<L = U1>, View: FoldResult<Value = T>> SubqueryIntoView<T> for FoldQueryResult<View> {
+impl<T: Value<L = U1>, View: FoldResult<Value = T>> SubqueryIntoView<T> for FoldedQueryBuilder<View> {
     fn as_expr(&self) -> ExprViewBox<T> {
         T::view_from_exprs(arr![Expr; Expr::Subquery(self.subquery())])
     }

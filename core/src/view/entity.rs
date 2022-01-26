@@ -4,7 +4,7 @@ use sqlx::Database;
 use interface::{Association, FieldMarker, WithPrimaryKey, YukinoEntity};
 use query_builder::{Alias, ArgSource, ArgSourceList, InsertQuery};
 
-use crate::query::{Delete, DeleteQueryResult, QueryResultFilter};
+use crate::query::{Delete, DeletionBuilder, FilteredQueryBuilder};
 use crate::view::{ExprView, ExprViewBoxWithTag, TagList, Value, VerticalView};
 
 pub trait EntityView: ExprView<Self::Entity> {
@@ -30,7 +30,7 @@ pub trait EntityWithView: YukinoEntity + Value {
     type VerticalView: EntityVerticalView<Entity = Self>;
     type New;
 
-    fn all() -> QueryResultFilter<Self>;
+    fn all() -> FilteredQueryBuilder<Self>;
 }
 
 pub type ExprBoxOfAssociatedView<V, P, F> = ExprViewBoxWithTag<
@@ -89,11 +89,11 @@ where
 }
 
 pub trait Identifiable: WithPrimaryKey + EntityWithView {
-    fn get(id: Self::PrimaryKeyType) -> QueryResultFilter<Self>;
+    fn get(id: Self::PrimaryKeyType) -> FilteredQueryBuilder<Self>;
 }
 
 pub trait Deletable: Identifiable {
-    fn delete(self) -> DeleteQueryResult<Self> {
+    fn delete(self) -> DeletionBuilder<Self> {
         Self::get(self.primary_key().clone()).delete()
     }
 }

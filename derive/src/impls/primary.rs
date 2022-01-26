@@ -41,7 +41,7 @@ impl Implementor for PrimaryImplementor {
                     }
 
                     impl yukino::view::Identifiable for #entity_name {
-                        fn get(id: Self::PrimaryKeyType) -> yukino::query::QueryResultFilter<Self> {
+                        fn get(id: Self::PrimaryKeyType) -> yukino::query::FilteredQueryBuilder<Self> {
                             use yukino::query::Filter;
                             <Self as yukino::view::EntityWithView>::all()
                                 .filter(|e| yukino::eq!(e.#field_name, id))

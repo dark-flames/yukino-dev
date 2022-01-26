@@ -123,8 +123,8 @@ impl Implementor for EntityImplementor {
                 type VerticalView = #vertical_view_name;
                 type New = #new_entity_name;
 
-                fn all() -> yukino::query::QueryResultFilter<Self> {
-                    yukino::query::QueryResultFilter::create()
+                fn all() -> yukino::query::FilteredQueryBuilder<Self> {
+                    yukino::query::FilteredQueryBuilder::create()
                 }
             }
 
