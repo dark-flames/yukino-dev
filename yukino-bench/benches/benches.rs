@@ -266,9 +266,9 @@ fn bench_association_calc(c: &mut Criterion) {
 criterion::criterion_group!(
     name = benches;
     config = Criterion::default();
-    targets = //bench_insert,
-        //bench_fetch_all,
-        //bench_zip_association,
+    targets = bench_insert,
+        bench_fetch_all,
+        bench_zip_association,
         bench_association_calc
 
 );
