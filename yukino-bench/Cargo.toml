@@ -13,7 +13,7 @@ diesel = { version = "1.4.8", features = ["mysql", "chrono"] }
 sea-orm = {version = "0.5", features = ["runtime-tokio-rustls", "sqlx-mysql"]}
 chrono = "0.4.19"
 dotenv = "0.15.0"
-criterion = { version = "0.3.5", features = ["async_tokio"] }
+criterion = { version = "0.3.5", features = ["async_tokio", 'real_blackbox'] }
 rand = "0.8.4"
 futures = "0.3"
 

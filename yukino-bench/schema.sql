@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS user(
     `since`        DATETIME          NOT NULL,
     `introduction` TEXT              NOT NULL,
     PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS examination (
     `id`         INT    NOT NULL AUTO_INCREMENT,
@@ -18,5 +18,5 @@ CREATE TABLE IF NOT EXISTS examination (
     `comment`    TEXT   NOT NULL,
     PRIMARY KEY (`id`),
     CONSTRAINT `user_exam` FOREIGN KEY (`user_id`) REFERENCES user (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
