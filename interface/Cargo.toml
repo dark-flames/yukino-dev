@@ -6,10 +6,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-annotation-rs = "0.1.0"
-iroha = "0.1.7"
+quote-data = "1.0.0"
 quote = "1.0"
-syn = { version = "1.0", features = ["full"] }
 proc-macro2 = "1.0"
 
 [features]

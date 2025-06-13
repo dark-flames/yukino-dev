@@ -1,9 +1,9 @@
 use std::fmt::{Display, Formatter};
 
-use iroha::ToTokens;
+use quote_data::QuoteIt;
 
-#[derive(Copy, Clone, ToTokens, Debug, Eq, PartialEq, Hash)]
-#[Iroha(mod_path = "yukino")]
+#[derive(Copy, Clone, QuoteIt, Debug, Eq, PartialEq, Hash)]
+#[mod_path = "yukino"]
 pub enum DatabaseType {
     Bool,
     SmallInteger,

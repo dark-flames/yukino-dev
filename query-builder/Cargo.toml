@@ -7,16 +7,10 @@ edition = "2018"
 
 [dependencies]
 interface = { package = "yukino-interface", path = "../interface", version = "0.1.0" }
-iroha = "0.1.7"
-quote = "1.0"
-proc-macro2 = "1.0"
-time = { version = "0.3.5" }
 serde = { version = "1.0" }
 serde_json = { version = "1.0" }
 sqlx = { version = "0.5.9", features = ["runtime-tokio-rustls", "json", "time", "decimal"]}
 thiserror = "1.0"
-generic-array = "0.14.4"
-rust_decimal = "1.18.0"
 
 [features]
 default = [ "mysql" ]
